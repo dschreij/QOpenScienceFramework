@@ -9,11 +9,9 @@ Make sure you have the following modules available (all should be easy to get wi
 - qtawesome (https://github.com/spyder-ide/qtawesome)
 - requests_oauthlib (https://github.com/requests/requests-oauthlib)
 
-## Structure
-
-To be completed
-
 ## Running
-If you have all above modules installed, you should be able to do a test run with
+If you have all above modules installed, you should be able to perform a test run with
 
     python test.py
+
+This should load and display all widgets that can be used.
