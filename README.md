@@ -1,7 +1,5 @@
-# osf-api-pyqt-widgets
-This repository contains a set of PyQt widgets (should work with both pyqt4 and pyqt5 thanks to qtpy) that are designed
-to display and interact with information obtained through the Open Science Framework API. The module therefore requires
-[this library](https://github.com/dschreij/osf-api-python-interface) to work correclty.
+# osf-api-python-toolkit
+This repository should contain everything you need to start off with connecting your python application to the Open Science Framework (https://osf.io). It offers python functions that translate to Open Science Framework API endpoints, and also a set of PyQt widgets (should work with both pyqt4 and pyqt5 thanks to qtpy) that are designed to display and interact with information obtained through the OSF API. 
 
 ## Installation
 Make sure you have the following modules available (all should be easy to get with anaconda and/or pip
@@ -11,5 +9,11 @@ Make sure you have the following modules available (all should be easy to get wi
 - qtawesome (https://github.com/spyder-ide/qtawesome)
 - requests_oauthlib (https://github.com/requests/requests-oauthlib)
 
+## Structure
+
+To be completed
+
 ## Running
-If you have all above modules installed, you should be able to run the file test.py
+If you have all above modules installed, you should be able to do a test run with
+
+    python test.py
