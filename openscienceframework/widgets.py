@@ -14,18 +14,21 @@ from __future__ import unicode_literals
 
 import os
 import sys
+import platform
+
 import logging
+logging.basicConfig(level=logging.INFO)
 
 # QT classes
 from qtpy import QtGui, QtCore, QtWebKit, QtWidgets
 # Font Awesome icons for QT
 import qtawesome as qta
-# Mimetypes for file type recognition
-import mimetypes
 # OSF connection interface
 import openscienceframework.connection as osf
 # For performing HTTP requests
 import requests
+
+from openscienceframework.util import determine_filetype
 
 osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
 
@@ -196,12 +199,12 @@ class UserBadge(QtWidgets.QWidget):
 			self.statusbutton.setText(self.login_text)
 			
 
-class ProjectExplorer(QtWidgets.QWidget):
+class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
 	
 	preview_size = QtCore.QSize(150,150)
 	
-	def __init__(self, *args, **kwargs):
+	def __init__(self, *args, tree_widget=None, **kwargs):
 		""" Constructor 
 		
 		Can be passed a reference to an already existing ProjectTree if desired,
@@ -213,8 +216,8 @@ class ProjectExplorer(QtWidgets.QWidget):
 			The kind of object, which can be project, folder or file
 		
 		"""
-		
-		super(ProjectExplorer, self).__init__(*args, **kwargs)
+		# Call parent's constructor
+		super(OSFExplorer, self).__init__(*args, **kwargs)
 		
 		self.setWindowTitle("Project explorer")
 		self.resize(800,500)
@@ -227,18 +230,17 @@ class ProjectExplorer(QtWidgets.QWidget):
 		## globally accessible items
 
 		# ProjectTree widget. Can be passed as a reference to this object.
-		passed_tree = kwargs.get("tree_widget")
-		if passed_tree is None:
+		if tree_widget is None:
 			# Create a new ProjectTree instance
 			self.tree = ProjectTree()
 		else:
 			# Check if passed reference is a ProjectTree instance
-			if type(passed_tree) != ProjectTree:
+			if type(tree_widget) != ProjectTree:
 				raise TypeError("Passed tree_widget should be a 'ProjectTree'\
 					instance.")
 			else:
 				# assign passed reference of ProjectTree to this instance
-				self.tree = passed_tree
+				self.tree = tree_widget
 		
 		# File properties overview
 		self.properties_grid = self.__create_properties_pane()
@@ -268,7 +270,7 @@ class ProjectExplorer(QtWidgets.QWidget):
 		self.setLayout(hbox)
 		
 		# Event connections
-		self.tree.itemClicked.connect(self.item_clicked)
+		self.tree.itemClicked.connect(self.__item_clicked)
 		
 	def __create_properties_pane(self):
 		# Box to show the properties of the selected item
@@ -293,7 +295,8 @@ class ProjectExplorer(QtWidgets.QWidget):
 		return properties_pane
 		
 		
-	def item_clicked(self,item,col):
+	def __item_clicked(self,item,col):
+		""" Handles the QTreeWidget itemClicked event """
 		data = item.data
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
@@ -326,16 +329,47 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
 	in a treeview widget"""
 	
-	def __init__(self, *args, **kwars):
-		""" Constructor """
-		super(ProjectTree, self).__init__(*args, **kwars)
+	providers = {
+		'osfstorage'   : 'fa.connectdevelop',
+		'github'       : 'fa.github',
+		'dropbox'      : 'fa.dropbox',
+		'googledrive'  : 'fa.google',	
+	}
+	
+	def __init__(self, *args, use_theme=False, **kwargs):
+		""" Constructor 
+		Creates a tree showing the contents of the user's OSF repositories. 
+		Can be passed a theme to use for the icons, but if this doesn't happen
+		it will use the default qtawesome (FontAwesome) icons.
+		
+		Parameters
+		----------
+		use_theme : string (optional)
+			The name of the icon theme to use.
+		"""
+		super(ProjectTree, self).__init__(*args, **kwargs)
+		
+		# Check for argument specifying that qt_theme should be used to
+		# determine icons. Defaults to False.
+		
+		if type(use_theme) == str:
+			self.use_theme = use_theme
+			logging.info('Using icon theme of {}'.format(use_theme))
+			QtGui.QIcon.setThemeName(use_theme)
+			# Win and OSX don't support native themes
+			# so set the theming dir explicitly
+			if platform.system() in ['Darwin','Windows']:
+				QtGui.QIcon.setThemeSearchPaths(['./icons'])
+				logging.info(QtGui.QIcon.themeSearchPaths())
+		else:
+			self.use_theme = False
 		
 		# Set up general window
 		self.resize(400,500)
-		
+
 		# Set Window icon
 		if not os.path.isfile(osf_logo_path):
-			print("ERROR: OSF logo not found at {}".format(osf_logo_path))
+			logging.error("OSF logo not found at {}".format(osf_logo_path))
 		osf_icon = QtGui.QIcon(osf_logo_path)
 		self.setWindowIcon(osf_icon)
 		
@@ -344,87 +378,129 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		self.setColumnWidth(0,300)
 		
 		# Event handling
-		self.itemExpanded.connect(self.set_expanded_icon)
-		self.itemCollapsed.connect(self.set_collapsed_icon)
+		self.itemExpanded.connect(self.__set_expanded_icon)
+		self.itemCollapsed.connect(self.__set_collapsed_icon)
 		
 		self.setIconSize(QtCore.QSize(20,20))
 		
-	def set_expanded_icon(self,item):
+	def __set_expanded_icon(self,item):
 		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
 			item.setIcon(0,self.get_icon('folder-open',item.data['attributes']['name']))
 		
-	def set_collapsed_icon(self,item):
+	def __set_collapsed_icon(self,item):
 		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
 			item.setIcon(0,self.get_icon('folder',item.data['attributes']['name']))
-		
-
+	
 	def get_icon(self, datatype, name):
+		if self.use_theme != False:
+			return self.get_theme_icon(datatype, name)
+		else:
+			return self.get_fa_icon(datatype, name)
+	
+	def get_theme_icon(self, datatype, name):
 		""" 
-		Retrieves the icon for a certain object (project, folder) or filetype.
-		Uses mimetypes to determine the file type.
+		Retrieves the curren theme icon for a certain object (project, folder) 
+		or filetype. Uses the file extension to determine the file type.
 		
 		Parameters
 		----------
 		datatype : string
 			The kind of object, which can be project, folder or file
 		name : string
-			The name of the object, which is the project, folder or file name
+			The name of the object, which is the project's, folder's or 
+			file's name
 			
 		Returns
 		-------
-		QIcon : The icon for the current file/objec type """
+		QIcon : The icon for the current file/object type """
+		freedesktop_types = {
+			'image'        : 'image-x-generic',
+			'pdf'          : 'fa.file-pdf-o',
+			'text'         : 'text-x-generic',
+			'code'         : 'text-x-script',
+			'doc'          : 'x-office-document',
+			'presentation' : 'x-office-presentation',
+			'spreadsheet'  : 'x-office-spreadsheet',
+			'archive'      : 'package-x-generic',
+			'video'        : 'video-x-generic',
+			'audio'        : 'audio-x-generic',
+			'unknown'      : 'text-x-generic',
+		}
 		
-		providers = {
-			'osfstorage':'fa.connectdevelop',
-			'github':'fa.github',
-			'dropbox':'fa.dropbox',
-			'googledrive':'fa.google'
+		if datatype == 'project':
+			return qta.icon('fa.cubes')
+			
+		if datatype in ['folder','folder-open']:
+			# Providers are also seen as folders, so if the current folder
+			# matches a provider's name, simply show its icon.
+			if name in self.providers:
+				return qta.icon(self.providers[name])
+			else:
+				return QtGui.QIcon.fromTheme(
+					datatype,
+					self.get_fa_icon(datatype, name)
+				)
+		elif datatype == 'file':
+			filetype = determine_filetype(name)
+			if filetype in freedesktop_types:
+				return QtGui.QIcon.fromTheme(
+					freedesktop_types[filetype], 
+					self.get_fa_icon(datatype, name)
+				)
+		return qta.icon('fa.file-o')
+
+
+	def get_fa_icon(self, datatype, name):
+		""" 
+		Retrieves the Fontawesome icon for a certain object (project, folder)
+		or filetype. Uses the file extension to determine the file type.
+		
+		Parameters
+		----------
+		datatype : string
+			The kind of object, which can be project, folder or file
+		name : string
+			The name of the object, which is the project's, folder's or 
+			file's name
+			
+		Returns
+		-------
+		QIcon : The icon for the current file/object type """
+
+		# Dictionary translating filetypes to fontawesome icons.
+		fa_icons = {
+			# File types
+			'image'        : 'fa.file-image-o',
+			'pdf'          : 'fa.file-pdf-o',
+			'text'         : 'fa.file-text-o',
+			'code'         : 'fa.file-code-o',
+			'doc'          : 'fa.file-word-o',
+			'presentation' : 'fa.file-powerpoint-o',
+			'spreadsheet'  : 'fa.file-excel-o',
+			'archive'      : 'fa.file-archive-o',
+			'video'        : 'fa.file-video-o',
+			'audio'        : 'fa.file-audio-o',
+			'unknown'      : 'fa.file-o',
 		}
 		
 		if datatype == 'project':
 			icon = 'fa.cubes'
-		elif datatype == "folder":
-			if name in providers:
-				icon = providers[name]
+		elif datatype in ['folder','folder-open']:
+			if name in self.providers:
+				icon = self.providers[name]
 			else:
-				icon = 'fa.folder-o'
-		elif datatype == "folder-open":
-			if name in providers:
-				icon = providers[name]
-			else:
-				icon = 'fa.folder-open-o'
+				if datatype == "folder":
+					icon = 'fa.folder-o'
+				elif datatype == "folder-open":
+					icon = 'fa.folder-open-o'
 		elif datatype == "file":
-			filetype, encoding = mimetypes.guess_type(name)
-			if filetype:
-				if "image" in filetype:
-					icon = 'fa.file-image-o'
-				elif "pdf" in filetype:
-					icon = 'fa.file-pdf-o'
-				elif "text/x-" in filetype:
-					icon = 'fa.file-code-o'
-				elif "text/plain" in filetype:
-					icon = 'fa.file-text-o'
-				elif "msword" in filetype or \
-					"officedocument.wordprocessingml" in filetype or \
-					"opendocument.text" in filetype:
-					icon = 'fa.file-word-o'
-				elif "powerpoint" in filetype or \
-					"presentation" in filetype:
-					icon = 'fa.file-powerpoint-o'
-				elif "excel" in filetype or \
-					"spreadsheet" in filetype:
-					icon = 'fa.file-excel-o'				
-				elif "zip" in filetype or "x-tar" in filetype\
-					or "compressed" in filetype:
-					icon = 'fa.file-archive-o'
-				elif "video" in filetype:
-					icon = 'fa.file-video-o'
-				elif "audio" in filetype:
-					icon = 'fa.file-video-o'
-				else:
-					icon = 'fa.file-o'
+			filetype = determine_filetype(name)
+			if filetype in fa_icons:
+				icon = fa_icons[filetype]
+			else:
+				icon = fa_icons['unknown']
 		else:
-			icon = 'fa.file-o'
+			icon = fa_icons['unknown']
 		return qta.icon(icon)
 
 	def populate_tree(self, entrypoint, parent=None):

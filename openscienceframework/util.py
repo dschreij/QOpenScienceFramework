@@ -18,6 +18,12 @@ import logging
 import os
 import json
 
+# Mimetypes for file type recognition
+import mimetypes
+
+#-------------------------------------------------------------------------------
+# Event handling
+#-------------------------------------------------------------------------------
 
 class EventDispatcher(object):
 	"""The event dispatcher fires events to connected classes, which are henceforth
@@ -29,8 +35,7 @@ class EventDispatcher(object):
 	The only requirement for listener classes is that they implement a handling 
 	function for each event that is present in the self.events list.
 	These functions should be named "handle_<event_name>". For example, to catch
-	a login event, a listener should have the function handle_login. Each listener
-	has to have handle functions for *all* events specified in the self.events list."""
+	a login event, a listener should have the function handle_login."""
 	
 	# List of possible events this dispatcher can emit
 	events = ["login","logout"]	
@@ -40,40 +45,30 @@ class EventDispatcher(object):
 		super(EventDispatcher, self).__init__()
 		self.__listeners = []
 	
-	def __check_events(self,item):
-		"""Checks if the passed object has the required handler functions.
-		Args:
-			item - the object to check
-		Raises:
-			NameError - if the object does not have the required event handling 
-			functions
-		"""
-		for event in self.events:
-			if not hasattr(item,"handle_"+event) or not inspect.ismethod(getattr(item,"handle_"+event)):
-				raise NameError("{} does not have the required function {}".\
-					format(item.__class__.__name__, "handle_"+event))
-	
 	def add(self, obj):
 		""" Add (a) new object(s) to the list of objects listening for the events 
 	
-		Args:
-			obj - the listener to add. Can be a single listener or a list of listeners.
+		Parameters
+		----------
+		obj : object
+			the listener to add. Can be a single listener or a list of listeners.
+			Listeners should implement handling functions which are called when
+			certain events occur.
 		"""
-		# If the object passed is a list, check if each object in the list has the
-		# required event handling functions
+		# If the object passed is a list, add all object in the list
 		if type(obj) == list:
-			for item in obj:
-				self.__check_events(item)
 			self.__listeners.extend(obj)
 		else:
-		# If a single object is passed, check if it has the required functions
-			self.__check_events(obj)
 			self.__listeners.append(obj)
 		return self
 			
 	def remove(self,obj):
 		""" Remove a listener. Can be provided as a reference to the object
-		or simply by an index """
+		or simply by an index.
+		
+		Returns
+		-------
+		A reference to the current instance of this object (self)."""
 		for item in self.__listeners:
 			# Delete by object reference
 			if obj is item:
@@ -84,6 +79,11 @@ class EventDispatcher(object):
 		return self
 			
 	def get_listeners(self):
+		""" Returns a list of currently stored listeners. 
+		
+		Returns
+		-------
+		list : The list with listeners."""
 		return self.__listeners
 		
 	def dispatch_login(self):
@@ -96,18 +96,23 @@ class EventDispatcher(object):
 		
 	def dispatch(self,event):
 		""" Dispatch an event specified by the passed argument. The event has
-		to occur in the self.events list, otherwise an exception is raised."""
+		to occur in the self.events list, otherwise an exception is raised.
+		
+		Raises
+		-------
+		ValueError : if the passed event argument does not exist and is not valid.
+		"""
 		
 		if not event in self.events:
 			raise ValueError("Unknown event '{}'".format(event))
 			
 		for item in self.__listeners:
-			# Check here again, just to be sure
-			if not hasattr(item,"handle_"+event) or not inspect.ismethod(getattr(item,"handle_"+event)):
-				raise NameError("{} does not have the required function {}".\
-					format(item.__name__, "handle_"+event))
-			# Call the function!
-			getattr(item,"handle_"+event)()	
+			# Check if object has the required handling function before it
+			# is called.
+			if hasattr(item,"handle_"+event) and \
+				inspect.ismethod(getattr(item,"handle_"+event)):
+				# Call the function!
+				getattr(item,"handle_"+event)()	
 			
 class TestListener(object):
 	def handle_login(self):
@@ -118,6 +123,8 @@ class TestListener(object):
 
 		
 class TokenFileListener(object):
+	""" This listener stores the OAuth2 token after login and destroys it after 
+	logout."""
 	def __init__(self,tokenfile,osf):
 		super(TokenFileListener,self).__init__()
 		self.tokenfile = tokenfile
@@ -137,10 +144,56 @@ class TokenFileListener(object):
 				os.remove(self.tokenfile)
 			except Exception as e:
 				logging.warning("WARNING: {}".format(e.message))
-				
-		
+
+#-------------------------------------------------------------------------------
+# Other generally userful functions
+#-------------------------------------------------------------------------------	
+
+def determine_filetype(filename):
+	""" Determines the mimetype based on the passed extenstion. 
+
+	Parameters
+	----------
+	filename : string
+		The extension of the file
+
+	Returns
+	-------
+	string : the mimetype.
+	"""
+	
+	mimetype, encoding = mimetypes.guess_type(filename)
+	if mimetype:
+		if 'image' in mimetype:
+			return 'image'
+		elif 'pdf' in mimetype:
+			return 'pdf'
+		elif "text/x-" in mimetype:
+			return 'code'
+		elif "text/plain" in mimetype:
+			return 'text'
+		elif "msword" in mimetype or \
+			"officedocument.wordprocessingml" in mimetype or \
+			"opendocument.text" in mimetype:
+			return 'doc'
+		elif "powerpoint" in mimetype or \
+			"presentation" in mimetype:
+			return 'presentation'
+		elif "excel" in mimetype or \
+			"spreadsheet" in mimetype:
+			return 'spreadsheet'				
+		elif "zip" in mimetype or "x-tar" in mimetype\
+			or "compressed" in mimetype:
+			return 'archive'
+		elif "video" in mimetype:
+			return 'video'
+		elif "audio" in mimetype:
+			return 'audio'
+	return "unknown"
+
+
 if __name__== "__main__":
-	""" Test the dispatcher """
+	print ("Test the dispatcher.")
 	dispatcher = EventDispatcher()
 	tl = TestListener() # To be removed later	
 	dispatcher.add(tl)

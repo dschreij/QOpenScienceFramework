@@ -43,8 +43,11 @@ class StandAlone(object):
 		self.user_badge.move(850,100)
 		self.user_badge.show()
 		
+		# Set-up project tree
+		project_tree = widgets.ProjectTree(use_theme="Faenza")
+				
 		# Init and set up Project explorer
-		self.project_explorer = widgets.ProjectExplorer()
+		self.project_explorer = widgets.OSFExplorer(tree_widget=project_tree)
 		self.project_explorer.move(50,100)
 		self.project_explorer.show()
 	

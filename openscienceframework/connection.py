@@ -144,16 +144,19 @@ def requires_authentication(func):
 		try:
 			response = response.json()
 		except Exception as e:
-			if response.status_code != 204:
-				logging.info("Response status code {}".format(response.status_code))
-				logging.info("Could not decode response to JSON: {}".format(e))
+			logging.info("Could not decode response to JSON: {}".format(e))
+			raise e
 		
 		# If json decoding succeeded, response is now a dict instead of a 
 		# HTTP responses class
 		if type(response) == dict:
 			# If response contains an error key, something is wrong.
 			if "errors" in response.keys():
-				msg = response['errors'][0]['detail']
+				try:
+					msg = response['errors'][0]['detail']
+				except AttributeError:
+					raise Exception('An error occured, but OSF error message \
+						could not be retrieved. Invalid format?')
 				# Check if message involves an incorrecte token response
 				if msg == "User provided an invalid OAuth2 access token":
 					raise TokenError(msg)
@@ -164,7 +167,6 @@ def requires_authentication(func):
 		return response
 	return func_wrapper
 	
-@requires_authentication
 def logout():
 	""" Logs out the user, and resets the global session object. """
 	global session

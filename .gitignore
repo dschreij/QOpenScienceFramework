@@ -73,3 +73,6 @@ target/
 
 # OAuth token info
 token.json
+
+# Icons folder
+icons/
