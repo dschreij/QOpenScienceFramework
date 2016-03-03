@@ -1,3 +1,3 @@
 import openscienceframework.connection
-import openscienceframework.util
+import openscienceframework.events
 import openscienceframework.widgets
