@@ -27,16 +27,15 @@ from oauthlib.oauth2 import MobileApplicationClient
 # Easier function decorating
 from functools import wraps
 
+from openscienceframework.settings import client_id, redirect_uri
+
 # Convenience reference
-TokenError = requests_oauthlib.oauth2_session.TokenExpiredError
+TokenExpiredError = requests_oauthlib.oauth2_session.TokenExpiredError
 
 class OSFInvalidResponse(Exception):
 	pass
 
 #%%------------------ Main configuration and helper functions ------------------
-
-client_id = "cbc4c47b711a4feab974223b255c81c1"
-redirect_uri = "https://www.getpostman.com/oauth2/callback"
 
 def reset_session():
 	""" Creates/resets and OAuth 2 session, with the specified data. """
@@ -93,14 +92,6 @@ def api_call(command, *args):
 
 #%%--------------------------- Oauth communiucation ----------------------------
 
-def logged_in():
-	""" Function contents to be set in main module. """
-	logging.warning("User logged in! Overwrite this callback function withy your own custom one")
-
-def logged_out():
-	""" Function contents to be set in main module. """
-	logging.warning("User logged out! Overwrite this callback function withy your own custom one")
-
 def get_authorization_url():
 	""" Generate the URL at which an OAuth2 token for the OSF can be requested
 	with which OpenSesame can be allowed access to the user's account.
@@ -116,7 +107,6 @@ def parse_token_from_url(url):
 	token = session.token_from_fragment(url)
 	# Call logged_in function to notify event listeners that user is logged in
 	if is_authorized():
-		logged_in()
 		return token
 	else:
 		logging.debug("ERROR: Token received, but user not authorized")
@@ -138,7 +128,7 @@ def requires_authentication(func):
 			return False
 		# Check if token has not yet expired
 		if session.token["expires_at"] < time.time():
-			raise TokenError("The supplied token has expired")
+			raise TokenExpiredError("The supplied token has expired")
 
 		response = func(*args, **kwargs)
 
@@ -158,7 +148,7 @@ def requires_authentication(func):
 			if response.headers['content-type'] == 'application/octet-stream':
 				return response.content
 		# Anything else than a 200 code response is probably an error
-		if response.headers['content-type'] == 'application/json':
+		if response.headers['content-type'] in ['application/json','application/vnd.api+json']:
 			# See if you can decode the response to json.
 			try:
 				response = response.json()
@@ -174,15 +164,24 @@ def requires_authentication(func):
 				# Check if message involves an incorrecte token response
 				if msg == "User provided an invalid OAuth2 access token":
 					logout()
-					raise TokenError(msg)
+					raise TokenExpiredError(msg)
 
 		# If no response has been returned by now, or no error has been raised,
 		# then something fishy is going on that should be reported as en Error
-		raise OSFInvalidResponse('Could not handle response {}: {}\nContent Type: {}\n'.format(
+
+		# Don't print out html pages or octet stream, as this is useless
+		if not response.headers['content-type'] in ["text/html","application/octet-stream"]:
+			message = response.content
+		else:
+			message = ""
+
+		error_text = 'Could not handle response {}: {}\nContent Type: {}\n{}'.format(
 			response.status_code,
 			response.reason,
-			response.headers['content-type']
-		))
+			response.headers['content-type'],
+			message
+		)
+		raise OSFInvalidResponse(error_text)
 	return func_wrapper
 
 def logout():
@@ -196,10 +195,10 @@ def logout():
 		logging.info("User logged out")
 		# Reset session object
 		session = reset_session()
-		logged_out()
+		return True
 	else:
 		logging.debug("Error logging out")
-	return resp
+		return False
 
 #%% Functions interacting with the OSF API
 

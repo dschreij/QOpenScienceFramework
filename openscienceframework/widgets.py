@@ -19,6 +19,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # QT classes
+# Required QT classes
+import qtpy
+qtpy.setup_apiv2()
 from qtpy import QtGui, QtCore, QtWebKit, QtWidgets
 # OSF connection interface
 import openscienceframework.connection as osf
@@ -36,6 +39,9 @@ osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
 class LoginWindow(QtWebKit.QWebView):
 	""" A Login window for the OSF """
 	# Login event is emitted after successfull login
+
+	# Event fired when user successfully logged in
+	logged_in = QtCore.pyqtSignal()
 
 	def __init__(self):
 		""" Constructor """
@@ -79,6 +85,7 @@ class LoginWindow(QtWebKit.QWebView):
 			logging.info("Token URL: {}".format(r_url))
 			self.token = osf.parse_token_from_url(r_url)
 			if self.token:
+				self.logged_in.emit()
 				self.close()
 
 	def check_URL(self, url):
@@ -109,9 +116,11 @@ class UserBadge(QtWidgets.QWidget):
 	login_text = "Log in to OSF"
 	logout_text = "Log out"
 
-	def __init__(self):
+	def __init__(self, manager):
 		""" Constructor """
 		super(UserBadge, self).__init__()
+
+		self.manager = manager
 
 		# Set up general window
 		self.resize(200,40)
@@ -207,7 +216,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	# The maximum size an image may have to be downloaded for preview
 	image_size_limit = 1024**2/2.0
 
-	def __init__(self, *args, tree_widget=None, locale='en_us', **kwargs):
+	def __init__(self, manager, tree_widget=None, locale='en_us'):
 		""" Constructor
 
 		Can be passed a reference to an already existing ProjectTree if desired,
@@ -222,10 +231,10 @@ class OSFExplorer(QtWidgets.QWidget):
 			Should consist of lowercase characters only (e.g. nl_nl)
 		"""
 		# Call parent's constructor
-		super(OSFExplorer, self).__init__(*args, **kwargs)
+		super(OSFExplorer, self).__init__()
 
 		self.setWindowTitle("Project explorer")
-		self.resize(1000,500)
+		self.resize(800,500)
 		# Set Window icon
 		if not os.path.isfile(osf_logo_path):
 			print("ERROR: OSF logo not found at {}".format(osf_logo_path))
@@ -463,16 +472,16 @@ class OSFExplorer(QtWidgets.QWidget):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.tree.handle_logout()
 		self.image_space.setPixmap(QtGui.QPixmap())
-		self.nameValue.setText("")
-		self.typeValue.setText("")
+		for label,value in self.properties.values():
+			value.setText("")
 
 
 class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
 	in a treeview widget"""
 
-	def __init__(self, *args, use_theme=False, \
-				theme_path='./resources/iconthemes', **kwargs):
+	def __init__(self, manager, use_theme=False, \
+				theme_path='./resources/iconthemes'):
 		""" Constructor
 		Creates a tree showing the contents of the user's OSF repositories.
 		Can be passed a theme to use for the icons, but if this doesn't happen
@@ -483,7 +492,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		use_theme : string (optional)
 			The name of the icon theme to use.
 		"""
-		super(ProjectTree, self).__init__(*args, **kwargs)
+		super(ProjectTree, self).__init__()
+
+		self.manager = manager
 
 		# Check for argument specifying that qt_theme should be used to
 		# determine icons. Defaults to False.
