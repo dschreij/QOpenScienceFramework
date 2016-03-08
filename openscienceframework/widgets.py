@@ -145,8 +145,8 @@ class UserBadge(QtWidgets.QWidget):
 		self.statusbutton = QtWidgets.QPushButton(self)
 		self.statusbutton.clicked.connect(self.__handle_click)
 
-		# Determine content of labels:
-		self.check_user_status()
+		# Init user badge as logged out
+		self.handle_logout()
 
 		# Set up layout
 		grid = QtWidgets.QGridLayout()
@@ -161,19 +161,9 @@ class UserBadge(QtWidgets.QWidget):
 		grid.addLayout(login_grid,1,1)
 		self.setLayout(grid)
 
-	def check_user_status(self):
-		""" Checks the current status of the user and adjusts the contents of
-		the badge accordingly."""
-
-		if osf.is_authorized():
-			# Request logged in user's info
-			self.manager.get_logged_in_user(self.set_badge_contents)
-			
-		else:
-			self.user = None
-			self.user_name.setText("")
-			self.avatar.setPixmap(self.osf_logo_pixmap)
-			self.statusbutton.setText(self.login_text)
+	def current_user(self):
+		""" Checks the current status of the user."""
+		return self.manager.logged_in_user
 
 	# PyQt slots
 	def __handle_click(self):
@@ -188,11 +178,14 @@ class UserBadge(QtWidgets.QWidget):
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
-		self.check_user_status()
+		self.manager.get_logged_in_user(self.set_badge_contents)
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
-		self.check_user_status()
+		self.user = None
+		self.user_name.setText("")
+		self.avatar.setPixmap(self.osf_logo_pixmap)
+		self.statusbutton.setText(self.login_text)
 
 	# Other callback functions
 	

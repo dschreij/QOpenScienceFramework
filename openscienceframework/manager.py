@@ -70,8 +70,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if self.check_for_stored_token(self.tokenfile):
 			self.dispatcher.dispatch_login()
 			return
-		
 		# Otherwise, do the whole authentication dance
+		self.show_login_window()
+
+	def show_login_window(self):
 		""" Show the QWebView window with the login page of OSF """
 		auth_url, state = osf.get_authorization_url()
 
@@ -83,8 +85,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	def logout(self):
 		""" Logout from OSF """
-		if osf.logout():
-			self.dispatcher.dispatch_logout()
+		if osf.is_authorized() and osf.session.access_token:
+			self.post(osf.logout_url, self.__logout_succeeded, {'token':osf.session.access_token})
+
+	def __logout_succeeded(self,data,*args):
+		self.dispatcher.dispatch_logout()
 
 	def check_for_stored_token(self, tokenfile):
 		""" Checks if valid token information is stored in a token.json file.
@@ -110,17 +115,37 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			try:
 				osf.get_logged_in_user()
 				return True
-			except osf.TokenError as e:
-				logging.error(e)
+			except osf.TokenExpiredError as e:
 				osf.reset_session()
 				os.remove(tokenfile)
+				self.show_login_window()
 		else:
 			logging.info("Token expired; need log-in")
 			return False
 
 	# ------------------------ Communication with OSF API ---------------------------'
 	def get(self, url, callback, *args):
-		if not type(url) is QtCore.QUrl:
+		""" Perform a HTTP GET request. The OAuth2 token is automatically added to the
+		header if the request is going to an OSF server.
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url to perform the get request on
+		callback : function
+			The function to call once the request is finished.
+		*args (optional)
+			Any other arguments that you want to have passed to callable
+		"""
+
+		# First do some checking of the passed arguments
+		if not type(url) in [str, QtCore.QUrl]:
+			raise TypeError("url should be a string or QUrl object")
+
+		if not callable(callback):
+			raise TypeError("callback should be a function or callable.")
+
+		if type(url) is str:
 			url = self.get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
@@ -131,6 +156,61 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		self.redirect_counter = 0
 		reply = super(ConnectionManager, self).get(request)
+		reply.finished.connect(lambda: self.slotFinished(callback, *args))
+
+	def post(self, url, callback, data_to_send, *args):
+		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
+		header if the request is going to an OSF server.
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url to perform the get request on.
+		callback : function
+			The function to call once the request is finished.
+		data_to_send : dict
+			The data to send with the POST request. keys will be used as variable names
+			and values will be used as the variable values.
+		*args (optional)
+			Any other arguments that you want to have passed to callable.
+		"""
+		# First do some checking of the passed arguments
+		if not type(url) in [str, QtCore.QUrl]:
+			raise TypeError("url should be a string or QUrl object")
+
+		if not callable(callback):
+			raise TypeError("callback should be a function or callable.")
+
+		if not type(data_to_send) is dict:
+			raise TypeError("The POST data should be passed as a dict")
+
+		if not type(url) is QtCore.QUrl:
+			url = self.get_QUrl(url)
+		request = QtNetwork.QNetworkRequest(url)
+
+		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
+
+		if osf.is_authorized():
+			name = "Authorization".encode()
+			value = ("Bearer {}".format(osf.session.access_token)).encode()
+			request.setRawHeader(name, value)
+		
+		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
+		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
+		if QtCore.QT_VERSION_STR < '5':
+			postdata = QtCore.QUrl()
+		else:
+			postdata = QtCore.QUrlQuery()
+		# Add data
+		for varname in data_to_send:
+			postdata.addQueryItem(varname, data_to_send.get(varname))
+		# Convert to QByteArray for transport
+		if QtCore.QT_VERSION_STR < '5':
+			final_postdata = postdata.encodedQuery()
+		else:
+			final_postdata = postdata.toString(QtCore.QUrl.FullyEncoded).encode()
+		# Fire!
+		reply = super(ConnectionManager, self).post(request, final_postdata)
 		reply.finished.connect(lambda: self.slotFinished(callback, *args))
 
 	def get_logged_in_user(self, callback):
@@ -198,6 +278,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get_logged_in_user(self.set_logged_in_user)
 
 	def handle_logout(self):
+		self.osf.reset_session()
 		self.logged_in_user = {}
 
 	# ----------------------------- Other callbacks --------------------------------'
