@@ -67,10 +67,10 @@ logout_url = base_url + "oauth2/revoke"
 api_base_url = "https://test-api.osf.io/v2/"
 
 api_calls = {
-	"logged_in_user":"users/me",
-	"projects":"users/me/nodes",
-	"project_repos":"nodes/{}/files",
-	"repo_files":"nodes/{}/files/{}",
+	"logged_in_user":"users/me/",
+	"projects":"users/me/nodes/",
+	"project_repos":"nodes/{}/files/",
+	"repo_files":"nodes/{}/files/{}/",
 }
 
 def api_call(command, *args):
@@ -115,6 +115,12 @@ def is_authorized():
 	""" Convenience function simply returning OAuth2Session.authorized. """
 	return session.authorized
 
+def token_valid():
+	""" Checks if OAuth token is present, and if so, if it has not expired yet. """
+	if not hasattr(session,"token") or not session.token:
+		return False
+	return session.token["expires_at"] > time.time()
+
 def requires_authentication(func):
 	""" Decorator function which checks if a user is authenticated before he
 	performs the desired action. It furthermore checks if the response has been
@@ -127,7 +133,7 @@ def requires_authentication(func):
 			print("You are not authenticated. Please log in first.")
 			return False
 		# Check if token has not yet expired
-		if session.token["expires_at"] < time.time():
+		if not token_valid():
 			raise TokenExpiredError("The supplied token has expired")
 
 		response = func(*args, **kwargs)

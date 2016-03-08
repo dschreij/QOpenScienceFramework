@@ -14,10 +14,10 @@ from __future__ import unicode_literals
 
 # Import basics
 import inspect
-import time
 import logging
 import os
 import json
+import time
 
 #OSF modules
 import openscienceframework.connection as osf
@@ -34,9 +34,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	OSF. It checks if the app is still authorized to send requests, and also checks
 	for responses indicating this is not the case."""
 
-	def __init__(self, tokenfile="token.json", **kwargs):
+	# The maximum number of allowed redirects
+	MAX_REDIRECTS = 5
+
+	def __init__(self, manager, tokenfile="token.json"):
 		""" Constructor """
 		super(ConnectionManager, self).__init__()
+		self.manager = manager
 		self.tokenfile = tokenfile
 		self.dispatcher = EventDispatcher()
 
@@ -44,6 +48,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.browser = widgets.LoginWindow()
 		# Connect browsers logged in event to that of dispatcher's
 		self.browser.logged_in.connect(self.dispatcher.dispatch_login)
+
+		self.logged_in_user = {}
 
 	def get_QUrl(self, url):
 		""" Qt4 doesn url handling a bit different than Qt5, so check for that
@@ -53,9 +59,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		else:
 			return QtCore.QUrl(url)
 
-	# -------------------- Login and Logout functions -----------------------------
+	# --------------------- Login and Logout functions ---------------------------
 
 	def login(self):
+		""" Opens a browser window through which the user can log in. Upon successful
+		login, the browser widgets fires the 'logged_in' event. which is caught by this object
+		again in the handle_login() function. """
+
 		# If a valid stored token is found, read that in an dispatch login event
 		if self.check_for_stored_token(self.tokenfile):
 			self.dispatcher.dispatch_login()
@@ -80,18 +90,19 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		""" Checks if valid token information is stored in a token.json file.
 		of the project root. If not, or if the token is invalid/expired, it returns
 		False"""
+
 		logging.info("Looking for token at {}".format(tokenfile))
-		if tokenfile is None:
-			tokenfile = self.tokenfile
 
 		if not os.path.isfile(tokenfile):
 			return False
 
-		with open(tokenfile,"r") as f:
-			token = json.loads(f.read())
+		try:
+			token = json.load(open(tokenfile))
+		except IOError:
+			raise IOError("Token file could not be opened.")
 
 		# Check if token has not yet expired
-		if token["expires_at"] > time.time():
+		if token["expires_at"] > time.time() :
 			# Load the token information in the session object, but check its
 			# validity!
 			osf.session.token = token
@@ -107,30 +118,94 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			logging.info("Token expired; need log-in")
 			return False
 
-	# -------------------- Communication with OSF API -----------------------------'
-	def get(self, url):
-		qurl = self.get_QUrl(url)
-		request = QtNetwork.QNetworkRequest(qurl)
+	# ------------------------ Communication with OSF API ---------------------------'
+	def get(self, url, callback, *args):
+		if not type(url) is QtCore.QUrl:
+			url = self.get_QUrl(url)
+
+		request = QtNetwork.QNetworkRequest(url)
 		if osf.is_authorized():
-			name = "Bearer"
-			value = osf.session.token
+			name = "Authorization".encode()
+			value = ("Bearer {}".format(osf.session.access_token)).encode()
 			request.setRawHeader(name, value)
-		return super(ConnectionManager, self).get(request)
-	
-	def get_logged_in_user(self):
+
+		self.redirect_counter = 0
+		reply = super(ConnectionManager, self).get(request)
+		reply.finished.connect(lambda: self.slotFinished(callback, *args))
+
+	def get_logged_in_user(self, callback):
+		""" Contact the OSF to request data of the currently logged in user
+
+		Parameters
+		----------
+		callback : function
+			The callback function to which the data should be delivered
+
+		"""
 		api_call = osf.api_call("logged_in_user")
-		return self.get(api_call)
+		self.get(api_call, callback)
 
-	def get_user_projects(self):
-		api_call = self.get_QUrl(osf.api_call("projects"))
+	def get_user_projects(self, callback):
+		api_call = osf.api_call("projects")
+		self.get(api_call, callback)
 
-	def get_project_repos(self, project_id):
-		api_call = self.get_QUrl(osf.api_call("project_repos",project_id))
+	def get_project_repos(self, project_id, callback):
+		api_call = osf.api_call("project_repos",project_id)
+		self.get(api_call, callback)
 
-	def get_repo_files(self, project_id, repo_name):
-		api_call = self.get_QUrl(osf.api_call("repo_files",project_id, repo_name))
+	def get_repo_files(self, project_id, repo_name, callback):
+		api_call = osf.api_call("repo_files",project_id, repo_name)
+		self.get(api_call, callback)
+
+	# ----------------------------- PyQt Slots --------------------------------'
+
+	def slotFinished(self, callback, *args):
+		reply = self.sender()
+		request = reply.request()
 		
-	
+		# If an error occured, just show a simple QMessageBox for now
+		if reply.error() != reply.NoError:
+			QtWidgets.QMessageBox.critical(None, 
+				str(reply.attribute(request.HttpStatusCodeAttribute)), 
+				reply.errorString()
+			)
+			return
+		
+		# Check if the reply indicates a redirect
+		if reply.attribute(request.HttpStatusCodeAttribute) in [301,302]:
+			# To prevent endless redirects, make a count of them and only
+			# allow a set maximum
+			if self.redirect_counter < self.MAX_REDIRECTS:
+				self.redirect_counter += 1
+			else:
+				QtWidgets.QMessageBox.critical(None, 
+					"Whoops, something is going wrong", 
+					"Too Many redirects"
+				)
+				reply.deleteLater()
+				return
+			# Perform another request with the redirect_url and pass on the callback
+			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
+			self.get(redirect_url, callback, *args)
+		else:
+			# Content is a QByteArray, pass it on as a string for easier usage
+			callback(reply.readAll(), *args)
+
+		# Cleanup, mark the request and reply objects for deletion
+		reply.deleteLater()
+
+	def handle_login(self):
+		self.get_logged_in_user(self.set_logged_in_user)
+
+	def handle_logout(self):
+		self.logged_in_user = {}
+
+	# ----------------------------- Other callbacks --------------------------------'
+
+	def set_logged_in_user(self, user_data):
+		""" Callback function - Locally saves the data of the currently logged_in user """
+		self.logged_in_user = json.loads(user_data.data().decode())
+		
 
 class EventDispatcher(QtCore.QObject):
 	""" This class fires events to connected classes, which are henceforth
@@ -185,7 +260,6 @@ class EventDispatcher(QtCore.QObject):
 				- handle_login
 				- handle_logout
 		"""
-		logging.info("Linking {}".format(item))
 		if not hasattr(item,"handle_login"):
 			raise AttributeError("The passed item {} does not have the required 'handle_login' function".format(item))
 		self.logged_in.connect(item.handle_login)
@@ -245,6 +319,7 @@ class TokenFileListener(object):
 		if os.path.isfile(self.tokenfile):
 			try:
 				os.remove(self.tokenfile)
+				logging.info("Deleted {}".format(self.tokenfile))
 			except Exception as e:
 				logging.warning("WARNING: {}".format(e.message))
 

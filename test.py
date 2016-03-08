@@ -35,7 +35,7 @@ class StandAlone(object):
 		tokenfile = os.path.abspath("token.json")
 		# Create manager object
 		self.manager = ConnectionManager(tokenfile)
-
+		
 		# Init and set up user badge
 		self.user_badge = widgets.UserBadge(self.manager)
 		self.user_badge.move(850,100)
@@ -57,7 +57,7 @@ class StandAlone(object):
 		
 		self.tfl = TokenFileListener(tokenfile)
 
-		self.manager.dispatcher.add_listeners([self.tl, self.tfl, self.user_badge, self.project_explorer])
+		self.manager.dispatcher.add_listeners([self.tl, self.tfl, project_tree, self.user_badge, self.project_explorer])
 
 		# Connect click on user badge logout button to osf logout action
 		self.user_badge.logout_request.connect(self.manager.logout)
@@ -69,7 +69,6 @@ class StandAlone(object):
 		self.manager.login()
 		self.user_badge.show()
 		self.project_explorer.show()
-		self.manager.get_logged_in_user()
 
 if __name__ == "__main__":
 	app = QtWidgets.QApplication(sys.argv)

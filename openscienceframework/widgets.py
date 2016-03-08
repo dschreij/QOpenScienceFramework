@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 
 import os
 import platform
-
+import json
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -161,6 +161,21 @@ class UserBadge(QtWidgets.QWidget):
 		grid.addLayout(login_grid,1,1)
 		self.setLayout(grid)
 
+	def check_user_status(self):
+		""" Checks the current status of the user and adjusts the contents of
+		the badge accordingly."""
+
+		if osf.is_authorized():
+			# Request logged in user's info
+			self.manager.get_logged_in_user(self.set_badge_contents)
+			
+		else:
+			self.user = None
+			self.user_name.setText("")
+			self.avatar.setPixmap(self.osf_logo_pixmap)
+			self.statusbutton.setText(self.login_text)
+
+	# PyQt slots
 	def __handle_click(self):
 		button = self.sender()
 		logging.info("Button {} clicked".format(button.text()))
@@ -179,31 +194,24 @@ class UserBadge(QtWidgets.QWidget):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.check_user_status()
 
-	def check_user_status(self):
-		""" Checks the current status of the user and adjusts the contents of
-		the badge accordingly."""
+	# Other callback functions
+	
+	def set_badge_contents(self, data):
+		# Convert bytes to string and load the json data		
+		user = json.loads(data.data().decode())
+		# Get user's name
+		full_name = user["data"]["attributes"]["full_name"]
+		# Download avatar image from the specified url
+		avatar_url = user["data"]["links"]["profile_image"]
+		avatar_img = requests.get(avatar_url).content
+		pixmap = QtGui.QPixmap()
+		pixmap.loadFromData(avatar_img)
+		pixmap = pixmap.scaled(self.image_size)
 
-		if osf.is_authorized():
-			# Request logged in user's info
-			self.user = osf.get_logged_in_user()
-			# Get user's name
-			full_name = self.user["data"]["attributes"]["full_name"]
-			# Download avatar image from the specified url
-			avatar_url = self.user["data"]["links"]["profile_image"]
-			avatar_img = requests.get(avatar_url).content
-			pixmap = QtGui.QPixmap()
-			pixmap.loadFromData(avatar_img)
-			pixmap = pixmap.scaled(self.image_size)
-
-			# Update sub-widgets
-			self.user_name.setText(full_name)
-			self.avatar.setPixmap(pixmap)
-			self.statusbutton.setText(self.logout_text)
-		else:
-			self.user = None
-			self.user_name.setText("")
-			self.avatar.setPixmap(self.osf_logo_pixmap)
-			self.statusbutton.setText(self.login_text)
+		# Update sub-widgets
+		self.user_name.setText(full_name)
+		self.avatar.setPixmap(pixmap)
+		self.statusbutton.setText(self.logout_text)
 
 
 class OSFExplorer(QtWidgets.QWidget):
@@ -232,6 +240,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		"""
 		# Call parent's constructor
 		super(OSFExplorer, self).__init__()
+
+		self.manager = manager
 
 		self.setWindowTitle("Project explorer")
 		self.resize(800,500)
@@ -347,11 +357,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			if fileinspector.determine_category(filetype) == "image":
 				# Download and display image if it is not too big.
 				if filesize <= self.image_size_limit:
-					img_content = osf.direct_api_call(data["links"]["download"])
-					pixmap = QtGui.QPixmap()
-					pixmap.loadFromData(img_content)
-					pixmap = pixmap.scaledToHeight(self.image_space.height())
-					self.image_space.setPixmap(pixmap)
+					self.manager.get(data["links"]["download"], self.set_image_preview)
 		else:
 			filetype = "file"
 
@@ -397,7 +403,6 @@ class OSFExplorer(QtWidgets.QWidget):
 			for field in self.properties[row]:
 				field.show()
 
-
 	def set_folder_properties(self, data):
 		"""
 		Fills the contents of the properties pane for folders. Make sure the
@@ -433,7 +438,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Modified"][1].setText('')
 
 
-	### Event handlers
+	# PyQt slots 
 
 	def __item_clicked(self,item,col):
 		""" Handles the QTreeWidget itemClicked event """
@@ -466,14 +471,21 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 	def handle_login(self):
-		self.tree.handle_login()
+		pass
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
-		self.tree.handle_logout()
 		self.image_space.setPixmap(QtGui.QPixmap())
 		for label,value in self.properties.values():
 			value.setText("")
+
+	# Other callback functions
+	
+	def set_image_preview(self, img_content):
+		pixmap = QtGui.QPixmap()
+		pixmap.loadFromData(img_content)
+		pixmap = pixmap.scaledToHeight(self.image_space.height())
+		self.image_space.setPixmap(pixmap)
 
 
 class ProjectTree(QtWidgets.QTreeWidget):
@@ -588,7 +600,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		return QtGui.QIcon(osf_logo_path)
 
 
-	def populate_tree(self, entrypoint, parent=None):
+	def populate_tree(self, data, parent=None):
 		"""
 		Populates the tree with content retrieved from a certain entrypoint,
 		specified as an api endpoint of the OSF, such a a project or certain
@@ -608,7 +620,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		-------
 		list : The list of tree items that have just been generated """
 
-		osf_response = osf.direct_api_call(entrypoint)
+		osf_response = json.loads(data.data().decode())
 		treeItems = []
 
 		if parent is None:
@@ -627,6 +639,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				values += [humanize.naturalsize(entry["attributes"]["size"])]
 
 			item = QtWidgets.QTreeWidgetItem(parent,values)
+			
 			icon = self.get_icon(kind, name)
 			item.setIcon(0,icon)
 			item.data = entry
@@ -636,25 +649,38 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					next_entrypoint = entry['relationships']['files']\
 						['links']['related']['href']
 				except AttributeError as e:
-					raise osf.OSFInvalidResponse("Invalid api call for getting next\
-						entry point: {}".format(e))
-				children = self.populate_tree(next_entrypoint, item)
-				item.addChildren(children)
-			treeItems.append(item)
-		return treeItems
+					raise osf.OSFInvalidResponse("Invalid api call for getting next"
+						"entry point: {}".format(e))
+				self.manager.get(next_entrypoint, self.populate_tree, item)
 
-	#
+	def process_repo_contents(self, logged_in_user):
+		# If this function is called as a callback, the supplied data will be a
+		# QByteArray. Convert to a dictionary for easier usage
+		if type(logged_in_user) == QtCore.QByteArray:
+			logged_in_user = json.loads(logged_in_user.data().decode())
+
+		# Get url to user projects. Use that as entry point to populate the project tree
+		try:
+			user_nodes_api_call = logged_in_user['data']['relationships']['nodes']\
+			['links']['related']['href']
+		except AttributeError as e:
+			raise osf.OSFInvalidResponse("The structure of the retrieved data seems invalid")
+
+		self.manager.get(user_nodes_api_call, self.populate_tree)
+	
 	# Event handling functions required by EventDispatcher
-	#
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
-		logged_in_user = osf.get_logged_in_user()
-		# Get url to user projects. Use that as entry point to populate the tree
-		user_nodes_api_call = logged_in_user['data']['relationships']['nodes']\
-			['links']['related']['href']
-		self.populate_tree(user_nodes_api_call)
-
+		if self.manager.logged_in_user != {}:
+			# If manager has the data of the logged in user saved locally, pass it 
+			# to get_repo_contents directly.
+			self.process_repo_contents(self.manager.logged_in_user)
+		else:
+			# If not, query the osf for the user data, and pass get_repo_contents
+			# ass the callback to which the received data should be sent.
+			self.manager.get_logged_in_user(self.process_repo_contents)
+		
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.clear()
