@@ -13,7 +13,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 # Import basics
-import inspect
 import logging
 import os
 import json
@@ -268,10 +267,19 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# If an error occured, just show a simple QMessageBox for now
 		if reply.error() != reply.NoError:
+			# User not authenticated to perform this request
+			# Show login window again
+			if reply.error() == reply.ContentAccessDenied:
+				self.dispater.dispatch_logout()
+				self.show_login_window()
+				reply.deleteLater()
+				return
+
 			QtWidgets.QMessageBox.critical(None,
 				str(reply.attribute(request.HttpStatusCodeAttribute)),
 				reply.errorString()
 			)
+			reply.deleteLater()
 			return
 
 		# Check if the reply indicates a redirect
@@ -294,7 +302,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			# Content is a QByteArray, pass it on as a string for easier usage
 			callback(reply.readAll(), *args)
 
-		# Cleanup, mark the request and reply objects for deletion
+		# Cleanup, mark the reply object for deletion
 		reply.deleteLater()
 
 	def handle_login(self):

@@ -38,7 +38,7 @@ import arrow
 
 osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
 
-def check_for_opensesame_file(filename):
+def check_if_opensesame_file(filename):
 	""" Checks if the passed file is an OpenSesame file, based on its extension.
 
 	Parameters
@@ -52,7 +52,7 @@ def check_for_opensesame_file(filename):
 		True if filename is an OpenSesame file, False if not
 	"""
 	ext = os.path.splitext(filename)[1]
-	if ext in ['.osexp','.opensesame'] or \
+	if ext in ['.osexp', '.opensesame'] or \
 		(ext == '.gz' and 'opensesame.tar.gz' in filename):
 		return True
 	return False
@@ -81,7 +81,7 @@ class LoginWindow(QtWebKit.QWebView):
 		# Connect event that is fired if a HTTP request is completed.
 		self.nam.finished.connect(self.checkResponse)
 
-	def checkResponse(self,reply):
+	def checkResponse(self, reply):
 		"""Callback function for NetworkRequestManager.finished event
 
 		Parameters
@@ -169,7 +169,7 @@ class UserBadge(QtWidgets.QWidget):
 
 		# Spinner icon
 		self.spinner = qta.icon('fa.refresh', color='green',
-                     animation=qta.Spin(self.statusbutton))
+					 animation=qta.Spin(self.statusbutton))
 
 		# Init user badge as logged out
 		self.handle_logout()
@@ -298,17 +298,15 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Spinner image
 		self.spinner = QtWidgets.QLabel()
 		self.spinner.setAlignment(QtCore.Qt.AlignCenter)
-		self.spinner_icon = qta.icon(
-			'fa.spinner',
-			color='green',
-			animation=qta.Spin(self.spinner)
-		)
+		self.spinner_icon = qta.icon('fa.refresh',color='green')
 		spm = self.spinner_icon.pixmap(self.preview_size)
 		self.spinner.setPixmap(spm)
 		self.spinner.hide()
 
 		# Create layouts
-		hbox = QtWidgets.QHBoxLayout(self)
+
+		# The box holding
+		vbox = QtWidgets.QVBoxLayout(self)
 
 		# Grid layout for the info consisting of an image space and the
 		# properties grid
@@ -323,16 +321,24 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.info_frame.setLayout(info_grid)
 		self.info_frame.setVisible(False)
 
+		# Combine tree and info frame with a splitter in the middle
 		splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
 		splitter.addWidget(self.tree)
 		splitter.addWidget(self.info_frame)
 
-		hbox.addWidget(splitter)
-		self.setLayout(hbox)
+		# Create buttons at the bottom
+		buttonbar = self.__create_buttonbar()
+
+		# Add to layout
+		vbox.addWidget(splitter)
+		vbox.addWidget(buttonbar)
+		self.setLayout(vbox)
 
 		# Event connections
 		self.tree.itemClicked.connect(self.__item_clicked)
 		self.tree.itemSelectionChanged.connect(self.__selection_changed)
+
+	### Private functions
 
 	def __resizeImagePreview(self, event):
 		""" Resize the image preview (if there is any) after a resize event """
@@ -343,7 +349,32 @@ class OSFExplorer(QtWidgets.QWidget):
 			pm = self.current_img_preview.scaledToHeight(new_height)
 			self.image_space.setPixmap(pm)
 
-	### Private functions
+	def __create_buttonbar(self):
+		buttonbar = QtWidgets.QWidget()
+		hbox = QtWidgets.QHBoxLayout(buttonbar)
+		buttonbar.setLayout(hbox)
+
+		refresh_icon = qta.icon('fa.refresh', color='green')
+		self.refresh_button = QtWidgets.QPushButton(refresh_icon, 'Refresh')
+		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
+
+		download_icon = qta.icon('fa.cloud-download')
+		self.download_button = QtWidgets.QPushButton(download_icon, 'Download')
+		self.download_button.clicked.connect(self.__clicked_download_file)
+		self.download_button.setDisabled(True)
+
+		upload_icon = qta.icon('fa.cloud-upload')
+		self.upload_button = QtWidgets.QPushButton(upload_icon, 'Upload to folder')
+		self.upload_button.clicked.connect(self.__clicked_upload_file)
+		self.upload_button.setDisabled(True)
+
+		hbox.addWidget(self.refresh_button)
+		hbox.addStretch(1)
+		hbox.addWidget(self.download_button)
+		hbox.addWidget(self.upload_button)
+		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+
+		return buttonbar
 
 	def __create_properties_pane(self):
 		# Box to show the properties of the selected item
@@ -396,7 +427,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		except AttributeError as e:
 			raise osf.OSFInvalidResponse("Error parsing parse OSF response: {}".format(e))
 
-		if check_for_opensesame_file(name):
+		if check_if_opensesame_file(name):
 			filetype = "OpenSesame experiment"
 		else:
 			# Use fileinspector to determine filetype
@@ -512,8 +543,15 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		if kind  == "file":
 			self.set_file_properties(data)
-		else:
+			self.download_button.setDisabled(False)
+			self.upload_button.setDisabled(True)
+		elif kind == "folder":
 			self.set_folder_properties(data)
+			self.download_button.setDisabled(True)
+			self.upload_button.setDisabled(False)
+		else:
+			self.download_button.setDisabled(True)
+			self.upload_button.setDisabled(True)
 
 	def __selection_changed(self):
 		items_selected = bool(self.tree.selectedItems())
@@ -528,6 +566,15 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.current_img_preview = None
 			self.info_frame.setVisible(False)
 			return
+
+	def __clicked_refresh_tree(self):
+		self.tree.refresh_contents()
+
+	def __clicked_download_file(self):
+		pass
+
+	def __clicked_upload_file(self):
+		pass
 
 	def handle_login(self):
 		pass
@@ -654,7 +701,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		elif datatype == 'file':
 			# check for OpenSesame extensions first. If this is not an OS file
 			# use fileinspector to determine the filetype
-			if check_for_opensesame_file(name):
+			if check_if_opensesame_file(name):
 				filetype = 'opera-widget-manager'
 			else:
 				filetype = fileinspector.determine_type(name,'xdg')
@@ -665,6 +712,15 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			)
 		return QtGui.QIcon(osf_logo_path)
 
+	def refresh_contents(self):
+		if self.manager.logged_in_user != {}:
+			# If manager has the data of the logged in user saved locally, pass it
+			# to get_repo_contents directly.
+			self.process_repo_contents(self.manager.logged_in_user)
+		else:
+			# If not, query the osf for the user data, and pass get_repo_contents
+			# ass the callback to which the received data should be sent.
+			self.manager.get_logged_in_user(self.process_repo_contents)
 
 	def populate_tree(self, data, parent=None):
 		"""
@@ -732,21 +788,15 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			raise osf.OSFInvalidResponse(
 				"The structure of the retrieved data seems invalid: {}".format(e)
 			)
-
+		# Clear the tree to be sure
+		self.clear()
 		self.manager.get(user_nodes_api_call, self.populate_tree)
 
 	# Event handling functions required by EventDispatcher
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
-		if self.manager.logged_in_user != {}:
-			# If manager has the data of the logged in user saved locally, pass it
-			# to get_repo_contents directly.
-			self.process_repo_contents(self.manager.logged_in_user)
-		else:
-			# If not, query the osf for the user data, and pass get_repo_contents
-			# ass the callback to which the received data should be sent.
-			self.manager.get_logged_in_user(self.process_repo_contents)
+		self.refresh_contents()
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """

@@ -15,8 +15,6 @@ from __future__ import unicode_literals
 # Import basics
 import sys
 import os
-import json
-import time
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -35,17 +33,19 @@ class StandAlone(object):
 		tokenfile = os.path.abspath("token.json")
 		# Create manager object
 		self.manager = ConnectionManager(tokenfile)
-		
+
 		# Init and set up user badge
 		self.user_badge = widgets.UserBadge(self.manager)
-		self.user_badge.move(850,100)
+		self.user_badge.move(850, 100)
 
 		# Set-up project tree
 		project_tree = widgets.ProjectTree(self.manager, use_theme="Faenza")
 
 		# Init and set up Project explorer
-		self.project_explorer = widgets.OSFExplorer(self.manager, tree_widget=project_tree)
-		self.project_explorer.move(50,100)
+		self.project_explorer = widgets.OSFExplorer(
+			self.manager, tree_widget=project_tree
+		)
+		self.project_explorer.move(50, 100)
 
 		# Testlistener (to be removed later). Simply prints out which event
 		# it received.
@@ -54,18 +54,21 @@ class StandAlone(object):
 		# Token file listener writes the token to a json file if it receives
 		# a logged_in event and removes this file after logout
 		# Filename of the file to store token information in.
-		
 		self.tfl = TokenFileListener(tokenfile)
 
-		self.manager.dispatcher.add_listeners([self.tl, self.tfl, project_tree, self.user_badge, self.project_explorer])
-
+		self.manager.dispatcher.add_listeners(
+			[
+				self.tl, self.tfl, project_tree,
+				self.user_badge, self.project_explorer
+			]
+		)
 		# Connect click on user badge logout button to osf logout action
 		self.user_badge.logout_request.connect(self.manager.logout)
 		self.user_badge.login_request.connect(self.manager.login)
 
 		# If a valid token is stored in token.json, use that.
 		# Otherwise show the loging window.
-		
+
 		self.manager.login()
 		self.user_badge.show()
 		self.project_explorer.show()
