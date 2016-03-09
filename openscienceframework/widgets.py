@@ -23,6 +23,8 @@ logging.basicConfig(level=logging.INFO)
 import qtpy
 qtpy.setup_apiv2()
 from qtpy import QtGui, QtCore, QtWebKit, QtWidgets
+# QtAwesome icon fonts for spinners
+import qtawesome as qta
 # OSF connection interface
 import openscienceframework.connection as osf
 # For performing HTTP requests
@@ -35,6 +37,25 @@ import humanize
 import arrow
 
 osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
+
+def check_for_opensesame_file(filename):
+	""" Checks if the passed file is an OpenSesame file, based on its extension.
+
+	Parameters
+	----------
+	filename : string
+		The filename to check
+
+	Returns
+	-------
+	boolean :
+		True if filename is an OpenSesame file, False if not
+	"""
+	ext = os.path.splitext(filename)[1]
+	if ext in ['.osexp','.opensesame'] or \
+		(ext == '.gz' and 'opensesame.tar.gz' in filename):
+		return True
+	return False
 
 class LoginWindow(QtWebKit.QWebView):
 	""" A Login window for the OSF """
@@ -65,7 +86,8 @@ class LoginWindow(QtWebKit.QWebView):
 
 		Parameters
 		----------
-		reply : The HTTPResponse object provided by NetworkRequestManager
+		reply : QtNetwork.QNetworkReply
+			The HTTPResponse object provided by NetworkRequestManager
 		"""
 		request = reply.request()
 		# Get the HTTP statuscode for this response
@@ -145,6 +167,10 @@ class UserBadge(QtWidgets.QWidget):
 		self.statusbutton = QtWidgets.QPushButton(self)
 		self.statusbutton.clicked.connect(self.__handle_click)
 
+		# Spinner icon
+		self.spinner = qta.icon('fa.refresh', color='green',
+                     animation=qta.Spin(self.statusbutton))
+
 		# Init user badge as logged out
 		self.handle_logout()
 
@@ -178,7 +204,9 @@ class UserBadge(QtWidgets.QWidget):
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
-		self.manager.get_logged_in_user(self.set_badge_contents)
+		self.statusbutton.setIcon(self.spinner)
+		self.statusbutton.setText("Logging in")
+		self.manager.get_logged_in_user(self.__set_badge_contents)
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
@@ -188,9 +216,9 @@ class UserBadge(QtWidgets.QWidget):
 		self.statusbutton.setText(self.login_text)
 
 	# Other callback functions
-	
-	def set_badge_contents(self, data):
-		# Convert bytes to string and load the json data		
+
+	def __set_badge_contents(self, data):
+		# Convert bytes to string and load the json data
 		user = json.loads(data.data().decode())
 		# Get user's name
 		full_name = user["data"]["attributes"]["full_name"]
@@ -205,6 +233,7 @@ class UserBadge(QtWidgets.QWidget):
 		self.user_name.setText(full_name)
 		self.avatar.setPixmap(pixmap)
 		self.statusbutton.setText(self.logout_text)
+		self.statusbutton.setIcon(QtGui.QIcon())
 
 
 class OSFExplorer(QtWidgets.QWidget):
@@ -263,6 +292,20 @@ class OSFExplorer(QtWidgets.QWidget):
 		properties_pane = self.__create_properties_pane()
 		self.image_space = QtWidgets.QLabel()
 		self.image_space.setAlignment(QtCore.Qt.AlignCenter)
+		self.image_space.resizeEvent = self.__resizeImagePreview
+		self.current_img_preview = None
+
+		# Spinner image
+		self.spinner = QtWidgets.QLabel()
+		self.spinner.setAlignment(QtCore.Qt.AlignCenter)
+		self.spinner_icon = qta.icon(
+			'fa.spinner',
+			color='green',
+			animation=qta.Spin(self.spinner)
+		)
+		spm = self.spinner_icon.pixmap(self.preview_size)
+		self.spinner.setPixmap(spm)
+		self.spinner.hide()
 
 		# Create layouts
 		hbox = QtWidgets.QHBoxLayout(self)
@@ -272,6 +315,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		info_grid = QtWidgets.QGridLayout()
 		info_grid.setSpacing(10)
 		info_grid.addWidget(self.image_space,1,1)
+		info_grid.addWidget(self.spinner,1,1)
 		info_grid.addLayout(properties_pane,2,1)
 
 		# The widget to hold the infogrid
@@ -289,6 +333,15 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Event connections
 		self.tree.itemClicked.connect(self.__item_clicked)
 		self.tree.itemSelectionChanged.connect(self.__selection_changed)
+
+	def __resizeImagePreview(self, event):
+		""" Resize the image preview (if there is any) after a resize event """
+		if not self.current_img_preview is None:
+			# Calculate new height, but let the minimum be determined by
+			# the y coordinate of preview_size
+			new_height = max(event.size().height()-20, self.preview_size.height())
+			pm = self.current_img_preview.scaledToHeight(new_height)
+			self.image_space.setPixmap(pm)
 
 	### Private functions
 
@@ -319,6 +372,8 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		return properties_pane
 
+	### Public functions
+
 	def set_file_properties(self, data):
 		"""
 		Fills the contents of the properties pane for files. Makes sure the
@@ -341,18 +396,24 @@ class OSFExplorer(QtWidgets.QWidget):
 		except AttributeError as e:
 			raise osf.OSFInvalidResponse("Error parsing parse OSF response: {}".format(e))
 
-		# Use fileinspector to determine filetype
-		filetype = fileinspector.determine_type(name)
-		# If filetype could not be determined, the response is False
-		if filetype != False:
-			self.properties["Type"][1].setText(filetype)
-
-			if fileinspector.determine_category(filetype) == "image":
-				# Download and display image if it is not too big.
-				if filesize <= self.image_size_limit:
-					self.manager.get(data["links"]["download"], self.set_image_preview)
+		if check_for_opensesame_file(name):
+			filetype = "OpenSesame experiment"
 		else:
-			filetype = "file"
+			# Use fileinspector to determine filetype
+			filetype = fileinspector.determine_type(name)
+			# If filetype could not be determined, the response is False
+			if filetype != False:
+				self.properties["Type"][1].setText(filetype)
+
+				if fileinspector.determine_category(filetype) == "image":
+					# Download and display image if it is not too big.
+					if filesize <= self.image_size_limit:
+						self.manager.get(
+							data["links"]["download"],
+							self.set_image_preview)
+						self.spinner.show()
+			else:
+				filetype = "file"
 
 		### Do some reformatting of the data to make it look nicer for us humans
 		filesize = humanize.naturalsize(filesize)
@@ -431,10 +492,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Modified"][1].setText('')
 
 
-	# PyQt slots 
+	### PyQT slots
 
 	def __item_clicked(self,item,col):
 		""" Handles the QTreeWidget itemClicked event """
+		# Reset the image preview contents
+		self.current_img_preview = None
+
 		data = item.data
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
@@ -460,6 +524,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 		if self.info_frame.isVisible() and not items_selected:
+			# Reset the image preview contents
+			self.current_img_preview = None
 			self.info_frame.setVisible(False)
 			return
 
@@ -472,12 +538,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		for label,value in self.properties.values():
 			value.setText("")
 
-	# Other callback functions
-	
+	### Other callback functions
+
 	def set_image_preview(self, img_content):
-		pixmap = QtGui.QPixmap()
-		pixmap.loadFromData(img_content)
-		pixmap = pixmap.scaledToHeight(self.image_space.height())
+		self.current_img_preview = QtGui.QPixmap()
+		self.current_img_preview.loadFromData(img_content)
+		pixmap = self.current_img_preview.scaledToHeight(self.image_space.height())
+		self.spinner.hide()
 		self.image_space.setPixmap(pixmap)
 
 
@@ -585,7 +652,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					QtGui.QIcon(osf_logo_path)
 				)
 		elif datatype == 'file':
-			filetype = fileinspector.determine_type(name,"xdg")
+			# check for OpenSesame extensions first. If this is not an OS file
+			# use fileinspector to determine the filetype
+			if check_for_opensesame_file(name):
+				filetype = 'opera-widget-manager'
+			else:
+				filetype = fileinspector.determine_type(name,'xdg')
+
 			return QtGui.QIcon.fromTheme(
 				filetype,
 				QtGui.QIcon(osf_logo_path)
@@ -614,7 +687,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		list : The list of tree items that have just been generated """
 
 		osf_response = json.loads(data.data().decode())
-		treeItems = []
 
 		if parent is None:
 			parent = self.invisibleRootItem()
@@ -632,7 +704,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				values += [humanize.naturalsize(entry["attributes"]["size"])]
 
 			item = QtWidgets.QTreeWidgetItem(parent,values)
-			
+
 			icon = self.get_icon(kind, name)
 			item.setIcon(0,icon)
 			item.data = entry
@@ -657,23 +729,25 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			user_nodes_api_call = logged_in_user['data']['relationships']['nodes']\
 			['links']['related']['href']
 		except AttributeError as e:
-			raise osf.OSFInvalidResponse("The structure of the retrieved data seems invalid")
+			raise osf.OSFInvalidResponse(
+				"The structure of the retrieved data seems invalid: {}".format(e)
+			)
 
 		self.manager.get(user_nodes_api_call, self.populate_tree)
-	
+
 	# Event handling functions required by EventDispatcher
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
 		if self.manager.logged_in_user != {}:
-			# If manager has the data of the logged in user saved locally, pass it 
+			# If manager has the data of the logged in user saved locally, pass it
 			# to get_repo_contents directly.
 			self.process_repo_contents(self.manager.logged_in_user)
 		else:
 			# If not, query the osf for the user data, and pass get_repo_contents
 			# ass the callback to which the received data should be sent.
 			self.manager.get_logged_in_user(self.process_repo_contents)
-		
+
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.clear()

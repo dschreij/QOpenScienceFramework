@@ -79,7 +79,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Set up browser
 		browser_url = self.get_QUrl(auth_url)
-		
+
 		self.browser.load(browser_url)
 		self.browser.show()
 
@@ -115,7 +115,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			try:
 				osf.get_logged_in_user()
 				return True
-			except osf.TokenExpiredError as e:
+			except osf.TokenExpiredError:
 				osf.reset_session()
 				os.remove(tokenfile)
 				self.show_login_window()
@@ -137,18 +137,30 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		*args (optional)
 			Any other arguments that you want to have passed to callable
 		"""
-
 		# First do some checking of the passed arguments
-		if not type(url) in [str, QtCore.QUrl]:
+
+		# A safety net for when Python 2 is used. In that ver all strings are now also
+		# unicode characters because of the __future__ imports. Both str and unicode
+		# types will evaluate to True with isinstance(<value>,basestring) in Py 2
+
+		try:
+			# Python 2:
+			url_is_string = isinstance(url, basestring)
+		except NameError:
+			# Python 3
+			url_is_string = isinstance(url, str)
+
+		if not type(url) == QtCore.QUrl and not url_is_string:
 			raise TypeError("url should be a string or QUrl object")
 
 		if not callable(callback):
 			raise TypeError("callback should be a function or callable.")
 
-		if type(url) is str:
+		if not type(url) is QtCore.QUrl:
 			url = self.get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
+
 		if osf.is_authorized():
 			name = "Authorization".encode()
 			value = ("Bearer {}".format(osf.session.access_token)).encode()
@@ -175,7 +187,18 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			Any other arguments that you want to have passed to callable.
 		"""
 		# First do some checking of the passed arguments
-		if not type(url) in [str, QtCore.QUrl]:
+
+		# A safety net for when Python 2 is used. In that ver all strings are now also
+		# unicode characters because of the __future__ imports. Both str and unicode
+		# types will evaluate to True with isinstance(<value>,basestring) in Py 2
+		try:
+			# Python 2:
+			url_is_string = isinstance(url, basestring)
+		except NameError:
+			# Python 3
+			url_is_string = isinstance(url, str)
+
+		if not type(url) == QtCore.QUrl and not url_is_string:
 			raise TypeError("url should be a string or QUrl object")
 
 		if not callable(callback):
@@ -186,15 +209,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		if not type(url) is QtCore.QUrl:
 			url = self.get_QUrl(url)
-		request = QtNetwork.QNetworkRequest(url)
 
+		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
 		if osf.is_authorized():
 			name = "Authorization".encode()
 			value = ("Bearer {}".format(osf.session.access_token)).encode()
 			request.setRawHeader(name, value)
-		
+
 		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
 		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
 		if QtCore.QT_VERSION_STR < '5':
@@ -242,15 +265,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def slotFinished(self, callback, *args):
 		reply = self.sender()
 		request = reply.request()
-		
+
 		# If an error occured, just show a simple QMessageBox for now
 		if reply.error() != reply.NoError:
-			QtWidgets.QMessageBox.critical(None, 
-				str(reply.attribute(request.HttpStatusCodeAttribute)), 
+			QtWidgets.QMessageBox.critical(None,
+				str(reply.attribute(request.HttpStatusCodeAttribute)),
 				reply.errorString()
 			)
 			return
-		
+
 		# Check if the reply indicates a redirect
 		if reply.attribute(request.HttpStatusCodeAttribute) in [301,302]:
 			# To prevent endless redirects, make a count of them and only
@@ -258,8 +281,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			if self.redirect_counter < self.MAX_REDIRECTS:
 				self.redirect_counter += 1
 			else:
-				QtWidgets.QMessageBox.critical(None, 
-					"Whoops, something is going wrong", 
+				QtWidgets.QMessageBox.critical(None,
+					"Whoops, something is going wrong",
 					"Too Many redirects"
 				)
 				reply.deleteLater()
@@ -286,7 +309,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
 		self.logged_in_user = json.loads(user_data.data().decode())
-		
+
 
 class EventDispatcher(QtCore.QObject):
 	""" This class fires events to connected classes, which are henceforth
