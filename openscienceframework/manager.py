@@ -22,6 +22,9 @@ import time
 import openscienceframework.connection as osf
 from openscienceframework import widgets
 
+# Easier function decorating
+from functools import wraps
+
 # PyQt modules
 from qtpy import QtCore, QtNetwork, QtWidgets
 import qtpy
@@ -123,7 +126,24 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			return False
 
 	# ------------------------ Communication with OSF API ---------------------------'
-	def get(self, url, callback, *args):
+
+	def check_network_accessibility(func):
+		""" Checks if network is accessible """
+		@wraps(func)
+		def func_wrapper(inst, *args, **kwargs):
+			if inst.networkAccessible() == inst.NotAccessible:
+				QtWidgets.QMessageBox.critical(None,
+					"No network access",
+					"Your network connection is down or you currently have"
+					" no Internet access."
+				)
+				return
+			else:
+				return func(inst, *args, **kwargs)
+		return func_wrapper
+
+	@check_network_accessibility
+	def get(self, url, callback, *args, **kwargs):
 		""" Perform a HTTP GET request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
 
@@ -160,15 +180,25 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		request = QtNetwork.QNetworkRequest(url)
 
+		# Check if this is a redirect and keep a count to prevent endless
+		# redirects
+
+		redirect_count = kwargs.pop('redirect_count',0)
+
 		if osf.is_authorized():
 			name = "Authorization".encode()
 			value = ("Bearer {}".format(osf.session.access_token)).encode()
 			request.setRawHeader(name, value)
 
-		self.redirect_counter = 0
 		reply = super(ConnectionManager, self).get(request)
-		reply.finished.connect(lambda: self.slotFinished(callback, *args))
+		reply.finished.connect(
+			lambda: self.__slotFinished(
+				callback, *args, redirect_count=redirect_count
+			)
+		)
+		return reply
 
+	@check_network_accessibility
 	def post(self, url, callback, data_to_send, *args):
 		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
@@ -233,7 +263,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			final_postdata = postdata.toString(QtCore.QUrl.FullyEncoded).encode()
 		# Fire!
 		reply = super(ConnectionManager, self).post(request, final_postdata)
-		reply.finished.connect(lambda: self.slotFinished(callback, *args))
+		reply.finished.connect(lambda: self.__slotFinished(callback, *args))
 
 	def get_logged_in_user(self, callback):
 		""" Contact the OSF to request data of the currently logged in user
@@ -261,7 +291,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	# ----------------------------- PyQt Slots --------------------------------'
 
-	def slotFinished(self, callback, *args):
+	def __slotFinished(self, callback, *args, **kwargs):
 		reply = self.sender()
 		request = reply.request()
 
@@ -286,8 +316,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if reply.attribute(request.HttpStatusCodeAttribute) in [301,302]:
 			# To prevent endless redirects, make a count of them and only
 			# allow a set maximum
-			if self.redirect_counter < self.MAX_REDIRECTS:
-				self.redirect_counter += 1
+			redirect_count = kwargs.pop('redirect_count',0)
+			if redirect_count < self.MAX_REDIRECTS:
+				redirect_count += 1
 			else:
 				QtWidgets.QMessageBox.critical(None,
 					"Whoops, something is going wrong",
@@ -297,10 +328,14 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-			self.get(redirect_url, callback, *args)
+			logging.info("{} Redirect ({}) to {}".format(
+				reply.attribute(request.HttpStatusCodeAttribute),
+				redirect_count,
+				reply.attribute(request.RedirectionTargetAttribute).toString()
+			))
+			self.get(redirect_url, callback, *args, redirect_count=redirect_count)
 		else:
-			# Content is a QByteArray, pass it on as a string for easier usage
-			callback(reply.readAll(), *args)
+			callback(reply, *args)
 
 		# Cleanup, mark the reply object for deletion
 		reply.deleteLater()
@@ -316,7 +351,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
-		self.logged_in_user = json.loads(user_data.data().decode())
+		self.logged_in_user = json.loads(user_data.readAll().data().decode())
 
 
 class EventDispatcher(QtCore.QObject):

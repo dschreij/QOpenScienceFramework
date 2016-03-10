@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 # Required QT classes
 import qtpy
 qtpy.setup_apiv2()
-from qtpy import QtGui, QtCore, QtWebKit, QtWidgets
+from qtpy import QtGui, QtCore, QtWebKit, QtWidgets, QtNetwork
 # QtAwesome icon fonts for spinners
 import qtawesome as qta
 # OSF connection interface
@@ -217,9 +217,9 @@ class UserBadge(QtWidgets.QWidget):
 
 	# Other callback functions
 
-	def __set_badge_contents(self, data):
+	def __set_badge_contents(self, reply):
 		# Convert bytes to string and load the json data
-		user = json.loads(data.data().decode())
+		user = json.loads(reply.readAll().data().decode())
 		# Get user's name
 		full_name = user["data"]["attributes"]["full_name"]
 		# Download avatar image from the specified url
@@ -240,6 +240,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
 	# Size of preview icon in properties pane
 	preview_size = QtCore.QSize(150,150)
+	button_icon_size = QtCore.QSize(20,20)
 	# Formatting of date displays
 	timeformat = 'YYYY-MM-DD HH:mm'
 	datedisplay = '{}\n({})'
@@ -288,20 +289,14 @@ class OSFExplorer(QtWidgets.QWidget):
 				# assign passed reference of ProjectTree to this instance
 				self.tree = tree_widget
 
+		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
+
 		# File properties overview
 		properties_pane = self.__create_properties_pane()
 		self.image_space = QtWidgets.QLabel()
 		self.image_space.setAlignment(QtCore.Qt.AlignCenter)
 		self.image_space.resizeEvent = self.__resizeImagePreview
 		self.current_img_preview = None
-
-		# Spinner image
-		self.spinner = QtWidgets.QLabel()
-		self.spinner.setAlignment(QtCore.Qt.AlignCenter)
-		self.spinner_icon = qta.icon('fa.refresh',color='green')
-		spm = self.spinner_icon.pixmap(self.preview_size)
-		self.spinner.setPixmap(spm)
-		self.spinner.hide()
 
 		# Create layouts
 
@@ -313,7 +308,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		info_grid = QtWidgets.QGridLayout()
 		info_grid.setSpacing(10)
 		info_grid.addWidget(self.image_space,1,1)
-		info_grid.addWidget(self.spinner,1,1)
 		info_grid.addLayout(properties_pane,2,1)
 
 		# The widget to hold the infogrid
@@ -354,18 +348,29 @@ class OSFExplorer(QtWidgets.QWidget):
 		hbox = QtWidgets.QHBoxLayout(buttonbar)
 		buttonbar.setLayout(hbox)
 
-		refresh_icon = qta.icon('fa.refresh', color='green')
-		self.refresh_button = QtWidgets.QPushButton(refresh_icon, 'Refresh')
+		self.refresh_icon = qta.icon('fa.refresh', color='green')
+		self.refresh_button = QtWidgets.QPushButton(self.refresh_icon, 'Refresh')
+		self.refresh_icon_spinning = qta.icon(
+			'fa.refresh', color='green', animation=qta.Spin(self.refresh_button))
+		self.refresh_button.setIconSize(self.button_icon_size)
 		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
 
-		download_icon = qta.icon('fa.cloud-download')
+		download_icon = QtGui.QIcon.fromTheme(
+			'go-down',
+			qta.icon('fa.cloud-download')
+		)
 		self.download_button = QtWidgets.QPushButton(download_icon, 'Download')
+		self.download_button.setIconSize(self.button_icon_size)
 		self.download_button.clicked.connect(self.__clicked_download_file)
 		self.download_button.setDisabled(True)
 
-		upload_icon = qta.icon('fa.cloud-upload')
+		upload_icon = QtGui.QIcon.fromTheme(
+			'go-up',
+			qta.icon('fa.cloud-upload')
+		)
 		self.upload_button = QtWidgets.QPushButton(upload_icon, 'Upload to folder')
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
+		self.upload_button.setIconSize(self.button_icon_size)
 		self.upload_button.setDisabled(True)
 
 		hbox.addWidget(self.refresh_button)
@@ -442,7 +447,6 @@ class OSFExplorer(QtWidgets.QWidget):
 						self.manager.get(
 							data["links"]["download"],
 							self.set_image_preview)
-						self.spinner.show()
 			else:
 				filetype = "file"
 
@@ -568,7 +572,10 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 	def __clicked_refresh_tree(self):
+		self.refresh_button.setDisabled(True)
+		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
+
 
 	def __clicked_download_file(self):
 		pass
@@ -576,28 +583,35 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __clicked_upload_file(self):
 		pass
 
+	def __tree_refresh_finished(self):
+		self.refresh_button.setIcon(self.refresh_icon)
+		self.refresh_button.setDisabled(False)
+
 	def handle_login(self):
-		pass
+		self.refresh_button.setDisabled(True)
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.image_space.setPixmap(QtGui.QPixmap())
 		for label,value in self.properties.values():
 			value.setText("")
+		self.refresh_button.setDisabled(True)
 
 	### Other callback functions
 
 	def set_image_preview(self, img_content):
 		self.current_img_preview = QtGui.QPixmap()
-		self.current_img_preview.loadFromData(img_content)
+		self.current_img_preview.loadFromData(img_content.readAll())
 		pixmap = self.current_img_preview.scaledToHeight(self.image_space.height())
-		self.spinner.hide()
 		self.image_space.setPixmap(pixmap)
 
 
 class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
 	in a treeview widget"""
+
+	# Event fired when refresh of tree is finished
+	refreshFinished = QtCore.pyqtSignal()
 
 	def __init__(self, manager, use_theme=False, \
 				theme_path='./resources/iconthemes'):
@@ -649,6 +663,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		self.itemCollapsed.connect(self.__set_collapsed_icon)
 
 		self.setIconSize(QtCore.QSize(20,20))
+
+		# Due to the recursive nature of the tree populating function, it is
+		# sometimes difficult to keep track of if the populating function is still
+		# active. This is a somewhat hacky attempt to artificially keep try to keep
+		# track, by adding current requests in this list.
+		self.active_requests = []
 
 	def __set_expanded_icon(self,item):
 		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
@@ -722,7 +742,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			# ass the callback to which the received data should be sent.
 			self.manager.get_logged_in_user(self.process_repo_contents)
 
-	def populate_tree(self, data, parent=None):
+	def populate_tree(self, reply, parent=None):
 		"""
 		Populates the tree with content retrieved from a certain entrypoint,
 		specified as an api endpoint of the OSF, such a a project or certain
@@ -742,7 +762,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		-------
 		list : The list of tree items that have just been generated """
 
-		osf_response = json.loads(data.data().decode())
+		osf_response = json.loads(reply.readAll().data().decode())
 
 		if parent is None:
 			parent = self.invisibleRootItem()
@@ -772,13 +792,22 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				except AttributeError as e:
 					raise osf.OSFInvalidResponse("Invalid api call for getting next"
 						"entry point: {}".format(e))
-				self.manager.get(next_entrypoint, self.populate_tree, item)
+				req = self.manager.get(next_entrypoint, self.populate_tree, item)
+				self.active_requests.append(req)
+
+		try:
+			self.active_requests.remove(reply)
+		except ValueError as e:
+			logging.info("Reply not found in active requests")
+
+		if not self.active_requests:
+			self.refreshFinished.emit()
 
 	def process_repo_contents(self, logged_in_user):
 		# If this function is called as a callback, the supplied data will be a
 		# QByteArray. Convert to a dictionary for easier usage
-		if type(logged_in_user) == QtCore.QByteArray:
-			logged_in_user = json.loads(logged_in_user.data().decode())
+		if type(logged_in_user) == QtNetwork.QNetworkReply:
+			logged_in_user = json.loads(logged_in_user.readAll().data().decode())
 
 		# Get url to user projects. Use that as entry point to populate the project tree
 		try:
@@ -790,7 +819,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			)
 		# Clear the tree to be sure
 		self.clear()
-		self.manager.get(user_nodes_api_call, self.populate_tree)
+		req = self.manager.get(user_nodes_api_call, self.populate_tree)
+		self.active_requests.append(req)
 
 	# Event handling functions required by EventDispatcher
 
