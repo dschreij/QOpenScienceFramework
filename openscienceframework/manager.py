@@ -30,6 +30,9 @@ from qtpy import QtCore, QtNetwork, QtWidgets
 import qtpy
 qtpy.setup_apiv2()
 
+# Python 2 and 3 compatiblity settings
+from openscienceframework.compat import *
+
 class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	"""
 	The connection manager does much of the heavy lifting in communicating with the
@@ -158,18 +161,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		"""
 		# First do some checking of the passed arguments
 
-		# A safety net for when Python 2 is used. In that ver all strings are now also
-		# unicode characters because of the __future__ imports. Both str and unicode
-		# types will evaluate to True with isinstance(<value>,basestring) in Py 2
-
-		try:
-			# Python 2:
-			url_is_string = isinstance(url, basestring)
-		except NameError:
-			# Python 3
-			url_is_string = isinstance(url, str)
-
-		if not type(url) == QtCore.QUrl and not url_is_string:
+		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
 			raise TypeError("url should be a string or QUrl object")
 
 		if not callable(callback):
@@ -181,9 +173,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request = QtNetwork.QNetworkRequest(url)
 
 		# Check if this is a redirect and keep a count to prevent endless
-		# redirects
-
-		redirect_count = kwargs.pop('redirect_count',0)
+		# redirects. If redirect_count is not set, init it to 0
+		kwargs['redirect_count'] = kwargs.get('redirect_count',0)
 
 		if osf.is_authorized():
 			name = "Authorization".encode()
@@ -191,9 +182,26 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			request.setRawHeader(name, value)
 
 		reply = super(ConnectionManager, self).get(request)
+
+		# Check if a callback has been specified to which the downloadprogress
+		# is to be reported
+		dlpCallback = kwargs.get('downloadProgress', None)
+		if callable(dlpCallback):
+			reply.downloadProgress.connect(dlpCallback)
+
+		# Check if a callback has been specified for reply's readyRead() signal
+		# which emits as soon as data is available on the buffer and doesn't wait
+		# till the whole transfer is finished as the finished() callback does
+		# This is useful when downloading larger files
+		rrCallback = kwargs.get('readyRead', None)
+		if callable(rrCallback):
+			reply.readyRead.connect(
+				lambda: rrCallback(*args, **kwargs)
+			)
+
 		reply.finished.connect(
 			lambda: self.__slotFinished(
-				callback, *args, redirect_count=redirect_count
+				callback, *args, **kwargs
 			)
 		)
 		return reply
@@ -216,18 +224,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			Any other arguments that you want to have passed to callable.
 		"""
 		# First do some checking of the passed arguments
-
-		# A safety net for when Python 2 is used. In that ver all strings are now also
-		# unicode characters because of the __future__ imports. Both str and unicode
-		# types will evaluate to True with isinstance(<value>,basestring) in Py 2
-		try:
-			# Python 2:
-			url_is_string = isinstance(url, basestring)
-		except NameError:
-			# Python 3
-			url_is_string = isinstance(url, str)
-
-		if not type(url) == QtCore.QUrl and not url_is_string:
+		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
 			raise TypeError("url should be a string or QUrl object")
 
 		if not callable(callback):
@@ -271,25 +268,120 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Parameters
 		----------
 		callback : function
-			The callback function to which the data should be delivered
+			The callback function to which the data should be delivered once the
+			request is finished
 
+		Returns
+		-------
+		QtNetwork.QNetworkReply or None if something went wrong
+
+		Note :
+			To process retrieved data from this reply, the callback function
+			argument should be used, and not the QNetworkReply object that is
+			returned here.
 		"""
 		api_call = osf.api_call("logged_in_user")
-		self.get(api_call, callback)
+		return self.get(api_call, callback)
 
 	def get_user_projects(self, callback):
+		""" Get a list of projects owned by the currently logged in user from OSF
+
+		Parameters
+		----------
+		callback : function
+			The callback function to which the data should be delivered once the
+			request is finished
+
+		Returns
+		-------
+		QtNetwork.QNetworkReply or None if something went wrong
+
+		Note :
+			To process retrieved data from this reply, the callback function
+			argument should be used, and not the QNetworkReply object that is
+			returned here.
+		"""
 		api_call = osf.api_call("projects")
-		self.get(api_call, callback)
+		return self.get(api_call, callback)
 
 	def get_project_repos(self, project_id, callback):
-		api_call = osf.api_call("project_repos",project_id)
-		self.get(api_call, callback)
+		""" Get a list of repositories from the OSF that belong to the passed
+		project id
+
+		Parameters
+		----------
+		project_id : string
+			The project id that OSF uses for this project (e.g. the node id)
+		callback : function
+			The callback function to which the data should be delivered once the
+			request is finished
+
+		Returns
+		-------
+		QtNetwork.QNetworkReply or None if something went wrong
+
+		Note :
+			To process retrieved data from this reply, the callback function
+			argument should be used, and not the QNetworkReply object that is
+			returned here.
+		"""
+		api_call = osf.api_call("project_repos", project_id)
+		return self.get(api_call, callback)
 
 	def get_repo_files(self, project_id, repo_name, callback):
-		api_call = osf.api_call("repo_files",project_id, repo_name)
-		self.get(api_call, callback)
+		""" Get a list of files from the OSF that belong to the indicated
+		repository of the passed project id
 
-	# ----------------------------- PyQt Slots --------------------------------'
+		Parameters
+		----------
+		project_id : string
+			The project id that OSF uses for this project (e.g. the node id)
+		repo_name : string
+			The repository to get the files from. Should be something along the
+			lines of osfstorage, github, dropbox, etc. Check OSF documentation
+			for a full list of specifications.
+		callback : function
+			The callback function to which the data should be delivered once the
+			request is finished
+
+		Returns
+		-------
+		QtNetwork.QNetworkReply or None if something went wrong
+
+		Note :
+			To process retrieved data from this reply, the callback function
+			argument should be used, and not the QNetworkReply object that is
+			returned here.
+		"""
+		api_call = osf.api_call("repo_files",project_id, repo_name)
+		return self.get(api_call, callback)
+
+	def download_file(self, url, destination, *args, **kwargs):
+		# Check if destination is a string 
+		if not type(destination) == str:
+			raise ValueError("destination should be a string")
+		# Check if the specified folder exists. However, because a situation is possible in which
+		# the user has selected a destination but deletes the folder in some other program in the meantime,
+		# show a message box, but do not raise an exception, because we don't want this to completely crash
+		# our program.
+		if not os.path.isdir(os.path.split(os.path.abspath(destination))[0]):
+			QtWidgets.QMessageBox.critical(None,"{} is not a valid destination".format(destination))
+			return
+		kwargs['destination'] = destination
+
+		# Create tempfile
+		tmp_file = QtCore.QTemporaryFile()
+		tmp_file.open(QtCore.QIODevice.WriteOnly)
+		kwargs['tmp_file'] = tmp_file
+
+		# Callback function for when bytes are received
+		kwargs['readyRead'] = self.__download_readyRead
+		self.get(url, self.__download_finished, *args, **kwargs)
+
+	def upload_file(self, url, source, progress_indication=True):
+		pass
+
+	### PyQt Slots
 
 	def __slotFinished(self, callback, *args, **kwargs):
 		reply = self.sender()
@@ -315,10 +407,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# Check if the reply indicates a redirect
 		if reply.attribute(request.HttpStatusCodeAttribute) in [301,302]:
 			# To prevent endless redirects, make a count of them and only
-			# allow a set maximum
-			redirect_count = kwargs.pop('redirect_count',0)
-			if redirect_count < self.MAX_REDIRECTS:
-				redirect_count += 1
+			# allow a preset maximum
+			if kwargs['redirect_count'] < self.MAX_REDIRECTS:
+				kwargs['redirect_count'] += 1
 			else:
 				QtWidgets.QMessageBox.critical(None,
 					"Whoops, something is going wrong",
@@ -330,15 +421,38 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
 			logging.info("{} Redirect ({}) to {}".format(
 				reply.attribute(request.HttpStatusCodeAttribute),
-				redirect_count,
+				kwargs['redirect_count'],
 				reply.attribute(request.RedirectionTargetAttribute).toString()
 			))
-			self.get(redirect_url, callback, *args, redirect_count=redirect_count)
+			self.get(redirect_url, callback, *args, **kwargs)
 		else:
-			callback(reply, *args)
+			# Remove some potentially internally used kwargs before passing
+			# data on to the callback
+			kwargs.pop('redirect_count', None)
+			kwargs.pop('downloadProgress', None)
+			kwargs.pop('readyRead', None)
+			callback(reply, *args, **kwargs)
 
 		# Cleanup, mark the reply object for deletion
 		reply.deleteLater()
+
+	def __download_readyRead(self, *args, **kwargs):
+		reply = self.sender()
+		data = reply.readAll()
+		if not 'tmp_file' in kwargs or not isinstance(kwargs['tmp_file'], QtCore.QTemporaryFile):
+			raise AttributeError('Missing file handle to write to')
+		kwargs['tmp_file'].write(data)
+
+	def __download_finished(self, reply, *args, **kwargs):
+		# Do some checks to see if the required data has been passed.
+		if not 'destination' in kwargs:
+			raise AttributeError("No destination passed")
+		if not 'tmp_file' in kwargs or not isinstance(kwargs['tmp_file'], QtCore.QTemporaryFile):
+			raise AttributeError("No valid reference to temp file where data was saved")
+
+		kwargs['tmp_file'].close()
+		if not kwargs['tmp_file'].copy(kwargs['destination']):
+			QtWidgets.QMessageBox.critical(None, "Could not save file to {}".format(kwargs['destination']))
 
 	def handle_login(self):
 		self.get_logged_in_user(self.set_logged_in_user)
@@ -347,7 +461,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.osf.reset_session()
 		self.logged_in_user = {}
 
-	# ----------------------------- Other callbacks --------------------------------'
+	### Other callbacks
 
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
@@ -469,7 +583,6 @@ class TokenFileListener(object):
 				logging.info("Deleted {}".format(self.tokenfile))
 			except Exception as e:
 				logging.warning("WARNING: {}".format(e.message))
-
 
 if __name__== "__main__":
 	print ("Test the dispatcher.")

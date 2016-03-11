@@ -38,6 +38,9 @@ import arrow
 
 osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
 
+# Dummy function later to be replaced for translation
+_ = lambda s: s
+
 def check_if_opensesame_file(filename):
 	""" Checks if the passed file is an OpenSesame file, based on its extension.
 
@@ -135,8 +138,10 @@ class UserBadge(QtWidgets.QWidget):
 	logout_request = QtCore.pyqtSignal()
 	login_request = QtCore.pyqtSignal()
 	# button texts
-	login_text = "Log in to OSF"
-	logout_text = "Log out"
+	login_text = _("Log in to OSF")
+	logout_text = _("Log out")
+	logging_in_text = _("Logging in")
+	logging_out_text = _("Logging out")
 
 	def __init__(self, manager):
 		""" Constructor """
@@ -146,7 +151,7 @@ class UserBadge(QtWidgets.QWidget):
 
 		# Set up general window
 		self.resize(200,40)
-		self.setWindowTitle("User badge")
+		self.setWindowTitle(_("User badge"))
 		# Set Window icon
 
 		if not os.path.isfile(osf_logo_path):
@@ -198,14 +203,14 @@ class UserBadge(QtWidgets.QWidget):
 		if button.text() == self.login_text:
 			self.login_request.emit()
 		elif button.text() == self.logout_text:
-			button.setText("Logging out...")
+			button.setText(self.logging_out_text)
 			QtCore.QCoreApplication.instance().processEvents()
 			self.logout_request.emit()
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
 		self.statusbutton.setIcon(self.spinner)
-		self.statusbutton.setText("Logging in")
+		self.statusbutton.setText(self.logging_in_text)
 		self.manager.get_logged_in_user(self.__set_badge_contents)
 
 	def handle_logout(self):
@@ -221,9 +226,12 @@ class UserBadge(QtWidgets.QWidget):
 		# Convert bytes to string and load the json data
 		user = json.loads(reply.readAll().data().decode())
 		# Get user's name
-		full_name = user["data"]["attributes"]["full_name"]
-		# Download avatar image from the specified url
-		avatar_url = user["data"]["links"]["profile_image"]
+		try:
+			full_name = user["data"]["attributes"]["full_name"]
+			# Download avatar image from the specified url
+			avatar_url = user["data"]["links"]["profile_image"]
+		except osf.OSFInvalidResponse as e:
+			raise osf.OSFInvalidResponse("Invalid user data format: {}".format(e))
 		avatar_img = requests.get(avatar_url).content
 		pixmap = QtGui.QPixmap()
 		pixmap.loadFromData(avatar_img)
@@ -234,7 +242,6 @@ class UserBadge(QtWidgets.QWidget):
 		self.avatar.setPixmap(pixmap)
 		self.statusbutton.setText(self.logout_text)
 		self.statusbutton.setIcon(QtGui.QIcon())
-
 
 class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
@@ -266,11 +273,12 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		self.manager = manager
 
-		self.setWindowTitle("Project explorer")
+		self.setWindowTitle(_("Project explorer"))
 		self.resize(800,500)
 		# Set Window icon
 		if not os.path.isfile(osf_logo_path):
-			print("ERROR: OSF logo not found at {}".format(osf_logo_path))
+			raise IOError("OSF logo not found at expected path: {}".format(
+				osf_logo_path))
 		osf_icon = QtGui.QIcon(osf_logo_path)
 		self.setWindowIcon(osf_icon)
 
@@ -293,22 +301,37 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		# File properties overview
 		properties_pane = self.__create_properties_pane()
+
+		# The section in which the file icon or the image preview is presented
+		preview_area = QtWidgets.QVBoxLayout()
+		# Space for image
 		self.image_space = QtWidgets.QLabel()
 		self.image_space.setAlignment(QtCore.Qt.AlignCenter)
 		self.image_space.resizeEvent = self.__resizeImagePreview
+		# This holds the image preview in binary format. Everytime the img preview
+		# needs to be rescaled, it is done with this variable as the img source
 		self.current_img_preview = None
 
-		# Create layouts
+		# The progress bar depicting the download state of the image preview
+		self.img_preview_progress_bar = QtWidgets.QProgressBar()
+		self.img_preview_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
+		self.img_preview_progress_bar.setFormat("Getting preview")
+		self.img_preview_progress_bar.hide()
+
+		preview_area.addWidget(self.image_space)
+		preview_area.addWidget(self.img_preview_progress_bar)
+
+		## Create layouts
 
 		# The box holding
 		vbox = QtWidgets.QVBoxLayout(self)
 
 		# Grid layout for the info consisting of an image space and the
 		# properties grid
-		info_grid = QtWidgets.QGridLayout()
+		info_grid = QtWidgets.QVBoxLayout()
 		info_grid.setSpacing(10)
-		info_grid.addWidget(self.image_space,1,1)
-		info_grid.addLayout(properties_pane,2,1)
+		info_grid.addLayout(preview_area)
+		info_grid.addLayout(properties_pane)
 
 		# The widget to hold the infogrid
 		self.info_frame = QtWidgets.QWidget()
@@ -329,8 +352,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.setLayout(vbox)
 
 		# Event connections
-		self.tree.itemClicked.connect(self.__item_clicked)
-		self.tree.itemSelectionChanged.connect(self.__selection_changed)
+		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
+		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
 
 	### Private functions
 
@@ -349,7 +372,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		buttonbar.setLayout(hbox)
 
 		self.refresh_icon = qta.icon('fa.refresh', color='green')
-		self.refresh_button = QtWidgets.QPushButton(self.refresh_icon, 'Refresh')
+		self.refresh_button = QtWidgets.QPushButton(self.refresh_icon, _('Refresh'))
 		self.refresh_icon_spinning = qta.icon(
 			'fa.refresh', color='green', animation=qta.Spin(self.refresh_button))
 		self.refresh_button.setIconSize(self.button_icon_size)
@@ -359,7 +382,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			'go-down',
 			qta.icon('fa.cloud-download')
 		)
-		self.download_button = QtWidgets.QPushButton(download_icon, 'Download')
+		self.download_button = QtWidgets.QPushButton(download_icon, _('Download'))
 		self.download_button.setIconSize(self.button_icon_size)
 		self.download_button.clicked.connect(self.__clicked_download_file)
 		self.download_button.setDisabled(True)
@@ -368,7 +391,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			'go-up',
 			qta.icon('fa.cloud-upload')
 		)
-		self.upload_button = QtWidgets.QPushButton(upload_icon, 'Upload to folder')
+		self.upload_button = QtWidgets.QPushButton(upload_icon, _('Upload to folder'))
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
 		self.upload_button.setIconSize(self.button_icon_size)
 		self.upload_button.setDisabled(True)
@@ -395,7 +418,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		self.properties = {}
 		for field in self.common_fields + self.file_fields:
-			label = QtWidgets.QLabel(field)
+			label = QtWidgets.QLabel(_(field))
 			label.setStyleSheet(labelStyle)
 			value = QtWidgets.QLabel('')
 			self.properties[field] = (label,value)
@@ -444,9 +467,12 @@ class OSFExplorer(QtWidgets.QWidget):
 				if fileinspector.determine_category(filetype) == "image":
 					# Download and display image if it is not too big.
 					if filesize <= self.image_size_limit:
+						self.img_preview_progress_bar.setValue(0)
+						self.img_preview_progress_bar.show()
 						self.manager.get(
 							data["links"]["download"],
-							self.set_image_preview)
+							self.__set_image_preview,
+							downloadProgress = self.__prev_dl_progress)
 			else:
 				filetype = "file"
 
@@ -463,7 +489,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				ltArrow.humanize(locale=self.locale)
 			)
 		else:
-			last_touched = "Never"
+			last_touched = _("Never")
 
 		# Format created time
 		cArrow = arrow.get(created)
@@ -526,13 +552,15 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Created"][1].setText('')
 		self.properties["Modified"][1].setText('')
 
-
 	### PyQT slots
 
-	def __item_clicked(self,item,col):
+	def __slot_currentItemChanged(self,item,col):
 		""" Handles the QTreeWidget itemClicked event """
 		# Reset the image preview contents
 		self.current_img_preview = None
+
+		if item is None:
+			return
 
 		data = item.data
 		if data['type'] == 'nodes':
@@ -554,10 +582,11 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(False)
 		else:
+			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(True)
 
-	def __selection_changed(self):
+	def __slot_itemSelectionChanged(self):
 		items_selected = bool(self.tree.selectedItems())
 		# If there are selected items, show the properties pane
 		if not self.info_frame.isVisible() and items_selected:
@@ -576,12 +605,41 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
 
-
 	def __clicked_download_file(self):
-		pass
+		selected_item = self.tree.currentItem()
+		download_url = selected_item.data['links']['download']
+		filename = selected_item.data['attributes']['name']
+
+		# See if a previous folder was set, and if not, try to set
+		# the user's home folder as a starting folder
+		if not hasattr(self, 'last_dl_destination_folder'):
+			self.last_dl_destination_folder = os.path.expanduser("~")
+
+		destination = QtWidgets.QFileDialog.getSaveFileName(self,
+			_("Save file as"),
+			os.path.join(self.last_dl_destination_folder, filename),
+		)
+		
+		# PyQt5 returns a tuple, because it actually performs the function of
+		# PyQt4's getSaveFileNameAndFilter() function
+		if isinstance(destination, tuple):
+			destination = destination[0]
+
+		if destination:
+			# Remember this folder for later when this dialog has to be presented again
+			self.last_dl_destination_folder = os.path.split(destination)[0]
+			# Download the file
+			self.manager.download_file(
+				download_url, 
+				destination, 
+				downloadProgress=self.__download_progress
+			)
 
 	def __clicked_upload_file(self):
 		pass
+
+	def __download_progress(self, transfered, total):
+		print('{}/{}'.format(transfered,total))
 
 	def __tree_refresh_finished(self):
 		self.refresh_button.setIcon(self.refresh_icon)
@@ -599,12 +657,21 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	### Other callback functions
 
-	def set_image_preview(self, img_content):
+	def __set_image_preview(self, img_content):
 		self.current_img_preview = QtGui.QPixmap()
 		self.current_img_preview.loadFromData(img_content.readAll())
 		pixmap = self.current_img_preview.scaledToHeight(self.image_space.height())
+		self.img_preview_progress_bar.hide()
 		self.image_space.setPixmap(pixmap)
 
+	def __prev_dl_progress(self, received, total):
+		# If total is 0, this is probably a redirect to the image location in
+		# cloud storage. Do nothing in this case
+		if total == 0:
+			return
+		# Convert to percentage
+		progress = 100*received/total
+		self.img_preview_progress_bar.setValue(progress)
 
 class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
@@ -793,7 +860,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					raise osf.OSFInvalidResponse("Invalid api call for getting next"
 						"entry point: {}".format(e))
 				req = self.manager.get(next_entrypoint, self.populate_tree, item)
-				self.active_requests.append(req)
+				# If something went wrong, req should be None
+				if req:
+					self.active_requests.append(req)
 
 		try:
 			self.active_requests.remove(reply)
@@ -820,7 +889,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Clear the tree to be sure
 		self.clear()
 		req = self.manager.get(user_nodes_api_call, self.populate_tree)
-		self.active_requests.append(req)
+		# If something went wrong, req should be None
+		if req:
+			self.active_requests.append(req)
 
 	# Event handling functions required by EventDispatcher
 
