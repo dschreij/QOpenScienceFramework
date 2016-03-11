@@ -297,8 +297,6 @@ class OSFExplorer(QtWidgets.QWidget):
 				# assign passed reference of ProjectTree to this instance
 				self.tree = tree_widget
 
-		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
-
 		# File properties overview
 		properties_pane = self.__create_properties_pane()
 
@@ -308,6 +306,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.image_space = QtWidgets.QLabel()
 		self.image_space.setAlignment(QtCore.Qt.AlignCenter)
 		self.image_space.resizeEvent = self.__resizeImagePreview
+
 		# This holds the image preview in binary format. Everytime the img preview
 		# needs to be rescaled, it is done with this variable as the img source
 		self.current_img_preview = None
@@ -315,7 +314,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		# The progress bar depicting the download state of the image preview
 		self.img_preview_progress_bar = QtWidgets.QProgressBar()
 		self.img_preview_progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-		self.img_preview_progress_bar.setFormat("Getting preview")
 		self.img_preview_progress_bar.hide()
 
 		preview_area.addWidget(self.image_space)
@@ -323,7 +321,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		## Create layouts
 
-		# The box holding
+		# The box layout holding all elements
 		vbox = QtWidgets.QVBoxLayout(self)
 
 		# Grid layout for the info consisting of an image space and the
@@ -351,9 +349,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		vbox.addWidget(buttonbar)
 		self.setLayout(vbox)
 
+		self.download_progress_dialog = QtWidgets.QProgressDialog(self)
+		self.download_progress_dialog.hide()
+
 		# Event connections
 		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
 		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
+		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
 
 	### Private functions
 
@@ -628,6 +630,10 @@ class OSFExplorer(QtWidgets.QWidget):
 		if destination:
 			# Remember this folder for later when this dialog has to be presented again
 			self.last_dl_destination_folder = os.path.split(destination)[0]
+			# Configure progress dialog
+			self.download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
+			self.download_progress_dialog.setMinimum(0)
+			self.download_progress_dialog.setMaximum(selected_item.data['attributes']['size'])
 			# Download the file
 			self.manager.download_file(
 				download_url, 
@@ -639,7 +645,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		pass
 
 	def __download_progress(self, transfered, total):
-		print('{}/{}'.format(transfered,total))
+		self.download_progress_dialog.setValue(transfered)
 
 	def __tree_refresh_finished(self):
 		self.refresh_button.setIcon(self.refresh_icon)

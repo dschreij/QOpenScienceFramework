@@ -452,7 +452,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		kwargs['tmp_file'].close()
 		if not kwargs['tmp_file'].copy(kwargs['destination']):
-			QtWidgets.QMessageBox.critical(None, "Could not save file to {}".format(kwargs['destination']))
+			QtWidgets.QMessageBox.critical(None, "Error", "Could not save file to {}".format(kwargs['destination']))
 
 	def handle_login(self):
 		self.get_logged_in_user(self.set_logged_in_user)
