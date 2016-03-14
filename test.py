@@ -23,9 +23,9 @@ import qtpy
 qtpy.setup_apiv2()
 from qtpy import QtWidgets, QtCore
 # Widgets
-from openscienceframework import widgets
+from openscienceframework import widgets, events
 # Event dispatcher and listeners
-from openscienceframework.manager import ConnectionManager, TestListener, TokenFileListener
+from openscienceframework.manager import ConnectionManager
 
 class StandAlone(object):
 
@@ -49,12 +49,12 @@ class StandAlone(object):
 
 		# Testlistener (to be removed later). Simply prints out which event
 		# it received.
-		self.tl = TestListener()
+		self.tl = events.TestListener()
 
 		# Token file listener writes the token to a json file if it receives
 		# a logged_in event and removes this file after logout
 		# Filename of the file to store token information in.
-		self.tfl = TokenFileListener(tokenfile)
+		self.tfl = events.TokenFileListener(tokenfile)
 
 		self.manager.dispatcher.add_listeners(
 			[

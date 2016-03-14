@@ -3,8 +3,8 @@
 Created on Fri Mar 11 13:11:14 2016
 
 """
-
 import sys
+from qtpy import QtCore
 
 if sys.version_info >= (3,0,0):
 	py3 = True
@@ -43,14 +43,23 @@ def safe_encode(s, enc='utf-8', errors='strict'):
 		return s
 	return s.encode(enc, errors)
 
+def get_QUrl(url):
+	""" Qt4 doesn url handling a bit different than Qt5, so check for that
+	here."""
+	if QtCore.QT_VERSION_STR < '5':
+		return QtCore.QUrl.fromEncoded(url)
+	else:
+		return QtCore.QUrl(url)
+
 if py3:
 	safe_str = safe_decode
 else:
 	safe_str = safe_encode
 
 __all__ = ['py3', 'safe_decode', 'safe_encode', 'safe_str',
-	'universal_newline_mode']
+	'universal_newline_mode','get_QUrl']
 if not py3:
 	__all__ += ['str', 'bytes']
 else:
 	__all__ += ['basestring']
+

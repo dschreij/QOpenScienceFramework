@@ -310,6 +310,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		# This holds the image preview in binary format. Everytime the img preview
 		# needs to be rescaled, it is done with this variable as the img source
 		self.current_img_preview = None
+		# The QNetworkReply object that is processing the preview request
+		self.processPreview = False
 
 		# The progress bar depicting the download state of the image preview
 		self.img_preview_progress_bar = QtWidgets.QProgressBar()
@@ -349,15 +351,12 @@ class OSFExplorer(QtWidgets.QWidget):
 		vbox.addWidget(buttonbar)
 		self.setLayout(vbox)
 
-		self.download_progress_dialog = QtWidgets.QProgressDialog(self)
-		self.download_progress_dialog.hide()
-
 		# Event connections
 		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
 		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
 		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
 
-	### Private functions
+	#--- Private functions
 
 	def __resizeImagePreview(self, event):
 		""" Resize the image preview (if there is any) after a resize event """
@@ -433,7 +432,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		return properties_pane
 
-	### Public functions
+	#--- Public functions
 
 	def set_file_properties(self, data):
 		"""
@@ -475,6 +474,7 @@ class OSFExplorer(QtWidgets.QWidget):
 							data["links"]["download"],
 							self.__set_image_preview,
 							downloadProgress = self.__prev_dl_progress)
+						self.processPreview = True
 			else:
 				filetype = "file"
 
@@ -554,10 +554,10 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Created"][1].setText('')
 		self.properties["Modified"][1].setText('')
 
-	### PyQT slots
+	#--- PyQT slots
 
 	def __slot_currentItemChanged(self,item,col):
-		""" Handles the QTreeWidget itemClicked event """
+		""" Handles the QTreeWidget currentItemChanged event """
 		# Reset the image preview contents
 		self.current_img_preview = None
 
@@ -621,7 +621,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			_("Save file as"),
 			os.path.join(self.last_dl_destination_folder, filename),
 		)
-		
+
 		# PyQt5 returns a tuple, because it actually performs the function of
 		# PyQt4's getSaveFileNameAndFilter() function
 		if isinstance(destination, tuple):
@@ -631,21 +631,24 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Remember this folder for later when this dialog has to be presented again
 			self.last_dl_destination_folder = os.path.split(destination)[0]
 			# Configure progress dialog
-			self.download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
-			self.download_progress_dialog.setMinimum(0)
-			self.download_progress_dialog.setMaximum(selected_item.data['attributes']['size'])
+			download_progress_dialog = QtWidgets.QProgressDialog()
+			download_progress_dialog.hide()
+			download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
+			download_progress_dialog.setMinimum(0)
+			download_progress_dialog.setMaximum(selected_item.data['attributes']['size'])
 			# Download the file
 			self.manager.download_file(
-				download_url, 
-				destination, 
-				downloadProgress=self.__download_progress
+				download_url,
+				destination,
+				downloadProgress=self.__download_progress,
+				progressDialog=download_progress_dialog,
 			)
+
+	def __download_progress(self, transfered, total):
+		self.sender().property('dlpDialog').setValue(transfered)
 
 	def __clicked_upload_file(self):
 		pass
-
-	def __download_progress(self, transfered, total):
-		self.download_progress_dialog.setValue(transfered)
 
 	def __tree_refresh_finished(self):
 		self.refresh_button.setIcon(self.refresh_icon)
@@ -661,20 +664,27 @@ class OSFExplorer(QtWidgets.QWidget):
 			value.setText("")
 		self.refresh_button.setDisabled(True)
 
-	### Other callback functions
+	#--- Other callback functions
 
 	def __set_image_preview(self, img_content):
+		# Create a pixmap from the just received data
 		self.current_img_preview = QtGui.QPixmap()
 		self.current_img_preview.loadFromData(img_content.readAll())
+		# Scale to preview area hight
 		pixmap = self.current_img_preview.scaledToHeight(self.image_space.height())
+		# Hide progress bar
 		self.img_preview_progress_bar.hide()
+		# Show image preview
 		self.image_space.setPixmap(pixmap)
+		# Reset variable holding preview reply object
+		self.current_img_preview_req = None
 
 	def __prev_dl_progress(self, received, total):
 		# If total is 0, this is probably a redirect to the image location in
 		# cloud storage. Do nothing in this case
 		if total == 0:
 			return
+
 		# Convert to percentage
 		progress = 100*received/total
 		self.img_preview_progress_bar.setValue(progress)
@@ -743,6 +753,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# track, by adding current requests in this list.
 		self.active_requests = []
 
+	### Private functions
+
 	def __set_expanded_icon(self,item):
 		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
 			item.setIcon(0,self.get_icon('folder-open',item.data['attributes']['name']))
@@ -750,6 +762,19 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	def __set_collapsed_icon(self,item):
 		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
 			item.setIcon(0,self.get_icon('folder',item.data['attributes']['name']))
+
+	def __populate_error(self, reply):
+		# Reset active requests after error
+		try:
+			self.active_requests.remove(reply)
+		except ValueError:
+			logging.info("Reply not found in active requests")
+
+		if not self.active_requests:
+			self.refreshFinished.emit()
+
+
+	### Public functions
 
 	def get_icon(self, datatype, name):
 		"""
@@ -872,7 +897,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		try:
 			self.active_requests.remove(reply)
-		except ValueError as e:
+		except ValueError:
 			logging.info("Reply not found in active requests")
 
 		if not self.active_requests:
@@ -894,7 +919,11 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			)
 		# Clear the tree to be sure
 		self.clear()
-		req = self.manager.get(user_nodes_api_call, self.populate_tree)
+		req = self.manager.get(
+			user_nodes_api_call,
+			self.populate_tree,
+			errorCallback=self.__populate_error,
+		)
 		# If something went wrong, req should be None
 		if req:
 			self.active_requests.append(req)
@@ -903,11 +932,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
+		self.active_requests = []
 		self.refresh_contents()
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.clear()
+		self.active_requests = []
 
 
 

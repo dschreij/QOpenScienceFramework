@@ -20,7 +20,7 @@ import time
 
 #OSF modules
 import openscienceframework.connection as osf
-from openscienceframework import widgets
+from openscienceframework import widgets, events
 
 # Easier function decorating
 from functools import wraps
@@ -41,13 +41,20 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	# The maximum number of allowed redirects
 	MAX_REDIRECTS = 5
+	error_message = QtCore.pyqtSignal('QString','QString')
+	info_message = QtCore.pyqtSignal('QString','QString')
 
 	def __init__(self, manager, tokenfile="token.json"):
 		""" Constructor """
 		super(ConnectionManager, self).__init__()
 		self.manager = manager
 		self.tokenfile = tokenfile
-		self.dispatcher = EventDispatcher()
+		self.dispatcher = events.EventDispatcher()
+
+		# Notifications
+		self.notifier = events.Notifier()
+		self.error_message.connect(self.notifier.error)
+		self.info_message.connect(self.notifier.info)
 
 		# Init browser in which login page is displayed
 		self.browser = widgets.LoginWindow()
@@ -56,15 +63,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		self.logged_in_user = {}
 
-	def get_QUrl(self, url):
-		""" Qt4 doesn url handling a bit different than Qt5, so check for that
-		here."""
-		if QtCore.QT_VERSION_STR < '5':
-			return QtCore.QUrl.fromEncoded(url)
-		else:
-			return QtCore.QUrl(url)
-
-	# --------------------- Login and Logout functions ---------------------------
+	#--- Login and Logout functions
 
 	def login(self):
 		""" Opens a browser window through which the user can log in. Upon successful
@@ -83,7 +82,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		auth_url, state = osf.get_authorization_url()
 
 		# Set up browser
-		browser_url = self.get_QUrl(auth_url)
+		browser_url = get_QUrl(auth_url)
 
 		self.browser.load(browser_url)
 		self.browser.show()
@@ -128,14 +127,14 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			logging.info("Token expired; need log-in")
 			return False
 
-	# ------------------------ Communication with OSF API ---------------------------'
+	#--- Communication with OSF API
 
 	def check_network_accessibility(func):
 		""" Checks if network is accessible """
 		@wraps(func)
 		def func_wrapper(inst, *args, **kwargs):
 			if inst.networkAccessible() == inst.NotAccessible:
-				QtWidgets.QMessageBox.critical(None,
+				self.error_message.emit(
 					"No network access",
 					"Your network connection is down or you currently have"
 					" no Internet access."
@@ -155,9 +154,27 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		url : string / QtCore.QUrl
 			The target url to perform the get request on
 		callback : function
-			The function to call once the request is finished.
+			The function to call once the request is finished successfully.
+		downloadProgess : function (defualt: None)
+			The slot (callback function) for the downloadProgress signal of the
+			reply object. This signal is emitted after a certain amount of bytes
+			is received, and can be used for instance to update a download progress
+			dialog box. The callback function should have two parameters to which
+			the transfered and total bytes can be assigned.
+		readyRead : function (default : None)
+			The slot (callback function) for the readyRead signal of the
+			reply object.
+		errorCallback : function (default: None)
+			function to call whenever an error occurs. Should be able to accept
+			the reply object as an argument.
+		progressDialog : QtWidgets.QProgressDialog (default: None)
+			The dialog to send the progress indication to. Will be included in the
+			reply object so that it is accessible in the downloadProgress slot, by
+			calling self.sender().property('progressDialog')
 		*args (optional)
-			Any other arguments that you want to have passed to callable
+			Any other arguments that you want to have passed to the callback
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
 		"""
 		# First do some checking of the passed arguments
 
@@ -168,7 +185,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			raise TypeError("callback should be a function or callable.")
 
 		if not type(url) is QtCore.QUrl:
-			url = self.get_QUrl(url)
+			url = get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
 
@@ -182,6 +199,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			request.setRawHeader(name, value)
 
 		reply = super(ConnectionManager, self).get(request)
+
+		# Check if a QProgressDialog has been passed to which the download status
+		# can be reported. If so, add it as a property of the reply object
+		dlpDialog = kwargs.get('progressDialog', None)
+		if isinstance(dlpDialog, QtWidgets.QProgressDialog):
+			dlpDialog.canceled.connect(reply.abort)
+			reply.setProperty('dlpDialog', dlpDialog)
 
 		# Check if a callback has been specified to which the downloadprogress
 		# is to be reported
@@ -200,7 +224,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			)
 
 		reply.finished.connect(
-			lambda: self.__slotFinished(
+			lambda: self.__get_finished(
 				callback, *args, **kwargs
 			)
 		)
@@ -234,7 +258,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			raise TypeError("The POST data should be passed as a dict")
 
 		if not type(url) is QtCore.QUrl:
-			url = self.get_QUrl(url)
+			url = get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
@@ -357,7 +381,32 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return self.get(api_call, callback)
 
 	def download_file(self, url, destination, *args, **kwargs):
-		# Check if destination is a string 
+		""" Download a file by a using HTTP GET request. The OAuth2 token is automatically
+		added to the header if the request is going to an OSF server.
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url to perform the get request on
+		destination : string
+			The path and filename with which the file should be saved.
+		finished_callback : function (default: None)
+			The function to call once the download is finished.
+		downloadProgress : function (default: None)
+			The slot (callback function) for the downloadProgress signal of the
+			reply object. This signal is emitted after a certain amount of bytes
+			is received, and can be used for instance to update a download progress
+			dialog box. The callback function should have two parameters to which
+			the transfered and total bytes can be assigned.
+		errorCallback : function (default: None)
+			function to call whenever an error occurs. Should be able to accept
+			the reply object as an argument.
+		progressDialog : QtWidgets.QProgressDialog (default : None)
+			The dialog to send the progress indication to. Will be included in the
+			reply object so that it is accessible from the downloadProgress slot
+		"""
+
+		# Check if destination is a string
 		if not type(destination) == str:
 			raise ValueError("destination should be a string")
 		# Check if the specified folder exists. However, because a situation is possible in which
@@ -365,7 +414,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# show a message box, but do not raise an exception, because we don't want this to completely crash
 		# our program.
 		if not os.path.isdir(os.path.split(os.path.abspath(destination))[0]):
-			QtWidgets.QMessageBox.critical(None,"{} is not a valid destination".format(destination))
+			self.error_message.emit(_("{} is not a valid destination").format(destination))
 			return
 		kwargs['destination'] = destination
 
@@ -378,14 +427,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['readyRead'] = self.__download_readyRead
 		self.get(url, self.__download_finished, *args, **kwargs)
 
-	def upload_file(self, url, source, progress_indication=True):
-		pass
+	#--- PyQt Slots
 
-	### PyQt Slots
-
-	def __slotFinished(self, callback, *args, **kwargs):
+	def __get_finished(self, callback, *args, **kwargs):
 		reply = self.sender()
 		request = reply.request()
+
+		errorCallback = kwargs.get('errorCallback', None)
 
 		# If an error occured, just show a simple QMessageBox for now
 		if reply.error() != reply.NoError:
@@ -394,13 +442,18 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			if reply.error() == reply.ContentAccessDenied:
 				self.dispater.dispatch_logout()
 				self.show_login_window()
+				if callable(errorCallback):
+					errorCallback(reply)
 				reply.deleteLater()
 				return
 
-			QtWidgets.QMessageBox.critical(None,
+			self.error_message.emit(
 				str(reply.attribute(request.HttpStatusCodeAttribute)),
 				reply.errorString()
 			)
+
+			if callable(errorCallback):
+				errorCallback(reply)
 			reply.deleteLater()
 			return
 
@@ -411,19 +464,21 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			if kwargs['redirect_count'] < self.MAX_REDIRECTS:
 				kwargs['redirect_count'] += 1
 			else:
-				QtWidgets.QMessageBox.critical(None,
-					"Whoops, something is going wrong",
-					"Too Many redirects"
+				self.error_message.emit(
+					_("Whoops, something is going wrong"),
+					_("Too Many redirects")
 				)
+				if callable(errorCallback):
+					errorCallback(reply)
 				reply.deleteLater()
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-			logging.info("{} Redirect ({}) to {}".format(
-				reply.attribute(request.HttpStatusCodeAttribute),
-				kwargs['redirect_count'],
-				reply.attribute(request.RedirectionTargetAttribute).toString()
-			))
+#			logging.info("{} Redirect ({}) to {}".format(
+#				reply.attribute(request.HttpStatusCodeAttribute),
+#				kwargs['redirect_count'],
+#				reply.attribute(request.RedirectionTargetAttribute).toString()
+#			))
 			self.get(redirect_url, callback, *args, **kwargs)
 		else:
 			# Remove some potentially internally used kwargs before passing
@@ -431,6 +486,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			kwargs.pop('redirect_count', None)
 			kwargs.pop('downloadProgress', None)
 			kwargs.pop('readyRead', None)
+			kwargs.pop('errorCallback', None)
 			callback(reply, *args, **kwargs)
 
 		# Cleanup, mark the reply object for deletion
@@ -451,8 +507,32 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			raise AttributeError("No valid reference to temp file where data was saved")
 
 		kwargs['tmp_file'].close()
+		# If a file with the same name already exists at the location, try to
+		# delete it.
+		if QtCore.QFile.exists(kwargs['destination']):
+			if not QtCore.QFile.remove(kwargs['destination']):
+				# If the destination file could not be deleted, notify the user
+				# of this and stop the operation
+				self.error_message.emit(
+					_("Error saving file"),
+					_("Could not replace {}").format(kwargs['destination'])
+				)
+				reply.deleteLater()
+				return
+		# Copy the temp file to its destination
 		if not kwargs['tmp_file'].copy(kwargs['destination']):
-			QtWidgets.QMessageBox.critical(None, "Error", "Could not save file to {}".format(kwargs['destination']))
+			self.error_message.emit(
+				_("Error saving file"),
+				_("Could not save file to {}").format(kwargs['destination'])
+			)
+			reply.deleteLater()
+			return
+
+		fcb = kwargs.pop('finished_callback',None)
+		if callable(fcb):
+			fcb(reply, *args, **kwargs)
+		reply.deleteLater()
+
 
 	def handle_login(self):
 		self.get_logged_in_user(self.set_logged_in_user)
@@ -466,129 +546,3 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
 		self.logged_in_user = json.loads(user_data.readAll().data().decode())
-
-
-class EventDispatcher(QtCore.QObject):
-	""" This class fires events to connected classes, which are henceforth
-	referenced to as 'listeners'.
-	Basically EventDispatcher's purpose is to propagate login and logout events
-	to the QWidget subclasses that require authorization at the OSF to function
-	correctly, but of course this can be extended with events that are relevant
-	for all listeners.
-
-	The only requirement for listener classes is that they implement a handling
-	function for each event that should be named "handle_<event_name>". For example, to catch
-	a login event, a listener should have the function handle_login."""
-
-	# List of possible events this dispatcher can emit
-	logged_in = QtCore.pyqtSignal()
-	logged_out = QtCore.pyqtSignal()
-
-	def init(self, *args, **kwargs):
-		super(EventDispatcher, self).__init__(*args, **kwargs)
-
-	def add_listeners(self, obj_list):
-		""" Add (a) new object(s) to the list of objects listening for the events
-
-		Parameters
-		----------
-		obj : object
-			the list of listeners to add. Listeners should implement handling \
-			functions which are called when certain events occur.
-			The list of functions that listeners should implement is currently:
-
-				- handle_login
-				- handle_logout
-		"""
-		# If the object passed is a list, add all object in the list
-		if not type(obj_list) is list:
-			raise ValueError("List expected; {} received".format(type(obj_list)))
-
-		for item in obj_list:
-			self.add_listener(item)
-		return self
-
-	def add_listener(self, item):
-		""" Add a new object to listen for the events
-
-		Parameters
-		----------
-		obj : object
-			the listener to add. Should implement handling functions which are
-			called when certain events occur. The list of functions that the
-			listener should implement is currently:
-
-				- handle_login
-				- handle_logout
-		"""
-		if not hasattr(item,"handle_login"):
-			raise AttributeError("The passed item {} does not have the required 'handle_login' function".format(item))
-		self.logged_in.connect(item.handle_login)
-		if not hasattr(item,"handle_logout"):
-			raise AttributeError("The passed item {} does not have the required 'handle_logout' function".format(item))
-		self.logged_out.connect(item.handle_logout)
-
-	def remove_listener(self, item):
-		""" Remove a listener.
-
-		obj : object
-			The object that is to be disconnected
-
-		Returns
-		-------
-		A reference to the current instance of this object (self)."""
-		self.logged_in.disconnect(item.handle_login)
-		self.logged_out.disconnect(item.handle_logout)
-		return self
-
-	def dispatch_login(self):
-		""" Convenience function to dispatch the login event """
-		self.logged_in.emit()
-
-	def dispatch_logout(self):
-		""" Convenience function to dispatch the logout event """
-		self.logged_out.emit()
-
-class TestListener(QtWidgets.QWidget):
-	def __init__(self):
-		super(TestListener,self).__init__()
-
-	def handle_login(self):
-		print("Handling login!")
-		logging.info("Login event received")
-
-	def handle_logout(self):
-		logging.info("Logout event received")
-
-class TokenFileListener(object):
-	""" This listener stores the OAuth2 token after login and destroys it after
-	logout."""
-	def __init__(self,tokenfile):
-		super(TokenFileListener,self).__init__()
-		self.tokenfile = tokenfile
-
-	def handle_login(self):
-		if osf.session.token:
-			tokenstr = json.dumps(osf.session.token)
-			logging.info("Writing token file to {}".format(self.tokenfile))
-			with open(self.tokenfile,'w') as f:
-				f.write(tokenstr)
-		else:
-			logging.error("Error, could not find authentication token")
-
-	def handle_logout(self):
-		if os.path.isfile(self.tokenfile):
-			try:
-				os.remove(self.tokenfile)
-				logging.info("Deleted {}".format(self.tokenfile))
-			except Exception as e:
-				logging.warning("WARNING: {}".format(e.message))
-
-if __name__== "__main__":
-	print ("Test the dispatcher.")
-	dispatcher = ConnectionManager()
-	tl = TestListener() # To be removed later
-	dispatcher.add(tl)
-
-	for event in dispatcher.events:
-		dispatcher.dispatch(event)
