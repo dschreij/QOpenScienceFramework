@@ -252,7 +252,9 @@ class OSFExplorer(QtWidgets.QWidget):
 	timeformat = 'YYYY-MM-DD HH:mm'
 	datedisplay = '{}\n({})'
 	# The maximum size an image may have to be downloaded for preview
-	image_size_limit = 1024**2/2.0
+	preview_size_limit = 1024**2/2.0
+	# Signal that is sent if image preview should be aborted
+	abort_preview = QtCore.pyqtSignal()
 
 	def __init__(self, manager, tree_widget=None, locale='en_us'):
 		""" Constructor
@@ -310,8 +312,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		# This holds the image preview in binary format. Everytime the img preview
 		# needs to be rescaled, it is done with this variable as the img source
 		self.current_img_preview = None
-		# The QNetworkReply object that is processing the preview request
-		self.processPreview = False
 
 		# The progress bar depicting the download state of the image preview
 		self.img_preview_progress_bar = QtWidgets.QProgressBar()
@@ -462,19 +462,21 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Use fileinspector to determine filetype
 			filetype = fileinspector.determine_type(name)
 			# If filetype could not be determined, the response is False
-			if filetype != False:
+			if not filetype is None:
 				self.properties["Type"][1].setText(filetype)
 
 				if fileinspector.determine_category(filetype) == "image":
 					# Download and display image if it is not too big.
-					if filesize <= self.image_size_limit:
+					if filesize <= self.preview_size_limit:
 						self.img_preview_progress_bar.setValue(0)
 						self.img_preview_progress_bar.show()
 						self.manager.get(
 							data["links"]["download"],
 							self.__set_image_preview,
-							downloadProgress = self.__prev_dl_progress)
-						self.processPreview = True
+							downloadProgress = self.__prev_dl_progress,
+							abortSignal = self.abort_preview
+						)
+						
 			else:
 				filetype = "file"
 
@@ -558,11 +560,16 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def __slot_currentItemChanged(self,item,col):
 		""" Handles the QTreeWidget currentItemChanged event """
-		# Reset the image preview contents
-		self.current_img_preview = None
-
+		# If selection changed to no item, do nothing
 		if item is None:
 			return
+
+		# Reset the image preview contents
+		self.current_img_preview = None
+		self.img_preview_progress_bar.hide()
+
+		# Abort previous preview operation (if any)
+		self.abort_preview.emit()
 
 		data = item.data
 		if data['type'] == 'nodes':
@@ -677,7 +684,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Show image preview
 		self.image_space.setPixmap(pixmap)
 		# Reset variable holding preview reply object
-		self.current_img_preview_req = None
 
 	def __prev_dl_progress(self, received, total):
 		# If total is 0, this is probably a redirect to the image location in

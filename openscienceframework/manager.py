@@ -166,11 +166,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			reply object.
 		errorCallback : function (default: None)
 			function to call whenever an error occurs. Should be able to accept
-			the reply object as an argument.
+			the reply object as an argument. This function is also called if the
+			operation is aborted by the user him/herself.
 		progressDialog : QtWidgets.QProgressDialog (default: None)
 			The dialog to send the progress indication to. Will be included in the
 			reply object so that it is accessible in the downloadProgress slot, by
 			calling self.sender().property('progressDialog')
+		abortSignal : QtCore.pyqtSignal
+			This signal will be attached to the reply objects abort() slot, so that
+			the operation can be aborted from outside if necessary.
 		*args (optional)
 			Any other arguments that you want to have passed to the callback
 		**kwargs (optional)
@@ -200,6 +204,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		reply = super(ConnectionManager, self).get(request)
 
+		# If provided, connect the abort signal to the reply's abort() slot
+		abortSignal = kwargs.get('abortSignal', None)
+		if not abortSignal is None:
+			abortSignal.connect(reply.abort)
+
 		# Check if a QProgressDialog has been passed to which the download status
 		# can be reported. If so, add it as a property of the reply object
 		dlpDialog = kwargs.get('progressDialog', None)
@@ -224,7 +233,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			)
 
 		reply.finished.connect(
-			lambda: self.__get_finished(
+			lambda: self.__reply_finished(
 				callback, *args, **kwargs
 			)
 		)
@@ -284,7 +293,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			final_postdata = postdata.toString(QtCore.QUrl.FullyEncoded).encode()
 		# Fire!
 		reply = super(ConnectionManager, self).post(request, final_postdata)
-		reply.finished.connect(lambda: self.__slotFinished(callback, *args))
+		reply.finished.connect(lambda: self.__reply_finished(callback, *args))
 
 	def get_logged_in_user(self, callback):
 		""" Contact the OSF to request data of the currently logged in user
@@ -298,11 +307,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Returns
 		-------
 		QtNetwork.QNetworkReply or None if something went wrong
-
-		Note :
-			To process retrieved data from this reply, the callback function
-			argument should be used, and not the QNetworkReply object that is
-			returned here.
 		"""
 		api_call = osf.api_call("logged_in_user")
 		return self.get(api_call, callback)
@@ -319,11 +323,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Returns
 		-------
 		QtNetwork.QNetworkReply or None if something went wrong
-
-		Note :
-			To process retrieved data from this reply, the callback function
-			argument should be used, and not the QNetworkReply object that is
-			returned here.
 		"""
 		api_call = osf.api_call("projects")
 		return self.get(api_call, callback)
@@ -343,11 +342,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Returns
 		-------
 		QtNetwork.QNetworkReply or None if something went wrong
-
-		Note :
-			To process retrieved data from this reply, the callback function
-			argument should be used, and not the QNetworkReply object that is
-			returned here.
 		"""
 		api_call = osf.api_call("project_repos", project_id)
 		return self.get(api_call, callback)
@@ -371,11 +365,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Returns
 		-------
 		QtNetwork.QNetworkReply or None if something went wrong
-
-		Note :
-			To process retrieved data from this reply, the callback function
-			argument should be used, and not the QNetworkReply object that is
-			returned here.
 		"""
 		api_call = osf.api_call("repo_files",project_id, repo_name)
 		return self.get(api_call, callback)
@@ -387,7 +376,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Parameters
 		----------
 		url : string / QtCore.QUrl
-			The target url to perform the get request on
+			The target url that points to the file to download
 		destination : string
 			The path and filename with which the file should be saved.
 		finished_callback : function (default: None)
@@ -429,7 +418,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	#--- PyQt Slots
 
-	def __get_finished(self, callback, *args, **kwargs):
+	def __reply_finished(self, callback, *args, **kwargs):
 		reply = self.sender()
 		request = reply.request()
 
@@ -440,18 +429,27 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			# User not authenticated to perform this request
 			# Show login window again
 			if reply.error() == reply.ContentAccessDenied:
+				# If access is denied, the user's token must have expired
+				# or something like that. Dispatch the logout signal and
+				# show the login window again
 				self.dispater.dispatch_logout()
 				self.show_login_window()
+				# Call error callback (since operation did not go as intended?)
 				if callable(errorCallback):
 					errorCallback(reply)
 				reply.deleteLater()
 				return
 
-			self.error_message.emit(
-				str(reply.attribute(request.HttpStatusCodeAttribute)),
-				reply.errorString()
-			)
-
+			# Do not show error message if the user has aborted the request himself
+			if reply.error() != reply.OperationCanceledError:
+				self.error_message.emit(
+					str(reply.attribute(request.HttpStatusCodeAttribute)),
+					reply.errorString()
+				)
+			else:
+				# Do log this event though
+				logging.info("Operation aborted by user")
+			# Call error callback
 			if callable(errorCallback):
 				errorCallback(reply)
 			reply.deleteLater()
@@ -474,19 +472,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-#			logging.info("{} Redirect ({}) to {}".format(
-#				reply.attribute(request.HttpStatusCodeAttribute),
-#				kwargs['redirect_count'],
-#				reply.attribute(request.RedirectionTargetAttribute).toString()
-#			))
 			self.get(redirect_url, callback, *args, **kwargs)
 		else:
-			# Remove some potentially internally used kwargs before passing
+			# Remove (potentially) internally used kwargs before passing
 			# data on to the callback
 			kwargs.pop('redirect_count', None)
 			kwargs.pop('downloadProgress', None)
 			kwargs.pop('readyRead', None)
 			kwargs.pop('errorCallback', None)
+			kwargs.pop('abortSignal', None)
 			callback(reply, *args, **kwargs)
 
 		# Cleanup, mark the reply object for deletion
