@@ -447,15 +447,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		"""
 		# Get required properties
 		attributes = data['attributes']
-		try:
-			name = attributes["name"]
-			filesize = attributes["size"]
-			last_touched = attributes["last_touched"]
-			created = attributes["date_created"]
-			modified = attributes["date_modified"]
-		except AttributeError as e:
-			raise osf.OSFInvalidResponse("Error parsing parse OSF response: {}".format(e))
-
+		
+		name = attributes.get("name", "Unspecified")
+		filesize = attributes.get("size", "Unspecified")
+		last_touched = attributes.get("last_touched", None)
+		created = attributes.get("date_created", "Unspecified")
+		modified = attributes.get("date_modified", "Unspecified")
+		
 		if check_if_opensesame_file(name):
 			filetype = "OpenSesame experiment"
 		else:
@@ -476,12 +474,13 @@ class OSFExplorer(QtWidgets.QWidget):
 							downloadProgress = self.__prev_dl_progress,
 							abortSignal = self.abort_preview
 						)
-						
+
 			else:
 				filetype = "file"
 
 		### Do some reformatting of the data to make it look nicer for us humans
-		filesize = humanize.naturalsize(filesize)
+		if filesize != "Unspecified":
+			filesize = humanize.naturalsize(filesize)
 
 		# Last touched will be None if the file has never been 'touched'
 		# Change this to "Never"
@@ -496,18 +495,20 @@ class OSFExplorer(QtWidgets.QWidget):
 			last_touched = _("Never")
 
 		# Format created time
-		cArrow = arrow.get(created)
-		created = self.datedisplay.format(
-			cArrow.format(self.timeformat),
-			cArrow.humanize(locale=self.locale)
-		)
+		if created != "Unspecified":
+			cArrow = arrow.get(created)
+			created = self.datedisplay.format(
+				cArrow.format(self.timeformat),
+				cArrow.humanize(locale=self.locale)
+			)
 
 		# Format modified time
-		mArrow = arrow.get(modified)
-		modified = self.datedisplay.format(
-			mArrow.format(self.timeformat),
-			mArrow.humanize(locale=self.locale)
-		)
+		if modified != "Unspecified":
+			mArrow = arrow.get(modified)
+			modified = self.datedisplay.format(
+				mArrow.format(self.timeformat),
+				mArrow.humanize(locale=self.locale)
+			)
 
 		### Set properties in the panel.
 		self.properties["Name"][1].setText(name)
@@ -607,6 +608,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Reset the image preview contents
 			self.current_img_preview = None
 			self.info_frame.setVisible(False)
+			self.download_button.setDisabled(True)
+			self.upload_button.setDisabled(True)
 			return
 
 	def __clicked_refresh_tree(self):
@@ -647,16 +650,66 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.manager.download_file(
 				download_url,
 				destination,
-				downloadProgress=self.__download_progress,
+				downloadProgress=self.__transfer_progress,
 				progressDialog=download_progress_dialog,
 			)
 
-	def __download_progress(self, transfered, total):
-		self.sender().property('dlpDialog').setValue(transfered)
+	def __transfer_progress(self, transfered, total):
+		self.sender().property('progressDialog').setValue(transfered)
 
 	def __clicked_upload_file(self):
-		pass
+		selected_item = self.tree.currentItem()
+		upload_url = selected_item.data['links']['upload']
 
+		# See if a previous folder was set, and if not, try to set
+		# the user's home folder as a starting folder
+		if not hasattr(self, 'last_open_destination_folder'):
+			self.last_open_destination_folder = os.path.expanduser("~")
+
+		file_to_upload = QtWidgets.QFileDialog.getOpenFileName(self,
+			_("Select file for upload"),
+			os.path.join(self.last_open_destination_folder),
+		)
+
+		# PyQt5 returns a tuple, because it actually performs the function of
+		# PyQt4's getSaveFileNameAndFilter() function
+		if isinstance(file_to_upload, tuple):
+			file_to_upload = file_to_upload[0]
+
+		if file_to_upload:
+			# Get the filename
+			filename = os.path.split(file_to_upload)[1]
+			# ... and the convert to QFile
+			file_to_upload = QtCore.QFile(file_to_upload)
+			# add required query parameters
+			upload_url += '?kind=file&name={}'.format(filename)
+
+			progress_dialog = QtWidgets.QProgressDialog()
+			progress_dialog.hide()
+			progress_dialog.setLabelText(_("Uploading") + " " + file_to_upload.fileName())
+			progress_dialog.setMinimum(0)
+			progress_dialog.setMaximum(file_to_upload.size())
+			
+			self.manager.upload_file(
+				upload_url, 
+				file_to_upload,
+				uploadProgress=self.__transfer_progress,
+				progressDialog=progress_dialog,
+				finishedCallback=self.__upload_finished,
+				selectedTreeItem=selected_item
+			)
+
+	def __upload_finished(self, reply, progressDialog, *args, **kwargs):
+		progressDialog.deleteLater()
+		selectedTreeItem = kwargs.pop('selectedTreeItem',None)
+		if not selectedTreeItem:
+			logging.info('Refreshing tree')
+			self.__clicked_refresh_tree()
+		else:
+			# The new item data should be returned in the reply
+			new_item = json.loads(reply.readAll().data().decode())
+			self.tree.add_item(selectedTreeItem, new_item['data'])
+			
 	def __tree_refresh_finished(self):
 		self.refresh_button.setIcon(self.refresh_icon)
 		self.refresh_button.setDisabled(False)
@@ -779,7 +832,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		if not self.active_requests:
 			self.refreshFinished.emit()
 
-
 	### Public functions
 
 	def get_icon(self, datatype, name):
@@ -846,6 +898,26 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			# ass the callback to which the received data should be sent.
 			self.manager.get_logged_in_user(self.process_repo_contents)
 
+	def add_item(self, parent, data):
+		if data['type'] == 'nodes':
+			name = data["attributes"]["title"]
+			kind = data["attributes"]["category"]
+		if data['type'] == 'files':
+			name = data["attributes"]["name"]
+			kind = data["attributes"]["kind"]
+
+		values = [name,kind]
+		if "size" in data["attributes"] and data["attributes"]["size"]:
+			values += [humanize.naturalsize(data["attributes"]["size"])]
+
+		item = QtWidgets.QTreeWidgetItem(parent,values)
+		icon = self.get_icon(kind, name)
+		item.setIcon(0,icon)
+		item.data = data
+
+		return item, kind
+
+
 	def populate_tree(self, reply, parent=None):
 		"""
 		Populates the tree with content retrieved from a certain entrypoint,
@@ -872,23 +944,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			parent = self.invisibleRootItem()
 
 		for entry in osf_response["data"]:
-			if entry['type'] == 'nodes':
-				name = entry["attributes"]["title"]
-				kind = entry["attributes"]["category"]
-			if entry['type'] == 'files':
-				name = entry["attributes"]["name"]
-				kind = entry["attributes"]["kind"]
-
-			values = [name,kind]
-			if "size" in entry["attributes"] and entry["attributes"]["size"]:
-				values += [humanize.naturalsize(entry["attributes"]["size"])]
-
-			item = QtWidgets.QTreeWidgetItem(parent,values)
-
-			icon = self.get_icon(kind, name)
-			item.setIcon(0,icon)
-			item.data = entry
-
+			# Add item to the tree
+			item, kind = self.add_item(parent, entry)
+			
 			if kind in ["project","folder"]:
 				try:
 					next_entrypoint = entry['relationships']['files']\

@@ -90,7 +90,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def logout(self):
 		""" Logout from OSF """
 		if osf.is_authorized() and osf.session.access_token:
-			self.post(osf.logout_url, self.__logout_succeeded, {'token':osf.session.access_token})
+			self.post(
+				osf.logout_url, 
+				{'token':osf.session.access_token}, 
+				self.__logout_succeeded
+			)
 
 	def __logout_succeeded(self,data,*args):
 		self.dispatcher.dispatch_logout()
@@ -143,6 +147,19 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			else:
 				return func(inst, *args, **kwargs)
 		return func_wrapper
+	
+	def add_token(self,request):
+		""" Adds the OAuth2 token to the pending HTTP request (if available).
+
+		Parameters
+		----------
+		request : QtNetwork.QNetworkRequest
+			The network request item in whose header to add the OAuth2 token
+		"""
+		if osf.is_authorized():
+			name = "Authorization".encode()
+			value = ("Bearer {}".format(osf.session.access_token)).encode()
+			request.setRawHeader(name, value)
 
 	@check_network_accessibility
 	def get(self, url, callback, *args, **kwargs):
@@ -152,7 +169,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		Parameters
 		----------
 		url : string / QtCore.QUrl
-			The target url to perform the get request on
+			The target url/endpoint to perform the GET request on
 		callback : function
 			The function to call once the request is finished successfully.
 		downloadProgess : function (defualt: None)
@@ -193,14 +210,12 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		request = QtNetwork.QNetworkRequest(url)
 
+		# Add OAuth2 token
+		self.add_token(request)
+
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
 		kwargs['redirect_count'] = kwargs.get('redirect_count',0)
-
-		if osf.is_authorized():
-			name = "Authorization".encode()
-			value = ("Bearer {}".format(osf.session.access_token)).encode()
-			request.setRawHeader(name, value)
 
 		reply = super(ConnectionManager, self).get(request)
 
@@ -211,10 +226,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Check if a QProgressDialog has been passed to which the download status
 		# can be reported. If so, add it as a property of the reply object
-		dlpDialog = kwargs.get('progressDialog', None)
-		if isinstance(dlpDialog, QtWidgets.QProgressDialog):
-			dlpDialog.canceled.connect(reply.abort)
-			reply.setProperty('dlpDialog', dlpDialog)
+		progressDialog = kwargs.get('progressDialog', None)
+		if isinstance(progressDialog, QtWidgets.QProgressDialog):
+			progressDialog.canceled.connect(reply.abort)
+			reply.setProperty('progressDialog', progressDialog)
 
 		# Check if a callback has been specified to which the downloadprogress
 		# is to be reported
@@ -240,19 +255,21 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return reply
 
 	@check_network_accessibility
-	def post(self, url, callback, data_to_send, *args):
+	def post(self, url, data_to_send, callback, *args, **kwargs):
 		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
-		header if the request is going to an OSF server.
+		header if the request is going to an OSF server. This request is mainly used to send
+		small amounts of data to the OSF framework (use PUT for larger files, as this is also
+		required by the WaterButler service used for OSF)
 
 		Parameters
 		----------
 		url : string / QtCore.QUrl
-			The target url to perform the get request on.
-		callback : function
-			The function to call once the request is finished.
+			The target url/endpoint to perform the POST request on.
 		data_to_send : dict
 			The data to send with the POST request. keys will be used as variable names
 			and values will be used as the variable values.
+		callback : function
+			The function to call once the request is finished.
 		*args (optional)
 			Any other arguments that you want to have passed to callable.
 		"""
@@ -272,10 +289,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
-		if osf.is_authorized():
-			name = "Authorization".encode()
-			value = ("Bearer {}".format(osf.session.access_token)).encode()
-			request.setRawHeader(name, value)
+		# Add OAuth2 token
+		self.add_token(request)
 
 		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
 		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
@@ -293,7 +308,83 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			final_postdata = postdata.toString(QtCore.QUrl.FullyEncoded).encode()
 		# Fire!
 		reply = super(ConnectionManager, self).post(request, final_postdata)
-		reply.finished.connect(lambda: self.__reply_finished(callback, *args))
+		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
+
+	@check_network_accessibility
+	def put(self, url, data_to_send, callback, *args, **kwargs):
+		""" Perform a HTTP PUT request. The OAuth2 token is automatically added to the
+		header if the request is going to an OSF server. This method should be used
+		to upload larger sets of data such as files.
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url/endpoint to perform the PUT request on.
+		data_to_send : QIODevice
+			The file to upload (QFile or other QIODevice type)
+		callback : function
+			The function to call once the request is finished.
+		uploadProgess : function (defualt: None)
+			The slot (callback function) for the downloadProgress signal of the
+			reply object. This signal is emitted after a certain amount of bytes
+			is received, and can be used for instance to update a download progress
+			dialog box. The callback function should have two parameters to which
+			the transfered and total bytes can be assigned.
+		errorCallback : function (default: None)
+			function to call whenever an error occurs. Should be able to accept
+			the reply object as an argument. This function is also called if the
+			operation is aborted by the user him/herself.
+		progressDialog : QtWidgets.QProgressDialog (default: None)
+			The dialog to send the progress indication to. Will be included in the
+			reply object so that it is accessible in the downloadProgress slot, by
+			calling self.sender().property('progressDialog')
+		abortSignal : QtCore.pyqtSignal
+			This signal will be attached to the reply objects abort() slot, so that
+			the operation can be aborted from outside if necessary.
+		*args (optional)
+			Any other arguments that you want to have passed to the callback
+		"""
+		# First do some checking of the passed arguments
+		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
+			raise TypeError("url should be a string or QUrl object")
+
+		if not callable(callback):
+			raise TypeError("callback should be a function or callable.")
+
+		if not isinstance(data_to_send, QtCore.QIODevice):
+			raise TypeError("The data_to_send should be of type QtCore.QIODevice")
+
+		if not type(url) is QtCore.QUrl:
+			url = get_QUrl(url)
+
+		request = QtNetwork.QNetworkRequest(url)
+		# request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
+
+		# Add OAuth2 token
+		self.add_token(request)
+
+		reply = super(ConnectionManager, self).put(request, data_to_send)
+		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
+
+		# Check if a QProgressDialog has been passed to which the download status
+		# can be reported. If so, add it as a property of the reply object
+		progressDialog = kwargs.get('progressDialog', None)
+		if isinstance(progressDialog, QtWidgets.QProgressDialog):
+			progressDialog.canceled.connect(reply.abort)
+			reply.setProperty('progressDialog', progressDialog)
+		else:
+			logging.error("progressDialog is not a QtWidgets.QProgressDialog")
+
+		# If provided, connect the abort signal to the reply's abort() slot
+		abortSignal = kwargs.get('abortSignal', None)
+		if not abortSignal is None:
+			abortSignal.connect(reply.abort)
+
+		# Check if a callback has been specified to which the downloadprogress
+		# is to be reported
+		ulpCallback = kwargs.get('uploadProgress', None)
+		if callable(ulpCallback):
+			reply.downloadProgress.connect(ulpCallback)
 
 	def get_logged_in_user(self, callback):
 		""" Contact the OSF to request data of the currently logged in user
@@ -416,6 +507,52 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['readyRead'] = self.__download_readyRead
 		self.get(url, self.__download_finished, *args, **kwargs)
 
+	def upload_file(self, url, source_file, *args, **kwargs):
+		""" Upload a file to the specified destination on the OSF 
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url that points to endpoint handling the upload
+		source : string / QtCore.QtFile
+			The path and file which should be uploaded.
+		finishedCallback : function (default: None)
+			The function to call once the upload is finished.
+		uploadProgress : function (default: None)
+			The slot (callback function) for the uploadProgress signal of the
+			reply object. This signal is emitted after a certain amount of bytes
+			is received, and can be used for instance to update a upload progress
+			dialog box. The callback function should have two parameters to which
+			the transfered and total bytes can be assigned.
+		errorCallback : function (default: None)
+			function to call whenever an error occurs. Should be able to accept
+			the reply object as an argument.
+		progressDialog : QtWidgets.QProgressDialog (default : None)
+			The dialog to send the progress indication to. Will be included in the
+			reply object so that it is accessible from the downloadProgress slot
+		"""
+		# Put checks for the url to be a string or QUrl
+
+		# Check source file
+		if isinstance(source_file, basestring):
+			# Check if the specified file exists, because a situation is possible in which
+			# the user has deleted the file in the meantime in another program.
+			# show a message box, but do not raise an exception, because we don't want this 
+			# to completely crash our program.
+			if not os.path.isfile(os.path.abspath(source_file)):
+				self.error_message.emit(_("{} is not a valid source file").format(destination))
+				return
+
+			# Open source file for reading
+			source_file = QtCore.QFile(source_file)
+		elif not isinstance(source_file, QtCore.QIODevice):
+			self.error_message.emit(_("{} is not a string or QIODevice instance").format(destination))
+			return
+
+		source_file.open(QtCore.QIODevice.ReadOnly)
+		kwargs['source_file'] = source_file
+		self.put(url, source_file, self.__upload_finished, *args, **kwargs)
+
 	#--- PyQt Slots
 
 	def __reply_finished(self, callback, *args, **kwargs):
@@ -478,6 +615,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			# data on to the callback
 			kwargs.pop('redirect_count', None)
 			kwargs.pop('downloadProgress', None)
+			kwargs.pop('uploadProgress', None)
 			kwargs.pop('readyRead', None)
 			kwargs.pop('errorCallback', None)
 			kwargs.pop('abortSignal', None)
@@ -511,7 +649,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 					_("Error saving file"),
 					_("Could not replace {}").format(kwargs['destination'])
 				)
-				reply.deleteLater()
 				return
 		# Copy the temp file to its destination
 		if not kwargs['tmp_file'].copy(kwargs['destination']):
@@ -519,14 +656,22 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				_("Error saving file"),
 				_("Could not save file to {}").format(kwargs['destination'])
 			)
-			reply.deleteLater()
 			return
 
-		fcb = kwargs.pop('finished_callback',None)
+		fcb = kwargs.pop('finishedCallback',None)
 		if callable(fcb):
 			fcb(reply, *args, **kwargs)
-		reply.deleteLater()
 
+	def __upload_finished(self, reply, *args, **kwargs):
+		if not 'source_file' in kwargs or not isinstance(kwargs['source_file'], QtCore.QIODevice):
+			raise AttributeError("No valid open file handle")
+		# Close the source file
+		kwargs['source_file'].close()
+		
+		# If another external callback function was provided, call it below
+		fcb = kwargs.pop('finishedCallback',None)
+		if callable(fcb):
+			fcb(reply, *args, **kwargs)
 
 	def handle_login(self):
 		self.get_logged_in_user(self.set_logged_in_user)

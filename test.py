@@ -67,9 +67,9 @@ class StandAlone(object):
 		self.user_badge.login_request.connect(self.manager.login)
 
 		# If a valid token is stored in token.json, use that.
-		# Otherwise show the loging window.
-
+		# Otherwise show the login window.
 		self.manager.login()
+		# Show the user badge
 		self.user_badge.show()
 		self.project_explorer.show()
 
