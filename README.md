@@ -1,4 +1,4 @@
-# osf-api-python-toolkit
+# Open Science Framework - Python API toolkit
 This repository should contain everything you need to start off with connecting your python application to the Open Science Framework (https://osf.io). It offers python functions that translate to Open Science Framework API endpoints, and also a set of PyQt widgets (should work with both pyqt4 and pyqt5 thanks to qtpy) that are designed to display and interact with information obtained through the OSF API.
 
 ## Installation
