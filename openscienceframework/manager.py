@@ -91,8 +91,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		""" Logout from OSF """
 		if osf.is_authorized() and osf.session.access_token:
 			self.post(
-				osf.logout_url, 
-				{'token':osf.session.access_token}, 
+				osf.logout_url,
+				{'token':osf.session.access_token},
 				self.__logout_succeeded
 			)
 
@@ -147,7 +147,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			else:
 				return func(inst, *args, **kwargs)
 		return func_wrapper
-	
+
 	def add_token(self,request):
 		""" Adds the OAuth2 token to the pending HTTP request (if available).
 
@@ -157,9 +157,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			The network request item in whose header to add the OAuth2 token
 		"""
 		if osf.is_authorized():
-			name = "Authorization".encode()
-			value = ("Bearer {}".format(osf.session.access_token)).encode()
+			name = safe_encode("Authorization")
+			value = safe_encode("Bearer {}".format(osf.session.access_token))
 			request.setRawHeader(name, value)
+
+	### Basic HTTP Functions
 
 	@check_network_accessibility
 	def get(self, url, callback, *args, **kwargs):
@@ -209,6 +211,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			url = get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
+
+#		logging.info("GET {}".format(url))
 
 		# Add OAuth2 token
 		self.add_token(request)
@@ -289,6 +293,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
+#		logging.info("POST {}".format(url))
+
 		# Add OAuth2 token
 		self.add_token(request)
 
@@ -305,7 +311,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if QtCore.QT_VERSION_STR < '5':
 			final_postdata = postdata.encodedQuery()
 		else:
-			final_postdata = postdata.toString(QtCore.QUrl.FullyEncoded).encode()
+			final_postdata = safe_encode(postdata.toString(QtCore.QUrl.FullyEncoded))
 		# Fire!
 		reply = super(ConnectionManager, self).post(request, final_postdata)
 		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
@@ -360,6 +366,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request = QtNetwork.QNetworkRequest(url)
 		# request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
+#		logging.info("PUT {}".format(url))
+
 		# Add OAuth2 token
 		self.add_token(request)
 
@@ -384,7 +392,68 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# is to be reported
 		ulpCallback = kwargs.get('uploadProgress', None)
 		if callable(ulpCallback):
-			reply.downloadProgress.connect(ulpCallback)
+			reply.uploadProgress.connect(ulpCallback)
+
+	@check_network_accessibility
+	def delete(self, url, callback, *args, **kwargs):
+		""" Perform a HTTP DELETE request. The OAuth2 token is automatically added to the
+		header if the request is going to an OSF server.
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url/endpoint to perform the GET request on
+		callback : function
+			The function to call once the request is finished successfully.
+		errorCallback : function (default: None)
+			function to call whenever an error occurs. Should be able to accept
+			the reply object as an argument. This function is also called if the
+			operation is aborted by the user him/herself.
+		abortSignal : QtCore.pyqtSignal
+			This signal will be attached to the reply objects abort() slot, so that
+			the operation can be aborted from outside if necessary.
+		*args (optional)
+			Any other arguments that you want to have passed to the callback
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
+		"""
+		# First do some checking of the passed arguments
+
+		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
+			raise TypeError("url should be a string or QUrl object")
+
+		if not callable(callback):
+			raise TypeError("callback should be a function or callable.")
+
+		if not type(url) is QtCore.QUrl:
+			url = get_QUrl(url)
+
+		request = QtNetwork.QNetworkRequest(url)
+
+		logging.info("GET {}".format(url))
+
+		# Add OAuth2 token
+		self.add_token(request)
+
+		# Check if this is a redirect and keep a count to prevent endless
+		# redirects. If redirect_count is not set, init it to 0
+		kwargs['redirect_count'] = kwargs.get('redirect_count',0)
+
+		reply = super(ConnectionManager, self).deleteResource(request)
+
+		# If provided, connect the abort signal to the reply's abort() slot
+		abortSignal = kwargs.get('abortSignal', None)
+		if not abortSignal is None:
+			abortSignal.connect(reply.abort)
+
+		reply.finished.connect(
+			lambda: self.__reply_finished(
+				callback, *args, **kwargs
+			)
+		)
+		return reply
+
+	### Convenience HTTP Functions
 
 	def get_logged_in_user(self, callback):
 		""" Contact the OSF to request data of the currently logged in user
@@ -460,6 +529,25 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		api_call = osf.api_call("repo_files",project_id, repo_name)
 		return self.get(api_call, callback)
 
+	def get_file_info(self, file_id, callback, *args, **kwargs):
+		""" Get a list of files from the OSF that belong to the indicated
+		repository of the passed project id
+
+		Parameters
+		----------
+		file_id : string
+			The OSF file identifier (e.g. the node id).
+		callback : function
+			The callback function to which the data should be delivered once the
+			request is finished
+
+		Returns
+		-------
+		QtNetwork.QNetworkReply or None if something went wrong
+		"""
+		api_call = osf.api_call("file_info",file_id)
+		return self.get(api_call, callback, *args, **kwargs)
+
 	def download_file(self, url, destination, *args, **kwargs):
 		""" Download a file by a using HTTP GET request. The OAuth2 token is automatically
 		added to the header if the request is going to an OSF server.
@@ -508,7 +596,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get(url, self.__download_finished, *args, **kwargs)
 
 	def upload_file(self, url, source_file, *args, **kwargs):
-		""" Upload a file to the specified destination on the OSF 
+		""" Upload a file to the specified destination on the OSF
 
 		Parameters
 		----------
@@ -537,7 +625,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if isinstance(source_file, basestring):
 			# Check if the specified file exists, because a situation is possible in which
 			# the user has deleted the file in the meantime in another program.
-			# show a message box, but do not raise an exception, because we don't want this 
+			# show a message box, but do not raise an exception, because we don't want this
 			# to completely crash our program.
 			if not os.path.isfile(os.path.abspath(source_file)):
 				self.error_message.emit(_("{} is not a valid source file").format(destination))
@@ -609,7 +697,16 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-			self.get(redirect_url, callback, *args, **kwargs)
+			logging.info('Redirected to {}'.format(redirect_url))
+			if reply.operation() == self.GetOperation:
+				self.get(redirect_url, callback, *args, **kwargs)
+			# TODO: implement this for POST, PUT and DELETE too
+#			if reply.operation() == self.PostOperation:
+#				self.post(redirect_url, callback, *args, **kwargs)
+#			if reply.operation() == self.PutOperation:
+#				self.put(redirect_url, callback, *args, **kwargs)
+#			if reply.operation() == self.DeleteOperation:
+#				self.delete(redirect_url, callback, *args, **kwargs)
 		else:
 			# Remove (potentially) internally used kwargs before passing
 			# data on to the callback
@@ -667,7 +764,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			raise AttributeError("No valid open file handle")
 		# Close the source file
 		kwargs['source_file'].close()
-		
+
 		# If another external callback function was provided, call it below
 		fcb = kwargs.pop('finishedCallback',None)
 		if callable(fcb):
@@ -684,4 +781,4 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
-		self.logged_in_user = json.loads(user_data.readAll().data().decode())
+		self.logged_in_user = json.loads(safe_decode(user_data.readAll().data()))

@@ -36,6 +36,13 @@ import humanize
 # For better time functions
 import arrow
 
+### TEMP ###
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+
+# Python 2 and 3 compatiblity settings
+from openscienceframework.compat import *
+
 osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
 
 # Dummy function later to be replaced for translation
@@ -224,7 +231,7 @@ class UserBadge(QtWidgets.QWidget):
 
 	def __set_badge_contents(self, reply):
 		# Convert bytes to string and load the json data
-		user = json.loads(reply.readAll().data().decode())
+		user = json.loads(safe_decode(reply.readAll().data()))
 		# Get user's name
 		try:
 			full_name = user["data"]["attributes"]["full_name"]
@@ -298,6 +305,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			else:
 				# assign passed reference of ProjectTree to this instance
 				self.tree = tree_widget
+
+		self.tree.setSortingEnabled(True)
 
 		# File properties overview
 		properties_pane = self.__create_properties_pane()
@@ -379,6 +388,15 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setIconSize(self.button_icon_size)
 		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
 
+		delete_icon = QtGui.QIcon.fromTheme(
+			'user-trash-symbolic',
+			qta.icon('fa.trash')
+		)
+		self.delete_button = QtWidgets.QPushButton(delete_icon, _('Delete'))
+		self.delete_button.setIconSize(self.button_icon_size)
+		self.delete_button.clicked.connect(self.__clicked_delete)
+		self.delete_button.setDisabled(True)
+
 		download_icon = QtGui.QIcon.fromTheme(
 			'go-down',
 			qta.icon('fa.cloud-download')
@@ -399,6 +417,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		hbox.addWidget(self.refresh_button)
 		hbox.addStretch(1)
+		hbox.addWidget(self.delete_button)
 		hbox.addWidget(self.download_button)
 		hbox.addWidget(self.upload_button)
 		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
@@ -447,13 +466,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		"""
 		# Get required properties
 		attributes = data['attributes']
-		
+
 		name = attributes.get("name", "Unspecified")
 		filesize = attributes.get("size", "Unspecified")
 		last_touched = attributes.get("last_touched", None)
 		created = attributes.get("date_created", "Unspecified")
 		modified = attributes.get("date_modified", "Unspecified")
-		
+
 		if check_if_opensesame_file(name):
 			filetype = "OpenSesame experiment"
 		else:
@@ -572,7 +591,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Abort previous preview operation (if any)
 		self.abort_preview.emit()
 
-		data = item.data
+		data = item.data(0, QtCore.Qt.UserRole)
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
 			kind = data["attributes"]["category"]
@@ -587,10 +606,12 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.set_file_properties(data)
 			self.download_button.setDisabled(False)
 			self.upload_button.setDisabled(True)
+			self.delete_button.setDisabled(False)
 		elif kind == "folder":
 			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(False)
+			self.delete_button.setDisabled(False)
 		else:
 			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
@@ -654,12 +675,17 @@ class OSFExplorer(QtWidgets.QWidget):
 				progressDialog=download_progress_dialog,
 			)
 
-	def __transfer_progress(self, transfered, total):
-		self.sender().property('progressDialog').setValue(transfered)
+	def __clicked_delete(self):
+		selected_item = self.tree.currentItem()
+		data = selected_item.data(0, QtCore.Qt.UserRole)
+		delete_url = data['links']['delete']
+		self.manager.delete(delete_url, self.__item_deleted, selected_item)
+
 
 	def __clicked_upload_file(self):
 		selected_item = self.tree.currentItem()
-		upload_url = selected_item.data['links']['upload']
+		data = selected_item.data(0, QtCore.Qt.UserRole)
+		upload_url = data['links']['upload']
 
 		# See if a previous folder was set, and if not, try to set
 		# the user's home folder as a starting folder
@@ -678,25 +704,48 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		if file_to_upload:
 			# Get the filename
-			filename = os.path.split(file_to_upload)[1]
+			folder, filename = os.path.split(file_to_upload)
+			# Remember the containing folder for later
+			self.last_open_destination_folder = folder
 			# ... and the convert to QFile
 			file_to_upload = QtCore.QFile(file_to_upload)
-			# add required query parameters
-			upload_url += '?kind=file&name={}'.format(filename)
+			# Check if file is already present and get its index if so
+			index_if_present = self.tree.find_item(selected_item, 0, filename)
+
+			print("1 {}".format(upload_url))
+
+			# If index_is_present is None, the file is probably new
+			if index_if_present is None:
+				logging.info("File {} is new".format(filename))
+				# add required query parameters
+				upload_url += '?kind=file&name={}'.format(filename)
+			# If index_is_present is a number, it means the file is present
+			# and that file needs to be updated.
+			else:
+				logging.info("File {} exists and will be updated".format(filename))
+				old_item = selected_item.child(index_if_present)
+				# Get data stored in item
+				old_item_data = old_item.data(0,QtCore.Qt.UserRole)
+				# Get file specific update utrl
+				upload_url = old_item_data['links']['upload']
+				upload_url += '?kind=file'
+
+			print(upload_url)
 
 			progress_dialog = QtWidgets.QProgressDialog()
 			progress_dialog.hide()
 			progress_dialog.setLabelText(_("Uploading") + " " + file_to_upload.fileName())
 			progress_dialog.setMinimum(0)
 			progress_dialog.setMaximum(file_to_upload.size())
-			
+
 			self.manager.upload_file(
-				upload_url, 
+				upload_url,
 				file_to_upload,
 				uploadProgress=self.__transfer_progress,
 				progressDialog=progress_dialog,
 				finishedCallback=self.__upload_finished,
-				selectedTreeItem=selected_item
+				selectedTreeItem=selected_item,
+				updateIndex=index_if_present
 			)
 
 	def __upload_finished(self, reply, progressDialog, *args, **kwargs):
@@ -707,9 +756,29 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.__clicked_refresh_tree()
 		else:
 			# The new item data should be returned in the reply
-			new_item = json.loads(reply.readAll().data().decode())
-			self.tree.add_item(selectedTreeItem, new_item['data'])
-			
+			new_item = json.loads(safe_decode(reply.readAll().data()))
+			updateIndex = kwargs.get('updateIndex')
+			if not updateIndex is None:
+				# Remove old item first, before adding new one
+				selectedTreeItem.takeChild(updateIndex)
+			# Refresh info for the new file as the returned representation
+			# is incomplete
+			self.manager.get_file_info(
+				new_item['data']['attributes']['path'],
+				self.__upload_refresh_item,
+				selectedTreeItem
+			)
+
+	def __upload_refresh_item(self, reply, parent_item):
+		item = json.loads(safe_decode(reply.readAll().data()))
+		self.tree.add_item(parent_item, item['data'])
+
+	def __item_deleted(self, reply, item):
+		item.parent().removeChild(item)
+
+	def __transfer_progress(self, transfered, total):
+		self.sender().property('progressDialog').setValue(transfered)
+
 	def __tree_refresh_finished(self):
 		self.refresh_button.setIcon(self.refresh_icon)
 		self.refresh_button.setDisabled(False)
@@ -803,6 +872,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Event handling
 		self.itemExpanded.connect(self.__set_expanded_icon)
 		self.itemCollapsed.connect(self.__set_collapsed_icon)
+		self.refreshFinished.connect(self.__refresh_finished)
+
+		# Items currently expanded
+		self.expanded_items = set()
 
 		self.setIconSize(QtCore.QSize(20,20))
 
@@ -812,15 +885,22 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# track, by adding current requests in this list.
 		self.active_requests = []
 
+
+
 	### Private functions
 
 	def __set_expanded_icon(self,item):
-		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
-			item.setIcon(0,self.get_icon('folder-open',item.data['attributes']['name']))
+		data = item.data(0, QtCore.Qt.UserRole)
+		if data['type'] == 'files' and data['attributes']['kind'] == 'folder':
+			item.setIcon(0,self.get_icon('folder-open',data['attributes']['name']))
+		self.expanded_items.add(data['id'])
 
 	def __set_collapsed_icon(self,item):
-		if item.data['type'] == 'files' and item.data['attributes']['kind'] == 'folder':
-			item.setIcon(0,self.get_icon('folder',item.data['attributes']['name']))
+		data = item.data(0, QtCore.Qt.UserRole)
+		if data['type'] == 'files' and data['attributes']['kind'] == 'folder':
+			item.setIcon(0,self.get_icon('folder',data['attributes']['name']))
+		self.expanded_items.discard(data['id'])
+
 
 	def __populate_error(self, reply):
 		# Reset active requests after error
@@ -832,7 +912,47 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		if not self.active_requests:
 			self.refreshFinished.emit()
 
+	def __refresh_finished(self):
+		""" Expands all treewidget items again that were expanded before the
+		refresh. """
+		iterator = QtWidgets.QTreeWidgetItemIterator(self)
+		while(iterator.value()):
+			item = iterator.value()
+			item_data = item.data(0,QtCore.Qt.UserRole)
+			if item_data['id'] in self.expanded_items:
+				item.setExpanded(True)
+			iterator += 1
+
 	### Public functions
+
+	def find_item(self, item, index, value):
+		"""
+		Checks if there is already a tree item with the same name as value.
+
+		Parameters
+		----------
+		item : QtWidgets.QTreeWidgetItem
+			The tree widget item of which to search the direct descendents.
+		index : int
+			The column index of the tree widget item.
+		value : str
+			The value to search for
+
+		Returns
+		-------
+		int : The index position at which the item is found or None .
+		"""
+		child_count = item.childCount()
+		if not child_count:
+			return None
+
+		for i in range(0,child_count):
+			child = item.child(i)
+			displaytext = child.data(0,QtCore.Qt.DisplayRole)
+			if displaytext == value:
+				return i
+		return None
+
 
 	def get_icon(self, datatype, name):
 		"""
@@ -906,14 +1026,19 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			name = data["attributes"]["name"]
 			kind = data["attributes"]["kind"]
 
-		values = [name,kind]
+		values = [name, kind]
 		if "size" in data["attributes"] and data["attributes"]["size"]:
 			values += [humanize.naturalsize(data["attributes"]["size"])]
 
-		item = QtWidgets.QTreeWidgetItem(parent,values)
+		# Create item
+		item = QtWidgets.QTreeWidgetItem(parent, values)
+
+		# Set icon
 		icon = self.get_icon(kind, name)
-		item.setIcon(0,icon)
-		item.data = data
+		item.setIcon(0, icon)
+
+		# Add data
+		item.setData(0, QtCore.Qt.UserRole, data)
 
 		return item, kind
 
@@ -938,7 +1063,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		-------
 		list : The list of tree items that have just been generated """
 
-		osf_response = json.loads(reply.readAll().data().decode())
+		osf_response = json.loads(safe_decode(reply.readAll().data()))
 
 		if parent is None:
 			parent = self.invisibleRootItem()
@@ -946,7 +1071,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		for entry in osf_response["data"]:
 			# Add item to the tree
 			item, kind = self.add_item(parent, entry)
-			
+
 			if kind in ["project","folder"]:
 				try:
 					next_entrypoint = entry['relationships']['files']\
@@ -971,7 +1096,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# If this function is called as a callback, the supplied data will be a
 		# QByteArray. Convert to a dictionary for easier usage
 		if type(logged_in_user) == QtNetwork.QNetworkReply:
-			logged_in_user = json.loads(logged_in_user.readAll().data().decode())
+			logged_in_user = json.loads(safe_decode(logged_in_user.readAll().data()))
 
 		# Get url to user projects. Use that as entry point to populate the project tree
 		try:

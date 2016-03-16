@@ -71,6 +71,7 @@ api_calls = {
 	"projects":"users/me/nodes/",
 	"project_repos":"nodes/{}/files/",
 	"repo_files":"nodes/{}/files/{}/",
+	"file_info":"files/{}/"
 }
 
 def api_call(command, *args):
