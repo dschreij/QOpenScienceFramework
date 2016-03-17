@@ -36,14 +36,15 @@ import humanize
 # For better time functions
 import arrow
 
-### TEMP ###
+### TODO: remove later
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
-osf_logo_path = os.path.abspath('resources/img/cos-white2.png')
+osf_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+	'resources/img/cos-white2.png')
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -165,7 +166,6 @@ class UserBadge(QtWidgets.QWidget):
 			print("ERROR: OSF logo not found at {}".format(osf_logo_path))
 
 		self.osf_logo_pixmap = QtGui.QPixmap(osf_logo_path).scaled(self.image_size)
-
 		osf_icon = QtGui.QIcon(osf_logo_path)
 		self.setWindowIcon(osf_icon)
 
@@ -387,6 +387,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			'fa.refresh', color='green', animation=qta.Spin(self.refresh_button))
 		self.refresh_button.setIconSize(self.button_icon_size)
 		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
+		self.refresh_button.setDisabled(True)
 
 		delete_icon = QtGui.QIcon.fromTheme(
 			'user-trash-symbolic',
@@ -611,7 +612,14 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(False)
-			self.delete_button.setDisabled(False)
+			# Check if the parent node is a project
+			# If so the current 'folder' must be a storage provider (e.g. dropbox)
+			# which should not be allowed to be deleted.
+			parent_data = item.parent().data(0,QtCore.Qt.UserRole)
+			if parent_data['type'] == 'nodes':
+				self.delete_button.setDisabled(True)
+			else:
+				self.delete_button.setDisabled(False)
 		else:
 			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
@@ -631,6 +639,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.info_frame.setVisible(False)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(True)
+			self.delete_button.setDisabled(True)
+			self.refresh_button.setDisabled(True)
 			return
 
 	def __clicked_refresh_tree(self):
@@ -640,8 +650,9 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def __clicked_download_file(self):
 		selected_item = self.tree.currentItem()
-		download_url = selected_item.data['links']['download']
-		filename = selected_item.data['attributes']['name']
+		data = selected_item.data(0, QtCore.Qt.UserRole)
+		download_url = data['links']['download']
+		filename = data['attributes']['name']
 
 		# See if a previous folder was set, and if not, try to set
 		# the user's home folder as a starting folder
@@ -666,7 +677,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			download_progress_dialog.hide()
 			download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
 			download_progress_dialog.setMinimum(0)
-			download_progress_dialog.setMaximum(selected_item.data['attributes']['size'])
+			download_progress_dialog.setMaximum(data['attributes']['size'])
 			# Download the file
 			self.manager.download_file(
 				download_url,
@@ -678,8 +689,16 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __clicked_delete(self):
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
-		delete_url = data['links']['delete']
-		self.manager.delete(delete_url, self.__item_deleted, selected_item)
+
+		reply = QtWidgets.QMessageBox.question(
+			self,
+			_("Please confirm"),
+			_("Are you sure you want to delete '") + data['attributes']['name'] + "'?"
+		)
+
+		if reply == QtWidgets.QMessageBox.Yes:
+			delete_url = data['links']['delete']
+			self.manager.delete(delete_url, self.__item_deleted, selected_item)
 
 
 	def __clicked_upload_file(self):
@@ -824,7 +843,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	# Event fired when refresh of tree is finished
 	refreshFinished = QtCore.pyqtSignal()
 
-	def __init__(self, manager, use_theme=False, \
+	def __init__(self, manager, use_theme=None, \
 				theme_path='./resources/iconthemes'):
 		""" Constructor
 		Creates a tree showing the contents of the user's OSF repositories.
@@ -843,18 +862,16 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Check for argument specifying that qt_theme should be used to
 		# determine icons. Defaults to False.
 
-		if type(use_theme) == str:
-			self.use_theme = use_theme
+		if isinstance(use_theme, basestring):
 			logging.info('Using icon theme of {}'.format(use_theme))
 			QtGui.QIcon.setThemeName(use_theme)
 			# Win and OSX don't support native themes
 			# so set the theming dir explicitly
-			if platform.system() in ['Darwin','Windows']:
+			if isinstance(theme_path, basestring) and \
+			os.path.exists(os.path.abspath(theme_path)):
 				QtGui.QIcon.setThemeSearchPaths(QtGui.QIcon.themeSearchPaths() \
 					+ [theme_path])
 				logging.info(QtGui.QIcon.themeSearchPaths())
-		else:
-			self.use_theme = False
 
 		# Set up general window
 		self.resize(400,500)
@@ -884,8 +901,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# active. This is a somewhat hacky attempt to artificially keep try to keep
 		# track, by adding current requests in this list.
 		self.active_requests = []
-
-
 
 	### Private functions
 
@@ -1016,7 +1031,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		else:
 			# If not, query the osf for the user data, and pass get_repo_contents
 			# ass the callback to which the received data should be sent.
-			self.manager.get_logged_in_user(self.process_repo_contents)
+			self.manager.get_logged_in_user(
+				self.process_repo_contents, errorCallback=self.__populate_error)
 
 	def add_item(self, parent, data):
 		if data['type'] == 'nodes':
@@ -1079,7 +1095,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				except AttributeError as e:
 					raise osf.OSFInvalidResponse("Invalid api call for getting next"
 						"entry point: {}".format(e))
-				req = self.manager.get(next_entrypoint, self.populate_tree, item)
+				req = self.manager.get(
+					next_entrypoint, 
+					self.populate_tree, 
+					item,
+					errorCallback=self.__populate_error
+				)
 				# If something went wrong, req should be None
 				if req:
 					self.active_requests.append(req)
@@ -1095,7 +1116,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	def process_repo_contents(self, logged_in_user):
 		# If this function is called as a callback, the supplied data will be a
 		# QByteArray. Convert to a dictionary for easier usage
-		if type(logged_in_user) == QtNetwork.QNetworkReply:
+		if isinstance(logged_in_user, QtNetwork.QNetworkReply):
 			logged_in_user = json.loads(safe_decode(logged_in_user.readAll().data()))
 
 		# Get url to user projects. Use that as entry point to populate the project tree

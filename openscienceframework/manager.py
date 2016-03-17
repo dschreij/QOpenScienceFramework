@@ -455,7 +455,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	### Convenience HTTP Functions
 
-	def get_logged_in_user(self, callback):
+	def get_logged_in_user(self, callback, *args, **kwargs):
 		""" Contact the OSF to request data of the currently logged in user
 
 		Parameters
@@ -469,9 +469,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		QtNetwork.QNetworkReply or None if something went wrong
 		"""
 		api_call = osf.api_call("logged_in_user")
-		return self.get(api_call, callback)
+		return self.get(api_call, callback, *args, **kwargs)
 
-	def get_user_projects(self, callback):
+	def get_user_projects(self, callback, *args, **kwargs):
 		""" Get a list of projects owned by the currently logged in user from OSF
 
 		Parameters
@@ -485,9 +485,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		QtNetwork.QNetworkReply or None if something went wrong
 		"""
 		api_call = osf.api_call("projects")
-		return self.get(api_call, callback)
+		return self.get(api_call, callback, *args, **kwargs)
 
-	def get_project_repos(self, project_id, callback):
+	def get_project_repos(self, project_id, callback, *args, **kwargs):
 		""" Get a list of repositories from the OSF that belong to the passed
 		project id
 
@@ -504,9 +504,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		QtNetwork.QNetworkReply or None if something went wrong
 		"""
 		api_call = osf.api_call("project_repos", project_id)
-		return self.get(api_call, callback)
+		return self.get(api_call, callback, *args, **kwargs)
 
-	def get_repo_files(self, project_id, repo_name, callback):
+	def get_repo_files(self, project_id, repo_name, callback, *args, **kwargs):
 		""" Get a list of files from the OSF that belong to the indicated
 		repository of the passed project id
 
@@ -527,7 +527,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		QtNetwork.QNetworkReply or None if something went wrong
 		"""
 		api_call = osf.api_call("repo_files",project_id, repo_name)
-		return self.get(api_call, callback)
+		return self.get(api_call, callback, *args, **kwargs)
 
 	def get_file_info(self, file_id, callback, *args, **kwargs):
 		""" Get a list of files from the OSF that belong to the indicated
@@ -651,29 +651,23 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# If an error occured, just show a simple QMessageBox for now
 		if reply.error() != reply.NoError:
-			# User not authenticated to perform this request
-			# Show login window again
-			if reply.error() == reply.ContentAccessDenied:
-				# If access is denied, the user's token must have expired
-				# or something like that. Dispatch the logout signal and
-				# show the login window again
-				self.dispater.dispatch_logout()
-				self.show_login_window()
-				# Call error callback (since operation did not go as intended?)
-				if callable(errorCallback):
-					errorCallback(reply)
-				reply.deleteLater()
-				return
-
-			# Do not show error message if the user has aborted the request himself
+			# Don't show error notification if user manually cancelled operation.
+			# This is undesirable most of the time, and when it is required, it
+			# can be implemented by using the errorCallback function
 			if reply.error() != reply.OperationCanceledError:
 				self.error_message.emit(
 					str(reply.attribute(request.HttpStatusCodeAttribute)),
 					reply.errorString()
 				)
-			else:
-				# Do log this event though
-				logging.info("Operation aborted by user")
+			# User not authenticated to perform this request
+			# Show login window again
+			if reply.error() == reply.AuthenticationRequiredError:
+				# If access is denied, the user's token must have expired
+				# or something like that. Dispatch the logout signal and
+				# show the login window again
+				self.dispatcher.dispatch_logout()
+				self.show_login_window()
+				
 			# Call error callback
 			if callable(errorCallback):
 				errorCallback(reply)
