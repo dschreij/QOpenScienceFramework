@@ -94,6 +94,8 @@ class LoginWindow(QtWebKit.QWebView):
 
 	def checkResponse(self, reply):
 		"""Callback function for NetworkRequestManager.finished event
+		used to check if OAuth2 is redirecting to a link containing the token
+		string
 
 		Parameters
 		----------
@@ -119,7 +121,7 @@ class LoginWindow(QtWebKit.QWebView):
 			self.token = osf.parse_token_from_url(r_url)
 			if self.token:
 				self.logged_in.emit()
-				self.close()
+				self.hide()
 
 	def check_URL(self, url):
 		""" Callback function for urlChanged event.
@@ -139,9 +141,6 @@ class UserBadge(QtWidgets.QWidget):
 	""" A Widget showing the logged in user """
 
 	# Class variables
-
-	# Size of avatar and osf logo display image
-	image_size = QtCore.QSize(50,50)
 	# Login and logout events
 	logout_request = QtCore.pyqtSignal()
 	login_request = QtCore.pyqtSignal()
@@ -151,11 +150,16 @@ class UserBadge(QtWidgets.QWidget):
 	logging_in_text = _("Logging in")
 	logging_out_text = _("Logging out")
 
-	def __init__(self, manager):
+	def __init__(self, manager, image_size=None):
 		""" Constructor """
 		super(UserBadge, self).__init__()
 
 		self.manager = manager
+		if isinstance(image_size, QtCore.QSize):
+			# Size of avatar and osf logo display image
+			self.image_size = image_size
+		else:
+			self.image_size = QtCore.QSize(50,50)
 
 		# Set up general window
 		self.resize(200,40)
@@ -188,11 +192,11 @@ class UserBadge(QtWidgets.QWidget):
 
 		# Set up layout
 		grid = QtWidgets.QGridLayout()
-		grid.setSpacing(5)
+		grid.setSpacing(2)
 		grid.addWidget(self.avatar,1,0)
 
 		login_grid = QtWidgets.QGridLayout()
-		login_grid.setSpacing(5)
+		login_grid.setSpacing(2)
 		login_grid.addWidget(self.user_name,1,1)
 		login_grid.addWidget(self.statusbutton,2,1)
 
@@ -262,6 +266,8 @@ class OSFExplorer(QtWidgets.QWidget):
 	preview_size_limit = 1024**2/2.0
 	# Signal that is sent if image preview should be aborted
 	abort_preview = QtCore.pyqtSignal()
+
+	modes = [u'full', u'save', u'open']
 
 	def __init__(self, manager, tree_widget=None, locale='en_us'):
 		""" Constructor
@@ -364,6 +370,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
 		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
 		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
+
+		# Default to full mode
+		self.config = {'mode':'full'}
 
 	#--- Private functions
 
@@ -576,6 +585,35 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Last touched"][1].setText('')
 		self.properties["Created"][1].setText('')
 		self.properties["Modified"][1].setText('')
+
+	@property
+	def config(self):
+	    return self._config
+	
+	@config.setter
+	def config(self,value):
+		if not isinstance(value,dict):
+			raise TypeError('config should be a dict with options')
+		if not 'mode' in value.keys():
+			raise KeyError('Missing config setting "mode"')
+		if not value['mode'] in self.modes:
+			raise ValueError("Unsupported mode: {}".format(value['mode']))
+		self._config = value
+
+		# Get filters
+		filt = value.get('filter', None)
+
+		if value['mode'] == 'full':
+			pass
+			#self.tree.remove_filters()
+
+		if value['mode'] == 'save':
+			if not filt is None:
+				pass
+
+		if value['mode'] == 'open':
+			if not filt is None:
+				pass
 
 	#--- PyQT slots
 
