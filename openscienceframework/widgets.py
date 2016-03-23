@@ -35,6 +35,8 @@ import fileinspector
 import humanize
 # For better time functions
 import arrow
+# Unix style filename matching
+import fnmatch
 
 ### TODO: remove later
 import pprint
@@ -43,8 +45,8 @@ pp = pprint.PrettyPrinter(indent=4)
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
-osf_logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-	'resources/img/cos-white2.png')
+osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
+	'resources/img/cos-white2.png'))
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -267,8 +269,6 @@ class OSFExplorer(QtWidgets.QWidget):
 	# Signal that is sent if image preview should be aborted
 	abort_preview = QtCore.pyqtSignal()
 
-	modes = [u'full', u'save', u'open']
-
 	def __init__(self, manager, tree_widget=None, locale='en_us'):
 		""" Constructor
 
@@ -359,20 +359,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		splitter.addWidget(self.info_frame)
 
 		# Create buttons at the bottom
-		buttonbar = self.__create_buttonbar()
+		self.buttonbar = self.__create_buttonbar()
 
 		# Add to layout
 		vbox.addWidget(splitter)
-		vbox.addWidget(buttonbar)
+		vbox.addWidget(self.buttonbar)
 		self.setLayout(vbox)
 
 		# Event connections
 		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
 		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
 		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
-
-		# Default to full mode
-		self.config = {'mode':'full'}
 
 	#--- Private functions
 
@@ -386,9 +383,12 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.image_space.setPixmap(pm)
 
 	def __create_buttonbar(self):
+		# General buttonbar widget
 		buttonbar = QtWidgets.QWidget()
-		hbox = QtWidgets.QHBoxLayout(buttonbar)
-		buttonbar.setLayout(hbox)
+		buttonbar_hbox = QtWidgets.QHBoxLayout(buttonbar)
+		buttonbar.setLayout(buttonbar_hbox)
+
+		# Refresh button - always visible
 
 		self.refresh_icon = qta.icon('fa.refresh', color='green')
 		self.refresh_button = QtWidgets.QPushButton(self.refresh_icon, _('Refresh'))
@@ -398,6 +398,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
 		self.refresh_button.setDisabled(True)
 
+		# Other buttons, depend on config settings of OSF explorer
+
 		delete_icon = QtGui.QIcon.fromTheme(
 			'user-trash-symbolic',
 			qta.icon('fa.trash')
@@ -405,7 +407,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.delete_button = QtWidgets.QPushButton(delete_icon, _('Delete'))
 		self.delete_button.setIconSize(self.button_icon_size)
 		self.delete_button.clicked.connect(self.__clicked_delete)
-		self.delete_button.setDisabled(True)
+		self.delete_button.setDisabled(True)		
 
 		download_icon = QtGui.QIcon.fromTheme(
 			'go-down',
@@ -425,12 +427,27 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.upload_button.setIconSize(self.button_icon_size)
 		self.upload_button.setDisabled(True)
 
-		hbox.addWidget(self.refresh_button)
-		hbox.addStretch(1)
-		hbox.addWidget(self.delete_button)
-		hbox.addWidget(self.download_button)
-		hbox.addWidget(self.upload_button)
+		# Set up the general button bar layouts
+		buttonbar_hbox.addWidget(self.refresh_button)
+		buttonbar_hbox.addStretch(1)
+
+		# Add default buttons to default widget
+		buttonbar_hbox.addWidget(self.delete_button)
+		buttonbar_hbox.addWidget(self.download_button)
+		buttonbar_hbox.addWidget(self.upload_button)
+
+		# Make sure the button bar is vertically as small as possible.
 		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+
+		# Store the above buttons (except refresh) into a variable which later
+		# can be used to customize button set configurations
+		self.buttonsets = {
+			'default':[]
+		}
+
+		self.buttonsets['default'].append(self.delete_button)
+		self.buttonsets['default'].append(self.upload_button)
+		self.buttonsets['default'].append(self.download_button)
 
 		return buttonbar
 
@@ -462,6 +479,62 @@ class OSFExplorer(QtWidgets.QWidget):
 		return properties_pane
 
 	#--- Public functions
+	
+	def add_buttonset(self, title, buttons):
+		""" Adds a set of buttons that can be referenced by 'title'. With
+		set_buttonset(title) the buttons can be switched to this set. 
+
+		Parameters
+		----------
+		title : str
+			The label of the buttonset
+		buttons : list
+			A list containing QWidgets.QAbstractButton objects that belong to
+			this button set
+
+		Raises
+		------
+		TypeError : if there is no buttonset known by that label or an item in
+		the buttons list not an instance of QAbstractButton.
+		"""
+
+		# Check if the passed parameters are valid. This function only takes a list
+		# (even if the set consists of a single button)
+		if not isinstance(buttons, list):
+			raise TypeError('"buttons" should be a list with QtWidgets.QAbstractButton'
+				' that belong to the set')
+		# Check if all items in the list are a QtWidgets.QPushButton
+		for bttn in buttons:
+			if not isinstance(bttn, QtWidgets.QAbstractButton):
+				raise TypeError('All items in the buttons list should be of type'
+					' or inherit from QtWidgets.QAbstractButton')
+			bttn.setVisible(False)
+			self.buttonbar.layout().addWidget(bttn)
+
+		self.buttonsets[title] = buttons
+
+	def show_buttonset(self, title):
+		""" Sets the buttonset to show and hides all others
+		
+		Parameters
+		----------
+		title : str
+			The label of the buttonset that should be shown
+
+		Raises
+		------
+		KeyError : if there is no buttonset known by that label
+		"""
+
+		if not title in self.buttonsets:
+			raise KeyError('Buttonset "{}" could not be found.'.format(title))
+		# First hide all items
+		for bttnset in self.buttonsets.values():
+			for bttn in bttnset:
+				bttn.setVisible(False)
+		# Then show only the buttons of the specified buttonset
+		for bttn in self.buttonsets[title]:
+			bttn.setVisible(True)
 
 	def set_file_properties(self, data):
 		"""
@@ -507,8 +580,12 @@ class OSFExplorer(QtWidgets.QWidget):
 			else:
 				filetype = "file"
 
-		### Do some reformatting of the data to make it look nicer for us humans
-		if filesize != "Unspecified":
+		# If filesize is None, default to the value 'Unspecified'
+		if filesize is None:
+			filesize = "Unspecified"
+		# If filesize is a number do some reformatting of the data to make it 
+		# look nicer for us humans
+		if filesize != "Unspecified" and isinstance(filesize, int):
 			filesize = humanize.naturalsize(filesize)
 
 		# Last touched will be None if the file has never been 'touched'
@@ -586,35 +663,35 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Created"][1].setText('')
 		self.properties["Modified"][1].setText('')
 
+	def set_config(self, config):
+		""" Function that sets the config. Is equal to setting the config variable
+		directly by using OSFExplorer.config = <config dict> 
+
+		Parameters
+		----------
+		config : dict
+			The dictionary containing new configuration parameters.
+		"""
+
+		self.config = config
+
 	@property
 	def config(self):
 	    return self._config
-	
+
 	@config.setter
-	def config(self,value):
-		if not isinstance(value,dict):
+	def config(self, value):
+		if not isinstance(value, dict):
 			raise TypeError('config should be a dict with options')
-		if not 'mode' in value.keys():
-			raise KeyError('Missing config setting "mode"')
-		if not value['mode'] in self.modes:
-			raise ValueError("Unsupported mode: {}".format(value['mode']))
 		self._config = value
 
 		# Get filters
 		filt = value.get('filter', None)
+		buttonset = value.get('buttonset', 'default')
 
-		if value['mode'] == 'full':
-			pass
-			#self.tree.remove_filters()
-
-		if value['mode'] == 'save':
-			if not filt is None:
-				pass
-
-		if value['mode'] == 'open':
-			if not filt is None:
-				pass
-
+		self.tree.filter = filt
+		self.show_buttonset(buttonset)
+		
 	#--- PyQT slots
 
 	def __slot_currentItemChanged(self,item,col):
@@ -653,7 +730,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Check if the parent node is a project
 			# If so the current 'folder' must be a storage provider (e.g. dropbox)
 			# which should not be allowed to be deleted.
-			parent_data = item.parent().data(0,QtCore.Qt.UserRole)
+			parent_data = item.parent().data(0, QtCore.Qt.UserRole)
 			if parent_data['type'] == 'nodes':
 				self.delete_button.setDisabled(True)
 			else:
@@ -662,6 +739,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.set_folder_properties(data)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(True)
+			self.delete_button.setDisabled(True)
 
 	def __slot_itemSelectionChanged(self):
 		items_selected = bool(self.tree.selectedItems())
@@ -731,7 +809,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		reply = QtWidgets.QMessageBox.question(
 			self,
 			_("Please confirm"),
-			_("Are you sure you want to delete '") + data['attributes']['name'] + "'?"
+			_("Are you sure you want to delete '") + data['attributes']['name'] + "'?",
+			QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes
 		)
 
 		if reply == QtWidgets.QMessageBox.Yes:
@@ -932,6 +1011,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Items currently expanded
 		self.expanded_items = set()
 
+		# Set icon size for tree items
 		self.setIconSize(QtCore.QSize(20,20))
 
 		# Due to the recursive nature of the tree populating function, it is
@@ -939,6 +1019,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# active. This is a somewhat hacky attempt to artificially keep try to keep
 		# track, by adding current requests in this list.
 		self.active_requests = []
+
+		# Init filter variable
+		self._filter = None
 
 	### Private functions
 
@@ -968,6 +1051,11 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	def __refresh_finished(self):
 		""" Expands all treewidget items again that were expanded before the
 		refresh. """
+
+		# Reapply filter if set
+		if self._filter:
+			self.filter = self._filter
+
 		iterator = QtWidgets.QTreeWidgetItemIterator(self)
 		while(iterator.value()):
 			item = iterator.value()
@@ -976,7 +1064,81 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				item.setExpanded(True)
 			iterator += 1
 
+	### Properties
+	
+	@property
+	def filter(self):
+	    return self._filter
+
+	@filter.setter
+	def filter(self, value):
+		""" Only shows tree items that match the specified file extension(s)
+		and hides the others
+
+		value : None, str or list
+			If None is passed, this clears the filter, making all items present
+			in the tree visible again.
+
+			If a string is passed, it will be used as a single file extension
+			to compare the items against.
+
+			If a list of file extensions is passed, than items will be shown if
+			they match any of the extensions present in the list.
+		"""
+		# Check if supplied a valid value
+		if not isinstance(value, list) and \
+		not isinstance(value, basestring) and \
+		not value is None:
+			raise ValueError('Supplied filter invalid, needs to be list, string'
+				' or None')
+
+		# Store the filter for later reference
+		self._filter = value
+
+		# Iterate over the items
+		iterator = QtWidgets.QTreeWidgetItemIterator(self)
+		while(iterator.value()):
+			item = iterator.value()
+			# Check if item is of type 'file'
+			# Filters are only applicable to files
+			item_type = item.data(1, QtCore.Qt.DisplayRole)
+			if item_type == "file":
+				# If filter is None, it means everything should be
+				# visible, so set this item to visible and continue.
+				if self._filter is None:
+					item.setHidden(False)
+					iterator += 1
+					continue
+				
+				# Check if filter extension is contained in filename
+				item_data = item.data(0, QtCore.Qt.UserRole)
+				filename = item_data['attributes']['name']
+
+				# Assume no match by default
+				typematch = False
+				# If filter is a single string, just check directly
+				if isinstance(self._filter, basestring):
+					typematch = fnmatch.fnmatch(filename, self._filter)
+				# If filter is a list, compare to each item in it
+				if isinstance(self._filter, list):
+					for ext in self._filter:
+						if fnmatch.fnmatch(filename, ext):
+							typematch = True
+							break
+				# Set item's visibility according to value of typematch
+				if typematch:
+					item.setHidden(False)
+				else:
+					item.setHidden(True)
+			iterator += 1
+
 	### Public functions
+	
+	def set_filter(self, filetypes):
+		self.filter = filetypes
+
+	def clear_filter(self):
+		self.filter = None
 
 	def find_item(self, item, index, value):
 		"""
@@ -1041,7 +1203,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			# Providers are also seen as folders, so if the current folder
 			# matches a provider's name, simply show its icon.
 			if name in providers:
-				return QtGui.QIcon(providers[name])
+				return QtGui.QIcon.fromTheme(
+					providers[name],
+					QtGui.QIcon(osf_logo_path)
+				)
 			else:
 				return QtGui.QIcon.fromTheme(
 					datatype,
@@ -1057,7 +1222,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 			return QtGui.QIcon.fromTheme(
 				filetype,
-				QtGui.QIcon(osf_logo_path)
+				QtGui.QIcon.fromTheme(
+					'unknown',
+					QtGui.QIcon('osf_logo_path')
+				)
 			)
 		return QtGui.QIcon(osf_logo_path)
 
@@ -1134,8 +1302,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					raise osf.OSFInvalidResponse("Invalid api call for getting next"
 						"entry point: {}".format(e))
 				req = self.manager.get(
-					next_entrypoint, 
-					self.populate_tree, 
+					next_entrypoint,
+					self.populate_tree,
 					item,
 					errorCallback=self.__populate_error
 				)

@@ -47,6 +47,11 @@ class StandAlone(object):
 		)
 		self.project_explorer.move(50, 100)
 
+		test_bttn = QtWidgets.QPushButton('Test 1')
+		test_bttn2 = QtWidgets.QPushButton('Test 2')
+		self.project_explorer.add_buttonset('test',[test_bttn, test_bttn2])
+
+
 		# Testlistener (to be removed later). Simply prints out which event
 		# it received.
 		self.tl = events.TestListener()
