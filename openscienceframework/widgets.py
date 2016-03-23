@@ -686,11 +686,14 @@ class OSFExplorer(QtWidgets.QWidget):
 		self._config = value
 
 		# Get filters
-		filt = value.get('filter', None)
-		buttonset = value.get('buttonset', 'default')
+		filt = value.pop('filter', None)
+		buttonset = value.pop('buttonset', 'default')
 
 		self.tree.filter = filt
 		self.show_buttonset(buttonset)
+
+		if value:
+			logging.warning("Unknown options: {}".value.keys())
 		
 	#--- PyQT slots
 
@@ -800,6 +803,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				destination,
 				downloadProgress=self.__transfer_progress,
 				progressDialog=download_progress_dialog,
+				finishedCallback=self.__download_finished
 			)
 
 	def __clicked_delete(self):
@@ -883,6 +887,10 @@ class OSFExplorer(QtWidgets.QWidget):
 				selectedTreeItem=selected_item,
 				updateIndex=index_if_present
 			)
+
+	def __download_finished(self, reply, progressDialog, *args, **kwargs):
+		self.manager.info_message.emit('Download finished','Your download completed successfully')
+		progressDialog.deleteLater()
 
 	def __upload_finished(self, reply, progressDialog, *args, **kwargs):
 		progressDialog.deleteLater()
