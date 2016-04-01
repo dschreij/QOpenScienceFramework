@@ -20,7 +20,7 @@ import time
 
 #OSF modules
 import openscienceframework.connection as osf
-from openscienceframework import widgets, events
+from openscienceframework import widgets, events, loginwindow
 
 # Easier function decorating
 from functools import wraps
@@ -28,7 +28,6 @@ from functools import wraps
 # PyQt modules
 from qtpy import QtCore, QtNetwork, QtWidgets
 import qtpy
-qtpy.setup_apiv2()
 
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
@@ -57,7 +56,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.info_message.connect(self.notifier.info)
 
 		# Init browser in which login page is displayed
-		self.browser = widgets.LoginWindow()
+		self.browser = loginwindow.LoginWindow()
 		# Connect browsers logged in event to that of dispatcher's
 		self.browser.logged_in.connect(self.dispatcher.dispatch_login)
 

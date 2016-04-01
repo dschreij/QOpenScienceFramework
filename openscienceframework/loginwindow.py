@@ -1,0 +1,122 @@
+# -*- coding: utf-8 -*-
+"""
+@author: Daniel Schreij
+
+This module is distributed under the Apache v2.0 License.
+You should have received a copy of the Apache v2.0 License
+along with this module. If not, see <http://www.apache.org/licenses/>.
+"""
+# Python3 compatibility
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import os
+import logging
+logging.basicConfig(level=logging.INFO)
+
+# QT classes
+# Required QT classes
+from qtpy import QtCore
+
+# QtWebKit is dropped in favour of QtWebEngine from Qt 5.6 on
+try:
+	from qtpy.QtWebKit import QWebView as WebView
+except ImportError:
+	from qtpy.QtWebEngineWidgets import QWebEngineView as WebView
+
+# OSF connection interface
+import openscienceframework.connection as osf
+
+# Python 2 and 3 compatiblity settings
+from openscienceframework.compat import *
+
+osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
+	'resources/img/cos-white2.png'))
+
+# Dummy function later to be replaced for translation
+_ = lambda s: s
+
+class LoginWindow(WebView):
+	""" A Login window for the OSF """
+	# Login event is emitted after successfull login
+
+	# Event fired when user successfully logged in
+	logged_in = QtCore.pyqtSignal()
+
+	def __init__(self):
+		""" Constructor """
+		super(LoginWindow, self).__init__()
+
+		try:
+			# Create Network Access Manager to listen to all outgoing
+			# HTTP requests. Necessary to work around the WebKit 'bug' which
+			# causes it drop url fragments, and thus the access_token that the
+			# OSF Oauth system returns
+			self.nam = self.page().networkAccessManager()
+
+			# Connect event that is fired if a HTTP request is completed.
+			self.nam.finished.connect(self.checkResponse)
+		except Exception as e:
+			pass
+			# Connect event that is fired if a HTTP request is completed.
+			# self.finished.connect(self.checkResponse)
+
+		# Connect event that is fired after an URL is changed
+		# (does not fire on 301 redirects, hence the requirement of the NAM)
+		self.urlChanged.connect(self.check_URL)
+
+	def checkResponse(self, reply):
+		"""Callback function for NetworkRequestManager.finished event
+		used to check if OAuth2 is redirecting to a link containing the token
+		string
+
+		Parameters
+		----------
+		reply : QtNetwork.QNetworkReply
+			The HTTPResponse object provided by NetworkRequestManager
+		"""
+		request = reply.request()
+		# Get the HTTP statuscode for this response
+		statuscode = reply.attribute(request.HttpStatusCodeAttribute)
+		# The accesstoken is given with a 302 statuscode to redirect
+
+		# Stop if statuscode is not 302
+		if statuscode != 302:
+			return
+
+		redirectUrl = reply.attribute(request.RedirectionTargetAttribute)
+		if not redirectUrl.hasFragment():
+			return
+
+		r_url = redirectUrl.toString()
+		if osf.redirect_uri in r_url:
+			logging.info("Token URL: {}".format(r_url))
+			self.token = osf.parse_token_from_url(r_url)
+			if self.token:
+				self.logged_in.emit()
+				self.hide()
+
+	def check_URL(self, url):
+		""" Callback function for urlChanged event.
+
+		Parameters
+		----------
+		command : url
+			New url, provided by the urlChanged event
+
+		"""
+		url_string = url.toString()
+
+		# QWebEngineView receives token here.
+		if url.hasFragment():
+			logging.info("Token URL: {}".format(url_string))
+			self.token = osf.parse_token_from_url(url_string)
+			if self.token:
+				self.logged_in.emit()
+				self.hide()
+
+		# if not osf.base_url in url_string and not osf.redirect_uri in url_string:
+		# 	logging.warning("URL CHANGED: Unexpected url: {}".format(url_string))
+

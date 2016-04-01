@@ -21,8 +21,7 @@ logging.basicConfig(level=logging.INFO)
 # QT classes
 # Required QT classes
 import qtpy
-qtpy.setup_apiv2()
-from qtpy import QtGui, QtCore, QtWebKit, QtWidgets, QtNetwork
+from qtpy import QtGui, QtCore, QtWidgets, QtNetwork
 # QtAwesome icon fonts for spinners
 import qtawesome as qta
 # OSF connection interface
@@ -69,75 +68,6 @@ def check_if_opensesame_file(filename):
 		(ext == '.gz' and 'opensesame.tar.gz' in filename):
 		return True
 	return False
-
-class LoginWindow(QtWebKit.QWebView):
-	""" A Login window for the OSF """
-	# Login event is emitted after successfull login
-
-	# Event fired when user successfully logged in
-	logged_in = QtCore.pyqtSignal()
-
-	def __init__(self):
-		""" Constructor """
-		super(LoginWindow, self).__init__()
-
-		# Create Network Access Manager to listen to all outgoing
-		# HTTP requests. Necessary to work around the WebKit 'bug' which
-		# causes it drop url fragments, and thus the access_token that the
-		# OSF Oauth system returns
-		self.nam = self.page().networkAccessManager()
-
-		# Connect event that is fired after an URL is changed
-		# (does not fire on 301 redirects, hence the requirement of the NAM)
-		self.urlChanged.connect(self.check_URL)
-
-		# Connect event that is fired if a HTTP request is completed.
-		self.nam.finished.connect(self.checkResponse)
-
-	def checkResponse(self, reply):
-		"""Callback function for NetworkRequestManager.finished event
-		used to check if OAuth2 is redirecting to a link containing the token
-		string
-
-		Parameters
-		----------
-		reply : QtNetwork.QNetworkReply
-			The HTTPResponse object provided by NetworkRequestManager
-		"""
-		request = reply.request()
-		# Get the HTTP statuscode for this response
-		statuscode = reply.attribute(request.HttpStatusCodeAttribute)
-		# The accesstoken is given with a 302 statuscode to redirect
-
-		# Stop if statuscode is not 302
-		if statuscode != 302:
-			return
-
-		redirectUrl = reply.attribute(request.RedirectionTargetAttribute)
-		if not redirectUrl.hasFragment():
-			return
-
-		r_url = redirectUrl.toString()
-		if osf.redirect_uri in r_url:
-			logging.info("Token URL: {}".format(r_url))
-			self.token = osf.parse_token_from_url(r_url)
-			if self.token:
-				self.logged_in.emit()
-				self.hide()
-
-	def check_URL(self, url):
-		""" Callback function for urlChanged event.
-
-		Parameters
-		----------
-		command : url
-			New url, provided by the urlChanged event
-
-		"""
-		new_url = url.toString()
-
-		if not osf.base_url in new_url and not osf.redirect_uri in new_url:
-			logging.warning("URL CHANGED: Unexpected url: {}".format(url))
 
 class UserBadge(QtWidgets.QWidget):
 	""" A Widget showing the logged in user """

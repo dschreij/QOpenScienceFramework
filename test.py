@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 
 # Required QT classes
 import qtpy
-qtpy.setup_apiv2()
 from qtpy import QtWidgets, QtCore
 # Widgets
 from openscienceframework import widgets, events

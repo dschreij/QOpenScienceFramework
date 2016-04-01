@@ -17,7 +17,6 @@ import openscienceframework.connection as osf
 # PyQt modules
 from qtpy import QtCore, QtWidgets
 import qtpy
-qtpy.setup_apiv2()
 
 class EventDispatcher(QtCore.QObject):
 	""" This class fires events to connected classes, which are henceforth
