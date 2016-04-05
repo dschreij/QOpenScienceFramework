@@ -70,12 +70,14 @@ class LoginWindow(WebView):
 	def checkResponse(self, reply):
 		"""Callback function for NetworkRequestManager.finished event
 		used to check if OAuth2 is redirecting to a link containing the token
-		string
+		string. This is necessary for the QtWebKit module, because it drops
+		fragments after being redirect to a different URL. QWebEngine uses the
+		check_URL function to check for the token fragment
 
 		Parameters
 		----------
 		reply : QtNetwork.QNetworkReply
-			The HTTPResponse object provided by NetworkRequestManager
+			The response object provided by NetworkRequestManager
 		"""
 		request = reply.request()
 		# Get the HTTP statuscode for this response
@@ -93,8 +95,11 @@ class LoginWindow(WebView):
 		r_url = redirectUrl.toString()
 		if osf.redirect_uri in r_url:
 			logging.info("Token URL: {}".format(r_url))
-			self.token = osf.parse_token_from_url(r_url)
-			if self.token:
+			try:
+				self.token = osf.parse_token_from_url(r_url)
+			except ValueError as e:
+				logging.warning(e)
+			else:	
 				self.logged_in.emit()
 				self.hide()
 
@@ -112,8 +117,11 @@ class LoginWindow(WebView):
 		# QWebEngineView receives token here.
 		if url.hasFragment():
 			logging.info("Token URL: {}".format(url_string))
-			self.token = osf.parse_token_from_url(url_string)
-			if self.token:
+			try:
+				self.token = osf.parse_token_from_url(url_string)
+			except ValueError as e:
+				logging.warning(e)
+			else:	
 				self.logged_in.emit()
 				self.hide()
 

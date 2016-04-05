@@ -13,6 +13,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 # Import basics
+import os
 import time
 import logging
 import json
@@ -27,7 +28,14 @@ from oauthlib.oauth2 import MobileApplicationClient
 # Easier function decorating
 from functools import wraps
 
-from openscienceframework.settings import client_id, redirect_uri
+# Load settings file containing required OAuth2 parameters
+with open(os.path.join(os.path.dirname(__file__), 'test-settings.json')) as fp:
+	settings = json.load(fp)
+client_id = settings['client_id']
+redirect_uri = settings['redirect_uri']
+base_url = settings['base_url']
+api_base_url = settings['api_base_url']
+scope = settings['scope']
 
 # Convenience reference
 TokenExpiredError = requests_oauthlib.oauth2_session.TokenExpiredError
@@ -49,7 +57,7 @@ def reset_session():
 	session = requests_oauthlib.OAuth2Session(
 		client_id,
 		mobile_app_client,
-		scope="osf.full_write",
+		scope=scope,
 		redirect_uri=redirect_uri,
 	)
 	return session
@@ -58,14 +66,11 @@ def reset_session():
 session = reset_session()
 
 # Generate correct URLs
-base_url = "https://test-accounts.osf.io/"
 auth_url = base_url + "oauth2/authorize"
 token_url = base_url + "oauth2/token"
 logout_url = base_url + "oauth2/revoke"
 
 # API configuration settings
-api_base_url = "https://test-api.osf.io/v2/"
-
 api_calls = {
 	"logged_in_user":"users/me/",
 	"projects":"users/me/nodes/",

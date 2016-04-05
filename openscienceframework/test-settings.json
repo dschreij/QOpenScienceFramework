@@ -1,0 +1,7 @@
+{
+	"client_id"		: "cbc4c47b711a4feab974223b255c81c1",
+	"redirect_uri"	: "https://www.getpostman.com/oauth2/callback",
+	"base_url"		: "https://test-accounts.osf.io/",
+	"api_base_url"	: "https://test-api.osf.io/v2/",
+	"scope"			: "osf.full_write"
+}

@@ -29,6 +29,9 @@ from functools import wraps
 from qtpy import QtCore, QtNetwork, QtWidgets
 import qtpy
 
+# Python warnings
+import warnings
+
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
@@ -159,6 +162,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			name = safe_encode("Authorization")
 			value = safe_encode("Bearer {}".format(osf.session.access_token))
 			request.setRawHeader(name, value)
+			return True
+		else:
+			return False
 
 	### Basic HTTP Functions
 
@@ -211,11 +217,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		request = QtNetwork.QNetworkRequest(url)
 
-#		logging.info("GET {}".format(url))
-
 		# Add OAuth2 token
-		self.add_token(request)
-
+		if not self.add_token(request):
+			warnings.warn("Token could not be added to the request")
+			
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
 		kwargs['redirect_count'] = kwargs.get('redirect_count',0)
