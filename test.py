@@ -27,6 +27,8 @@ from openscienceframework import widgets, events
 from openscienceframework.manager import ConnectionManager
 
 class StandAlone(object):
+	""" Class that opens all available widgets when instantiated for testing
+	purposes. """
 
 	def __init__(self):
 		tokenfile = os.path.abspath("token.json")

@@ -269,7 +269,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		## Create layouts
 
 		# The box layout holding all elements
-		vbox = QtWidgets.QVBoxLayout(self)
+		self.main_layout = QtWidgets.QVBoxLayout(self)
 
 		# Grid layout for the info consisting of an image space and the
 		# properties grid
@@ -292,9 +292,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.buttonbar = self.__create_buttonbar()
 
 		# Add to layout
-		vbox.addWidget(splitter)
-		vbox.addWidget(self.buttonbar)
-		self.setLayout(vbox)
+		self.main_layout.addWidget(splitter)
+		self.main_layout.addWidget(self.buttonbar)
+		self.setLayout(self.main_layout)
 
 		# Event connections
 		self.tree.currentItemChanged.connect(self.__slot_currentItemChanged)
@@ -343,7 +343,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			'go-down',
 			qta.icon('fa.cloud-download')
 		)
-		self.download_button = QtWidgets.QPushButton(download_icon, _('Download'))
+		self.download_button = QtWidgets.QPushButton(download_icon, 
+			_('Download'))
 		self.download_button.setIconSize(self.button_icon_size)
 		self.download_button.clicked.connect(self.__clicked_download_file)
 		self.download_button.setDisabled(True)
@@ -352,7 +353,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			'go-up',
 			qta.icon('fa.cloud-upload')
 		)
-		self.upload_button = QtWidgets.QPushButton(upload_icon, _('Upload to folder'))
+		self.upload_button = QtWidgets.QPushButton(upload_icon, 
+			_('Upload file to folder'))
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
 		self.upload_button.setIconSize(self.button_icon_size)
 		self.upload_button.setDisabled(True)
@@ -367,7 +369,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		buttonbar_hbox.addWidget(self.upload_button)
 
 		# Make sure the button bar is vertically as small as possible.
-		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, 
+			QtWidgets.QSizePolicy.Fixed)
 
 		# Store the above buttons (except refresh) into a variable which later
 		# can be used to customize button set configurations
@@ -579,7 +582,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.properties["Name"][1].setText(attributes["name"])
 			self.properties["Type"][1].setText(attributes["kind"])
 		else:
-			raise osf.OSFInvalidResponse("Invalid structure for folder propertie received")
+			raise osf.OSFInvalidResponse("Invalid structure for folder property"
+				" received")
 
 		# Make sure the fields specific for files are shown
 		for row in self.file_fields:

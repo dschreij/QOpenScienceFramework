@@ -3,5 +3,5 @@
 	"redirect_uri"	: "https://www.getpostman.com/oauth2/callback",
 	"base_url"		: "https://accounts.osf.io/",
 	"api_base_url"	: "https://api.osf.io/v2/",
-	"scope"			: "write"
+	"scope"			: ["osf.full_read", "osf.full_write"]
 }
