@@ -46,6 +46,8 @@ from openscienceframework.compat import *
 
 osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
 	'resources/img/cos-white2.png'))
+osf_blacklogo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
+	'resources/img/cos-black.png'))
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -227,6 +229,20 @@ class OSFExplorer(QtWidgets.QWidget):
 		osf_icon = QtGui.QIcon(osf_logo_path)
 		self.setWindowIcon(osf_icon)
 
+		# Set up the title widget (so much code for a simple header with image...)
+		title_widget = QtWidgets.QWidget(self)
+		title_widget.setLayout(QtWidgets.QHBoxLayout(self))
+		title_logo = QtWidgets.QLabel(self)
+		title_logo.setPixmap(osf_icon.pixmap(QtCore.QSize(50,50)))
+		title_label = QtWidgets.QLabel("<h1>Open Science Framework</h1>", self)
+		title_widget.layout().addWidget(title_logo)
+		title_widget.layout().addWidget(title_label)
+		title_widget.layout().addStretch(1)
+		title_widget.setContentsMargins(0,0,0,0)
+		title_widget.layout().setContentsMargins(0,0,0,0)
+		title_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum, 
+			QtWidgets.QSizePolicy.Fixed)
+
 		## globally accessible items
 		self.locale = locale
 		# ProjectTree widget. Can be passed as a reference to this object.
@@ -291,8 +307,31 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Create buttons at the bottom
 		self.buttonbar = self.__create_buttonbar()
 
+		# Add splitter to extra parent widget to allow overlay
+		
+		self.login_required_label = QtWidgets.QLabel(
+			"Log in to the OSF to use this module")
+		self.login_required_label.setStyleSheet(
+			"""
+			font-size: 20px; 
+			background: rgba(250, 250, 250, 0.75);
+			""")
+		self.login_required_label.setAlignment(
+			QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+		
+		# Content pane with tree and properties view
+		# Also has overlay showing login required message when use is logged
+		# out
+		content_pane = QtWidgets.QWidget(self)
+		content_layout = QtWidgets.QGridLayout()
+		content_layout.setContentsMargins(0, 0, 0, 0)
+		content_pane.setLayout(content_layout)
+		content_layout.addWidget(splitter, 1, 1)
+		content_layout.addWidget(self.login_required_label, 1, 1)
+
 		# Add to layout
-		self.main_layout.addWidget(splitter)
+		self.main_layout.addWidget(title_widget)
+		self.main_layout.addWidget(content_pane)
 		self.main_layout.addWidget(self.buttonbar)
 		self.setLayout(self.main_layout)
 
@@ -375,12 +414,14 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Store the above buttons (except refresh) into a variable which later
 		# can be used to customize button set configurations
 		self.buttonsets = {
-			'default':[]
+			'default': []
 		}
 
 		self.buttonsets['default'].append(self.delete_button)
 		self.buttonsets['default'].append(self.upload_button)
 		self.buttonsets['default'].append(self.download_button)
+
+		buttonbar.layout().setContentsMargins(0, 0, 0, 0)
 
 		return buttonbar
 
@@ -862,6 +903,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setDisabled(False)
 
 	def handle_login(self):
+		""" Callback function for EventDispatcher when a login event is detected """
+		self.login_required_label.setVisible(False)
 		self.refresh_button.setDisabled(True)
 
 	def handle_logout(self):
@@ -870,6 +913,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		for label,value in self.properties.values():
 			value.setText("")
 		self.refresh_button.setDisabled(True)
+		self.login_required_label.setVisible(True)
 
 	#--- Other callback functions
 

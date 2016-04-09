@@ -46,15 +46,27 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	error_message = QtCore.pyqtSignal('QString','QString')
 	info_message = QtCore.pyqtSignal('QString','QString')
 
-	def __init__(self, manager, tokenfile="token.json"):
+	def __init__(self, tokenfile="token.json", notifier=None):
 		""" Constructor """
 		super(ConnectionManager, self).__init__()
-		self.manager = manager
 		self.tokenfile = tokenfile
 		self.dispatcher = events.EventDispatcher()
 
 		# Notifications
-		self.notifier = events.Notifier()
+		if notifier is None:
+			self.notifier = events.Notifier()
+		else:
+			if not isinstance(notifier, QtCore.QObject):
+				raise TypeError('notifier needs to be a class that inherits '
+					'from QtCore.QObject')
+			if not hasattr(notifier, 'info'):
+				raise AttributeError('notifier object is missing a pyqt slot '
+					' named info(str)')
+			if not hasattr(notifier, 'error'):
+				raise AttributeError('notifier object is missing a pyqt slot '
+					' named error(str)')
+			self.notifier = notifier
+
 		self.error_message.connect(self.notifier.error)
 		self.info_message.connect(self.notifier.info)
 

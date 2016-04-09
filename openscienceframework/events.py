@@ -136,7 +136,7 @@ class TokenFileListener(object):
 			except Exception as e:
 				logging.warning("WARNING: {}".format(e.message))
 
-class Notifier(QtWidgets.QWidget):
+class Notifier(QtCore.QObject):
 	""" This object receives error or info messages and displays them in a
 	QMessageBox notification box. It works with Qts signal slot architecture,
 	as in all functions are slots to which Qt signals should be connected."""
