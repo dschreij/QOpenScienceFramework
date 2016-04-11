@@ -45,6 +45,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	MAX_REDIRECTS = 5
 	error_message = QtCore.pyqtSignal('QString','QString')
 	info_message = QtCore.pyqtSignal('QString','QString')
+	success_message = QtCore.pyqtSignal('QString','QString')
 
 	def __init__(self, tokenfile="token.json", notifier=None):
 		""" Constructor """
@@ -69,6 +70,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		self.error_message.connect(self.notifier.error)
 		self.info_message.connect(self.notifier.info)
+		self.success_message.connect(self.notifier.success)
 
 		# Init browser in which login page is displayed
 		self.browser = loginwindow.LoginWindow()
@@ -309,8 +311,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
-#		logging.info("POST {}".format(url))
-
 		# Add OAuth2 token
 		self.add_token(request)
 
@@ -381,8 +381,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		request = QtNetwork.QNetworkRequest(url)
 		# request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
-
-#		logging.info("PUT {}".format(url))
 
 		# Add OAuth2 token
 		self.add_token(request)
@@ -710,13 +708,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			logging.info('Redirected to {}'.format(redirect_url))
 			if reply.operation() == self.GetOperation:
 				self.get(redirect_url, callback, *args, **kwargs)
-			# TODO: implement this for POST, PUT and DELETE too
-#			if reply.operation() == self.PostOperation:
-#				self.post(redirect_url, callback, *args, **kwargs)
-#			if reply.operation() == self.PutOperation:
-#				self.put(redirect_url, callback, *args, **kwargs)
-#			if reply.operation() == self.DeleteOperation:
-#				self.delete(redirect_url, callback, *args, **kwargs)
 		else:
 			# Remove (potentially) internally used kwargs before passing
 			# data on to the callback

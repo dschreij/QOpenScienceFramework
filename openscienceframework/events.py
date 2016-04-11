@@ -176,6 +176,22 @@ class Notifier(QtCore.QObject):
 			message
 		)
 
+	@QtCore.pyqtSlot('QString', 'QString')
+	def success(self, title, message):
+		""" Show a  message in a 'information' QMessageBox.
+
+		Parameters
+		----------
+		title : str
+			The title of the box
+		message : str
+			The message to display
+		"""
+		QtWidgets.QMessageBox.information(None,
+			title,
+			message
+		)
+
 
 
 

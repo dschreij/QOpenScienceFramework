@@ -37,10 +37,6 @@ import arrow
 # Unix style filename matching
 import fnmatch
 
-### TODO: remove later
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
@@ -52,13 +48,17 @@ osf_blacklogo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__fil
 # Dummy function later to be replaced for translation
 _ = lambda s: s
 
-def check_if_opensesame_file(filename):
+def check_if_opensesame_file(filename, os3_only=False):
 	""" Checks if the passed file is an OpenSesame file, based on its extension.
 
 	Parameters
 	----------
 	filename : string
-		The filename to check
+		The file to check
+	os3_only : bool (default: False)
+		Only check for the newer .osexp files (from OpenSesasme 3 on), if this
+		parameter is set to True, this function will return False for legacy
+		.opensesame and .opensesame.tar.gz formats
 
 	Returns
 	-------
@@ -66,6 +66,9 @@ def check_if_opensesame_file(filename):
 		True if filename is an OpenSesame file, False if not
 	"""
 	ext = os.path.splitext(filename)[1]
+	if os3_only:
+		return ext == '.osexp'
+
 	if ext in ['.osexp', '.opensesame'] or \
 		(ext == '.gz' and 'opensesame.tar.gz' in filename):
 		return True
@@ -156,7 +159,12 @@ class UserBadge(QtWidgets.QWidget):
 		""" Callback function for EventDispatcher when a login event is detected """
 		self.statusbutton.setIcon(self.spinner)
 		self.statusbutton.setText(self.logging_in_text)
-		self.manager.get_logged_in_user(self.__set_badge_contents)
+		# Get logged in user from manager, if something goes wrong, reset the login
+		# button status
+		self.manager.get_logged_in_user(
+			self.__set_badge_contents,
+			errorCallback=self.handle_logout
+		)
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
@@ -168,25 +176,29 @@ class UserBadge(QtWidgets.QWidget):
 	# Other callback functions
 
 	def __set_badge_contents(self, reply):
-		# Convert bytes to string and load the json data
-		user = json.loads(safe_decode(reply.readAll().data()))
-		# Get user's name
 		try:
-			full_name = user["data"]["attributes"]["full_name"]
-			# Download avatar image from the specified url
-			avatar_url = user["data"]["links"]["profile_image"]
-		except osf.OSFInvalidResponse as e:
-			raise osf.OSFInvalidResponse("Invalid user data format: {}".format(e))
-		avatar_img = requests.get(avatar_url).content
-		pixmap = QtGui.QPixmap()
-		pixmap.loadFromData(avatar_img)
-		pixmap = pixmap.scaled(self.image_size)
+			# Convert bytes to string and load the json data
+			user = json.loads(safe_decode(reply.readAll().data()))
+			# Get user's name
+			try:
+				full_name = user["data"]["attributes"]["full_name"]
+				# Download avatar image from the specified url
+				avatar_url = user["data"]["links"]["profile_image"]
+			except osf.OSFInvalidResponse as e:
+				raise osf.OSFInvalidResponse("Invalid user data format: {}".format(e))
+			avatar_img = requests.get(avatar_url).content
+			pixmap = QtGui.QPixmap()
+			pixmap.loadFromData(avatar_img)
+			pixmap = pixmap.scaled(self.image_size)
 
-		# Update sub-widgets
-		self.user_name.setText(full_name)
-		self.avatar.setPixmap(pixmap)
-		self.statusbutton.setText(self.logout_text)
-		self.statusbutton.setIcon(QtGui.QIcon())
+			# Update sub-widgets
+			self.user_name.setText(full_name)
+			self.avatar.setPixmap(pixmap)
+			self.statusbutton.setText(self.logout_text)
+			self.statusbutton.setIcon(QtGui.QIcon())
+		except:
+			# Reset button to login status if something goes wrong
+			self.handle_logout()
 
 class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
@@ -195,7 +207,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	button_icon_size = QtCore.QSize(20,20)
 	# Formatting of date displays
 	timeformat = 'YYYY-MM-DD HH:mm'
-	datedisplay = '{}\n({})'
+	datedisplay = '{} ({})'
 	# The maximum size an image may have to be downloaded for preview
 	preview_size_limit = 1024**2/2.0
 	# Signal that is sent if image preview should be aborted
@@ -393,7 +405,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			qta.icon('fa.cloud-upload')
 		)
 		self.upload_button = QtWidgets.QPushButton(upload_icon, 
-			_('Upload file to folder'))
+			_('Upload to folder'))
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
 		self.upload_button.setIconSize(self.button_icon_size)
 		self.upload_button.setDisabled(True)
@@ -773,7 +785,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
 				download_progress_dialog.setMinimum(0)
 				download_progress_dialog.setMaximum(data['attributes']['size'])
-				progress_cb = self.__transfer_progress
+				progress_cb = self._transfer_progress
 			else:
 				download_progress_dialog = None
 				progress_cb = None
@@ -861,7 +873,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.manager.upload_file(
 				upload_url,
 				file_to_upload,
-				uploadProgress=self.__transfer_progress,
+				uploadProgress=self._transfer_progress,
 				progressDialog=progress_dialog,
 				finishedCallback=self.__upload_finished,
 				selectedTreeItem=selected_item,
@@ -869,7 +881,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			)
 
 	def __download_finished(self, reply, progressDialog, *args, **kwargs):
-		self.manager.info_message.emit('Download finished','Your download completed successfully')
+		self.manager.success_message.emit('Download finished','Your download completed successfully')
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
 
@@ -901,7 +913,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __item_deleted(self, reply, item):
 		item.parent().removeChild(item)
 
-	def __transfer_progress(self, transfered, total):
+	def _transfer_progress(self, transfered, total):
 		self.sender().property('progressDialog').setValue(transfered)
 
 	def __tree_refresh_finished(self):
