@@ -766,17 +766,22 @@ class OSFExplorer(QtWidgets.QWidget):
 		if destination:
 			# Remember this folder for later when this dialog has to be presented again
 			self.last_dl_destination_folder = os.path.split(destination)[0]
-			# Configure progress dialog
-			download_progress_dialog = QtWidgets.QProgressDialog()
-			download_progress_dialog.hide()
-			download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
-			download_progress_dialog.setMinimum(0)
-			download_progress_dialog.setMaximum(data['attributes']['size'])
+			# Configure progress dialog (only if filesize is known)
+			if data['attributes']['size']:
+				download_progress_dialog = QtWidgets.QProgressDialog()
+				download_progress_dialog.hide()
+				download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
+				download_progress_dialog.setMinimum(0)
+				download_progress_dialog.setMaximum(data['attributes']['size'])
+				progress_cb = self.__transfer_progress
+			else:
+				download_progress_dialog = None
+				progress_cb = None
 			# Download the file
 			self.manager.download_file(
 				download_url,
 				destination,
-				downloadProgress=self.__transfer_progress,
+				downloadProgress=progress_cb,
 				progressDialog=download_progress_dialog,
 				finishedCallback=self.__download_finished
 			)
@@ -865,7 +870,8 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def __download_finished(self, reply, progressDialog, *args, **kwargs):
 		self.manager.info_message.emit('Download finished','Your download completed successfully')
-		progressDialog.deleteLater()
+		if isinstance(progressDialog, QtWidgets.QWidget):
+			progressDialog.deleteLater()
 
 	def __upload_finished(self, reply, progressDialog, *args, **kwargs):
 		progressDialog.deleteLater()
