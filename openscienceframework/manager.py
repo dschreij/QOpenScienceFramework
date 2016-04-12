@@ -137,15 +137,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			osf.session.token = token
 			# See if a request succeeds without errors
 			try:
-				osf.get_logged_in_user()
+				self.get_logged_in_user(self.set_logged_in_user)
 				return True
-			except osf.TokenExpiredError:
+			except:
 				osf.reset_session()
 				os.remove(tokenfile)
-				self.show_login_window()
-		else:
-			logging.info("Token expired; need log-in")
-			return False
+		logging.info("Token expired; need log-in")
+		return False
 
 	#--- Communication with OSF API
 
@@ -559,7 +557,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		-------
 		QtNetwork.QNetworkReply or None if something went wrong
 		"""
-		api_call = osf.api_call("file_info",file_id)
+		api_call = osf.api_call("file_info", file_id)
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def download_file(self, url, destination, *args, **kwargs):
