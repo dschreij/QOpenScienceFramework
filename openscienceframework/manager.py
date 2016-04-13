@@ -35,6 +35,9 @@ import warnings
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
+# Dummy function later to be replaced for translation
+_ = lambda s: s
+
 class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	"""
 	The connection manager does much of the heavy lifting in communicating with the
@@ -44,6 +47,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	# The maximum number of allowed redirects
 	MAX_REDIRECTS = 5
 	error_message = QtCore.pyqtSignal('QString','QString')
+	warning_message = QtCore.pyqtSignal('QString','QString')
 	info_message = QtCore.pyqtSignal('QString','QString')
 	success_message = QtCore.pyqtSignal('QString','QString')
 
@@ -71,6 +75,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.error_message.connect(self.notifier.error)
 		self.info_message.connect(self.notifier.info)
 		self.success_message.connect(self.notifier.success)
+		self.warning_message.connect(self.notifier.warning)
 
 		# Init browser in which login page is displayed
 		self.browser = loginwindow.LoginWindow()
@@ -228,7 +233,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Add OAuth2 token
 		if not self.add_token(request):
-			warnings.warn("Token could not be added to the request")
+			self.warning_message.emit('Warning',
+				_(u"Token could not be added to the request"))
 			
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
@@ -307,7 +313,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
 		# Add OAuth2 token
-		self.add_token(request)
+		if not self.add_token(request):
+			self.warning_message.emit('Warning',
+				_(u"Token could not be added to the request"))
 
 		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
 		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
@@ -378,7 +386,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
 
 		# Add OAuth2 token
-		self.add_token(request)
+		if not self.add_token(request):
+			self.warning_message.emit('Warning',
+				_(u"Token could not be added to the request"))
 
 		reply = super(ConnectionManager, self).put(request, data_to_send)
 		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
@@ -442,7 +452,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		logging.info("GET {}".format(url))
 
 		# Add OAuth2 token
-		self.add_token(request)
+		if not self.add_token(request):
+			self.warning_message.emit('Warning',
+				_(u"Token could not be added to the request"))
 
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0

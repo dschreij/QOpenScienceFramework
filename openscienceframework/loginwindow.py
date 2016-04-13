@@ -45,9 +45,9 @@ class LoginWindow(WebView):
 	# Event fired when user successfully logged in
 	logged_in = QtCore.pyqtSignal()
 
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		""" Constructor """
-		super(LoginWindow, self).__init__()
+		super(LoginWindow, self).__init__(*args, **kwargs)
 
 		try:
 			# Create Network Access Manager to listen to all outgoing

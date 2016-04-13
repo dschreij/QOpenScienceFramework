@@ -161,6 +161,22 @@ class Notifier(QtCore.QObject):
 		)
 
 	@QtCore.pyqtSlot('QString', 'QString')
+	def warning(self, title, message):
+		""" Show an error message in a 'critical' QMessageBox.
+
+		Parameters
+		----------
+		title : str
+			The title of the box
+		message : str
+			The message to display
+		"""
+		QtWidgets.QMessageBox.warning(None,
+			title,
+			message
+		)
+
+	@QtCore.pyqtSlot('QString', 'QString')
 	def info(self, title, message):
 		""" Show a  message in a 'information' QMessageBox.
 
