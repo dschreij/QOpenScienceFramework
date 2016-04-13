@@ -116,8 +116,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.dispatcher.dispatch_logout()
 
 	def check_for_stored_token(self, tokenfile):
-		""" Checks if valid token information is stored in a token.json file.
-		of the project root. If not, or if the token is invalid/expired, it returns
+		""" Checks if valid token information is stored in a token.json file at
+		the supplied location. If not, or if the oken is invalid/expired, it returns
 		False"""
 
 		logging.info("Looking for token at {}".format(tokenfile))
@@ -128,22 +128,19 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		try:
 			token = json.load(open(tokenfile))
 		except IOError:
-			raise IOError("Token file could not be opened.")
+			warnings.warn("Token file could not be opened.")
+			return False
 
 		# Check if token has not yet expired
 		if token["expires_at"] > time.time() :
-			# Load the token information in the session object, but check its
-			# validity!
+			# Load the token information in the session object
 			osf.session.token = token
-			# See if a request succeeds without errors
-			try:
-				self.get_logged_in_user(self.set_logged_in_user)
-				return True
-			except:
-				osf.reset_session()
-				os.remove(tokenfile)
-		logging.info("Token expired; need log-in")
-		return False
+			return True
+		else:
+			osf.reset_session()
+			os.remove(tokenfile)
+			logging.info("Token expired; need log-in")
+			return False
 
 	#--- Communication with OSF API
 
@@ -162,7 +159,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				return func(inst, *args, **kwargs)
 		return func_wrapper
 
-	def add_token(self,request):
+	def add_token(self, request):
 		""" Adds the OAuth2 token to the pending HTTP request (if available).
 
 		Parameters
@@ -640,13 +637,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			# show a message box, but do not raise an exception, because we don't want this
 			# to completely crash our program.
 			if not os.path.isfile(os.path.abspath(source_file)):
-				self.error_message.emit(_("{} is not a valid source file").format(destination))
+				self.error_message.emit(_("{} is not a valid source file").format(source_file))
 				return
 
 			# Open source file for reading
 			source_file = QtCore.QFile(source_file)
 		elif not isinstance(source_file, QtCore.QIODevice):
-			self.error_message.emit(_("{} is not a string or QIODevice instance").format(destination))
+			self.error_message.emit(_("{} is not a string or QIODevice instance").format(source_file))
 			return
 
 		source_file.open(QtCore.QIODevice.ReadOnly)

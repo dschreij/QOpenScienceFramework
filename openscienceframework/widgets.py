@@ -750,11 +750,14 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 	def __clicked_refresh_tree(self):
+		""" Refresh the tree contents and animate the refresh button while this 
+		process is in progress. """
 		self.refresh_button.setDisabled(True)
 		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
 
 	def __clicked_download_file(self):
+		""" Action to be performed when download button is clicked """
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
 		download_url = data['links']['download']
@@ -844,11 +847,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Check if file is already present and get its index if so
 			index_if_present = self.tree.find_item(selected_item, 0, filename)
 
-			print("1 {}".format(upload_url))
-
 			# If index_is_present is None, the file is probably new
 			if index_if_present is None:
-				logging.info("File {} is new".format(filename))
 				# add required query parameters
 				upload_url += '?kind=file&name={}'.format(filename)
 			# If index_is_present is a number, it means the file is present
@@ -862,8 +862,6 @@ class OSFExplorer(QtWidgets.QWidget):
 				upload_url = old_item_data['links']['upload']
 				upload_url += '?kind=file'
 
-			print(upload_url)
-
 			progress_dialog = QtWidgets.QProgressDialog()
 			progress_dialog.hide()
 			progress_dialog.setLabelText(_("Uploading") + " " + file_to_upload.fileName())
@@ -875,7 +873,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				file_to_upload,
 				uploadProgress=self._transfer_progress,
 				progressDialog=progress_dialog,
-				finishedCallback=self.__upload_finished,
+				finishedCallback=self._upload_finished,
 				selectedTreeItem=selected_item,
 				updateIndex=index_if_present
 			)
@@ -885,9 +883,11 @@ class OSFExplorer(QtWidgets.QWidget):
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
 
-	def __upload_finished(self, reply, progressDialog, *args, **kwargs):
-		progressDialog.deleteLater()
-		selectedTreeItem = kwargs.pop('selectedTreeItem',None)
+	def _upload_finished(self, reply, progressDialog, *args, **kwargs):
+		if isinstance(progressDialog, QtWidgets.QWidget):
+			progressDialog.deleteLater()
+
+		selectedTreeItem = kwargs.get('selectedTreeItem')
 		if not selectedTreeItem:
 			logging.info('Refreshing tree')
 			self.__clicked_refresh_tree()
@@ -905,6 +905,11 @@ class OSFExplorer(QtWidgets.QWidget):
 				self.__upload_refresh_item,
 				selectedTreeItem
 			)
+
+		kwargs['new_item'] = new_item
+		after_upload_cb = kwargs.get('afterUploadCallback')
+		if callable(after_upload_cb):
+			after_upload_cb(*args, **kwargs)
 
 	def __upload_refresh_item(self, reply, parent_item):
 		item = json.loads(safe_decode(reply.readAll().data()))
