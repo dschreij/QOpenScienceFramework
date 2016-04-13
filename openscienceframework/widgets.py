@@ -905,8 +905,8 @@ class OSFExplorer(QtWidgets.QWidget):
 				self.__upload_refresh_item,
 				selectedTreeItem
 			)
-
-		kwargs['new_item'] = new_item
+			kwargs['new_item'] = new_item
+			
 		after_upload_cb = kwargs.get('afterUploadCallback')
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
