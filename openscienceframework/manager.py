@@ -782,7 +782,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get_logged_in_user(self.set_logged_in_user)
 
 	def handle_logout(self):
-		self.osf.reset_session()
+		# self.osf.reset_session()
 		self.logged_in_user = {}
 
 	### Other callbacks

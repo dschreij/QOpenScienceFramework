@@ -906,7 +906,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				selectedTreeItem
 			)
 			kwargs['new_item'] = new_item
-			
+
 		after_upload_cb = kwargs.get('afterUploadCallback')
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
@@ -990,7 +990,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		if isinstance(use_theme, basestring):
 			logging.info('Using icon theme of {}'.format(use_theme))
-			QtGui.QIcon.setThemeName(use_theme)
+			QtGui.QIcon.setThemeName(os.path.basename(use_theme))
 			# Win and OSX don't support native themes
 			# so set the theming dir explicitly
 			if isinstance(theme_path, basestring) and \
@@ -1232,7 +1232,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			return QtGui.QIcon.fromTheme(
 				filetype,
 				QtGui.QIcon.fromTheme(
-					'unknown',
+					'text-x-generic',
 					QtGui.QIcon('osf_logo_path')
 				)
 			)
