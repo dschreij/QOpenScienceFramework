@@ -271,6 +271,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				self.tree = tree_widget
 
 		self.tree.setSortingEnabled(True)
+		self.tree.sortItems(0, QtCore.Qt.AscendingOrder)
 
 		# File properties overview
 		properties_pane = self.__create_properties_pane()
@@ -560,6 +561,7 @@ class OSFExplorer(QtWidgets.QWidget):
 							data["links"]["download"],
 							self.__set_image_preview,
 							downloadProgress = self.__prev_dl_progress,
+							errorCallback=self.__img_preview_error,
 							abortSignal = self.abort_preview
 						)
 
@@ -684,7 +686,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		
 	#--- PyQT slots
 
-	def __slot_currentItemChanged(self,item,col):
+	def __slot_currentItemChanged(self, item, col):
 		""" Handles the QTreeWidget currentItemChanged event """
 		# If selection changed to no item, do nothing
 		if item is None:
@@ -752,6 +754,13 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __clicked_refresh_tree(self):
 		""" Refresh the tree contents and animate the refresh button while this 
 		process is in progress. """
+
+		# Don't do anything if the refresh button is disabled. This probably
+		# means a refresh operation is in progress, and activating another one
+		# during this is asking for trouble.
+		if self.refresh_button.isEnabled() == False:
+			return
+
 		self.refresh_button.setDisabled(True)
 		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
@@ -815,7 +824,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		if reply == QtWidgets.QMessageBox.Yes:
 			delete_url = data['links']['delete']
 			self.manager.delete(delete_url, self.__item_deleted, selected_item)
-
 
 	def __clicked_upload_file(self):
 		selected_item = self.tree.currentItem()
@@ -889,31 +897,34 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		selectedTreeItem = kwargs.get('selectedTreeItem')
 		if not selectedTreeItem:
-			logging.info('Refreshing tree')
 			self.__clicked_refresh_tree()
+			after_upload_cb = kwargs.pop('afterUploadCallback')
+			if callable(after_upload_cb):
+				after_upload_cb(*args, **kwargs)
 		else:
 			# The new item data should be returned in the reply
-			new_item = json.loads(safe_decode(reply.readAll().data()))
+			new_item_data = json.loads(safe_decode(reply.readAll().data()))
 			updateIndex = kwargs.get('updateIndex')
 			if not updateIndex is None:
 				# Remove old item first, before adding new one
 				selectedTreeItem.takeChild(updateIndex)
 			# Refresh info for the new file as the returned representation
 			# is incomplete
+			kwargs['new_item_data'] = new_item_data
 			self.manager.get_file_info(
-				new_item['data']['attributes']['path'],
+				new_item_data['data']['attributes']['path'],
 				self.__upload_refresh_item,
-				selectedTreeItem
+				selectedTreeItem,
+				*args, **kwargs
 			)
-			kwargs['new_item'] = new_item
-
-		after_upload_cb = kwargs.get('afterUploadCallback')
+			
+	def __upload_refresh_item(self, reply, parent_item, *args, **kwargs):
+		item = json.loads(safe_decode(reply.readAll().data()))
+		new_item, kind = self.tree.add_item(parent_item, item['data'])
+		kwargs['new_item'] = new_item
+		after_upload_cb = kwargs.pop('afterUploadCallback')
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
-
-	def __upload_refresh_item(self, reply, parent_item):
-		item = json.loads(safe_decode(reply.readAll().data()))
-		self.tree.add_item(parent_item, item['data'])
 
 	def __item_deleted(self, reply, item):
 		item.parent().removeChild(item)
@@ -922,6 +933,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.sender().property('progressDialog').setValue(transfered)
 
 	def __tree_refresh_finished(self):
+		""" Event fired when the tree refresh is finished """
 		self.refresh_button.setIcon(self.refresh_icon)
 		self.refresh_button.setDisabled(False)
 
@@ -941,6 +953,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	#--- Other callback functions
 
 	def __set_image_preview(self, img_content):
+		""" Callback for set_file_properties() """
 		# Create a pixmap from the just received data
 		self.current_img_preview = QtGui.QPixmap()
 		self.current_img_preview.loadFromData(img_content.readAll())
@@ -953,6 +966,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Reset variable holding preview reply object
 
 	def __prev_dl_progress(self, received, total):
+		""" Callback for set_file_properties() """
 		# If total is 0, this is probably a redirect to the image location in
 		# cloud storage. Do nothing in this case
 		if total == 0:
@@ -962,6 +976,10 @@ class OSFExplorer(QtWidgets.QWidget):
 		progress = 100*received/total
 		self.img_preview_progress_bar.setValue(progress)
 
+	def __img_preview_error(self, reply):
+		""" Callback for set_file_properties() """
+		self.img_preview_progress_bar.hide()
+
 class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
 	in a treeview widget"""
@@ -969,8 +987,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	# Event fired when refresh of tree is finished
 	refreshFinished = QtCore.pyqtSignal()
 
-	def __init__(self, manager, use_theme=None, \
-				theme_path='./resources/iconthemes'):
+	def __init__(self, manager, use_theme=None, theme_path='./resources/iconthemes'):
 		""" Constructor
 		Creates a tree showing the contents of the user's OSF repositories.
 		Can be passed a theme to use for the icons, but if this doesn't happen
@@ -1032,6 +1049,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Init filter variable
 		self._filter = None
 
+		# Save the previously selected item before a refresh, so this item can
+		# be set as the selected item again after the refresh
+		self.previously_selected_item = None
+
+		# Flag that indicates if contents are currently refreshed
+		self.isRefreshing = False
+
 	### Private functions
 
 	def __set_expanded_icon(self,item):
@@ -1046,7 +1070,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			item.setIcon(0,self.get_icon('folder',data['attributes']['name']))
 		self.expanded_items.discard(data['id'])
 
-
 	def __populate_error(self, reply):
 		# Reset active requests after error
 		try:
@@ -1056,6 +1079,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		if not self.active_requests:
 			self.refreshFinished.emit()
+		else:
+			# isRefreshing will be set to False in refreshFinished()
+			self.isRefreshing = False
 
 	def __refresh_finished(self):
 		""" Expands all treewidget items again that were expanded before the
@@ -1071,8 +1097,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			item_data = item.data(0,QtCore.Qt.UserRole)
 			if item_data['id'] in self.expanded_items:
 				item.setExpanded(True)
+			# Reset selection to item that was selected before refresh
+			if self.previously_selected_item:
+				if self.previously_selected_item['id'] == item_data['id']:
+					self.setCurrentItem(item)
 			iterator += 1
 
+		self.isRefreshing = False
 	### Properties
 	
 	@property
@@ -1151,7 +1182,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 	def find_item(self, item, index, value):
 		"""
-		Checks if there is already a tree item with the same name as value.
+		Checks if there is already a tree item with the same name as value. This
+		function does not recurse over the tree items, it only checks the direct
+		descendants of the given item.
 
 		Parameters
 		----------
@@ -1176,7 +1209,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			if displaytext == value:
 				return i
 		return None
-
 
 	def get_icon(self, datatype, name):
 		"""
@@ -1239,6 +1271,15 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		return QtGui.QIcon(osf_logo_path)
 
 	def refresh_contents(self):
+		# Set flag that tree is currently refreshing
+		self.isRefreshing = True
+		# Save current item selection to restore it after refresh
+		current_item = self.currentItem()
+		if current_item:
+			self.previously_selected_item = current_item.data(0,QtCore.Qt.UserRole)
+		else:
+			self.previously_selected_item = None
+
 		if self.manager.logged_in_user != {}:
 			# If manager has the data of the logged in user saved locally, pass it
 			# to get_repo_contents directly.
@@ -1272,7 +1313,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		item.setData(0, QtCore.Qt.UserRole, data)
 
 		return item, kind
-
 
 	def populate_tree(self, reply, parent=None):
 		"""
@@ -1329,6 +1369,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			self.refreshFinished.emit()
 
 	def process_repo_contents(self, logged_in_user):
+		""" Processes contents for the logged in user. Starts by listing
+		the projects and then recurses through all their repositories, folders and files. """
 		# If this function is called as a callback, the supplied data will be a
 		# QByteArray. Convert to a dictionary for easier usage
 		if isinstance(logged_in_user, QtNetwork.QNetworkReply):
@@ -1364,6 +1406,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		self.clear()
 		self.active_requests = []
+		self.previously_selected_item = None
 
 
 

@@ -181,6 +181,33 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			return False
 
 	### Basic HTTP Functions
+	def __check_request_parameters(self, url, callback):
+		""" Check if the supplied url is of the correct type and if the callback
+		parameter is really a callable
+
+		Parameters
+		----------
+		url : string / QtCore.QUrl
+			The target url/endpoint to perform the request on
+
+		Returns
+		-------
+		QtCore.QUrl : The url to send the request to in QUrl format (does nothing
+		if url was already supplied as a QUrl)
+
+		Raises
+		------
+		TypeError : if url is not a QUrl or string, or if callback is not a
+		callable
+		"""
+		if not isinstance(url, QtCore.QUrl) and not isinstance(url, basestring):
+			raise TypeError("url should be a string or QUrl object")
+		if not isinstance(url, QtCore.QUrl):
+			url = get_QUrl(url)
+		if not callable(callback):
+			raise TypeError("callback should be a function or callable.")
+		return url
+
 
 	@check_network_accessibility
 	def get(self, url, callback, *args, **kwargs):
@@ -191,7 +218,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		----------
 		url : string / QtCore.QUrl
 			The target url/endpoint to perform the GET request on
-		callback : function
+		callback : callable
 			The function to call once the request is finished successfully.
 		downloadProgess : function (defualt: None)
 			The slot (callback function) for the downloadProgress signal of the
@@ -218,17 +245,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		**kwargs (optional)
 			Any other keywoard arguments that you want to have passed to the callback
 		"""
-		# First do some checking of the passed arguments
+		# First check the correctness of the url and callback parameters
+		url = self.__check_request_parameters(url, callback)
 
-		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
-			raise TypeError("url should be a string or QUrl object")
-
-		if not callable(callback):
-			raise TypeError("callback should be a function or callable.")
-
-		if not type(url) is QtCore.QUrl:
-			url = get_QUrl(url)
-
+		# Create network request
 		request = QtNetwork.QNetworkRequest(url)
 
 		# Add OAuth2 token
@@ -296,18 +316,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		*args (optional)
 			Any other arguments that you want to have passed to callable.
 		"""
-		# First do some checking of the passed arguments
-		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
-			raise TypeError("url should be a string or QUrl object")
-
-		if not callable(callback):
-			raise TypeError("callback should be a function or callable.")
+		# First check the correctness of the url and callback parameters
+		url = self.__check_request_parameters(url, callback)
 
 		if not type(data_to_send) is dict:
 			raise TypeError("The POST data should be passed as a dict")
-
-		if not type(url) is QtCore.QUrl:
-			url = get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
 		request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
@@ -369,18 +382,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		*args (optional)
 			Any other arguments that you want to have passed to the callback
 		"""
-		# First do some checking of the passed arguments
-		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
-			raise TypeError("url should be a string or QUrl object")
-
-		if not callable(callback):
-			raise TypeError("callback should be a function or callable.")
+		# First check the correctness of the url and callback parameters
+		url = self.__check_request_parameters(url, callback)
 
 		if not isinstance(data_to_send, QtCore.QIODevice):
 			raise TypeError("The data_to_send should be of type QtCore.QIODevice")
-
-		if not type(url) is QtCore.QUrl:
-			url = get_QUrl(url)
 
 		request = QtNetwork.QNetworkRequest(url)
 		# request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
@@ -436,16 +442,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		**kwargs (optional)
 			Any other keywoard arguments that you want to have passed to the callback
 		"""
-		# First do some checking of the passed arguments
-
-		if not type(url) == QtCore.QUrl and not isinstance(url, basestring):
-			raise TypeError("url should be a string or QUrl object")
-
-		if not callable(callback):
-			raise TypeError("callback should be a function or callable.")
-
-		if not type(url) is QtCore.QUrl:
-			url = get_QUrl(url)
+		# First check the correctness of the url and callback parameters
+		url = self.__check_request_parameters(url, callback)
 
 		request = QtNetwork.QNetworkRequest(url)
 
