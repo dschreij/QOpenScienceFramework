@@ -895,15 +895,38 @@ class OSFExplorer(QtWidgets.QWidget):
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
 
+		# See if upload action was triggered by interaction on a tree item 
 		selectedTreeItem = kwargs.get('selectedTreeItem')
+		# The new item data should be returned in the reply
+		new_item_data = json.loads(safe_decode(reply.readAll().data()))
+
+		# import pprint
+		# pp = pprint.PrettyPrinter(indent=2)
+
+		# new_item_data is only reliable for osfstorage for now, so simply
+		# refresh the whole tree if data is from another provider.
 		if not selectedTreeItem:
 			self.__clicked_refresh_tree()
 			after_upload_cb = kwargs.pop('afterUploadCallback')
 			if callable(after_upload_cb):
 				after_upload_cb(*args, **kwargs)
 		else:
-			# The new item data should be returned in the reply
-			new_item_data = json.loads(safe_decode(reply.readAll().data()))
+			node_data = selectedTreeItem.data(0,QtCore.Qt.UserRole)
+			# pp.pprint(node_data)
+			node_id = node_data['id']
+			# Protocol for direct repository entries is a bit different than for
+			# subfolders
+			if ':' in node_id:
+				project_id, repo = node_id.split(':')
+				info_url = osf.api_call('repo_files', project_id, new_item_data['data']['id'])
+				# Remove trailing slash, as it in this case throws off osf api
+				if info_url[-1] == u"/":
+					info_url = info_url[:-1]
+			else:
+				# For subfolders, you should just be able to use path attribute
+				info_url = osf.api_call('file_info', 
+					new_item_data['data']['attributes']['path'])
+
 			updateIndex = kwargs.get('updateIndex')
 			if not updateIndex is None:
 				# Remove old item first, before adding new one
@@ -911,8 +934,11 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Refresh info for the new file as the returned representation
 			# is incomplete
 			kwargs['new_item_data'] = new_item_data
-			self.manager.get_file_info(
-				new_item_data['data']['attributes']['path'],
+			
+			pp.pprint(new_item_data)
+
+			self.manager.get(
+				info_url,
 				self.__upload_refresh_item,
 				selectedTreeItem,
 				*args, **kwargs
