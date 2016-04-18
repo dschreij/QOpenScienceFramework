@@ -766,7 +766,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			fcb(reply, *args, **kwargs)
 
 	def __upload_finished(self, reply, *args, **kwargs):
-		if not 'source_file' in kwargs or not isinstance(kwargs['source_file'], QtCore.QIODevice):
+		if not 'source_file' in kwargs or not isinstance(kwargs['source_file'], 
+			QtCore.QIODevice):
 			raise AttributeError("No valid open file handle")
 		# Close the source file
 		kwargs['source_file'].close()

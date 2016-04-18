@@ -36,6 +36,7 @@ redirect_uri = settings['redirect_uri']
 base_url = settings['base_url']
 api_base_url = settings['api_base_url']
 scope = settings['scope']
+website_url = settings['website_url']
 
 # Convenience reference
 TokenExpiredError = requests_oauthlib.oauth2_session.TokenExpiredError

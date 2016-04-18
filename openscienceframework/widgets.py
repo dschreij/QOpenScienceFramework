@@ -16,6 +16,8 @@ import os
 import platform
 import json
 import logging
+import webbrowser
+import warnings
 logging.basicConfig(level=logging.INFO)
 
 # QT classes
@@ -81,25 +83,26 @@ class UserBadge(QtWidgets.QWidget):
 	# Login and logout events
 	logout_request = QtCore.pyqtSignal()
 	login_request = QtCore.pyqtSignal()
-	# button texts
-	login_text = _("Log in to OSF")
-	logout_text = _("Log out")
-	logging_in_text = _("Logging in")
-	logging_out_text = _("Logging out")
 
 	def __init__(self, manager, image_size=None):
 		""" Constructor """
 		super(UserBadge, self).__init__()
+
+		# button texts
+		self.login_text = _("Log in")
+		self.logout_text = _("Log out")
+		self.logging_in_text = _("Logging in")
+		self.logging_out_text = _("Logging out")
 
 		self.manager = manager
 		if isinstance(image_size, QtCore.QSize):
 			# Size of avatar and osf logo display image
 			self.image_size = image_size
 		else:
-			self.image_size = QtCore.QSize(50,50)
+			self.image_size = QtCore.QSize(40,40)
 
 		# Set up general window
-		self.resize(200,40)
+		# self.resize(200,40)
 		self.setWindowTitle(_("User badge"))
 		# Set Window icon
 
@@ -107,58 +110,61 @@ class UserBadge(QtWidgets.QWidget):
 			print("ERROR: OSF logo not found at {}".format(osf_logo_path))
 
 		self.osf_logo_pixmap = QtGui.QPixmap(osf_logo_path).scaled(self.image_size)
-		osf_icon = QtGui.QIcon(osf_logo_path)
-		self.setWindowIcon(osf_icon)
-
-		## Set up labels
-		# User's name
-		self.user_name = QtWidgets.QLabel()
-		# User's avatar
-		self.avatar = QtWidgets.QLabel()
+		self.osf_icon = QtGui.QIcon(osf_logo_path)
+		self.setWindowIcon(self.osf_icon)
 
 		# Login button
-		self.statusbutton = QtWidgets.QPushButton(self)
-		self.statusbutton.clicked.connect(self.__handle_click)
+		self.login_button = QtWidgets.QPushButton(self)
+		self.login_button.clicked.connect(self.__clicked_login)
+		self.login_button.setIconSize(self.image_size)
+		self.login_button.setFlat(True)
+
+		self.user_button = QtWidgets.QPushButton(self)
+		self.user_button.setIconSize(self.image_size)
+		self.logged_in_menu = QtWidgets.QMenu(self.login_button)
+		self.logged_in_menu.addAction(_(u"Visit osf.io"), self.__open_osf_website)
+		self.logged_in_menu.addAction(_(u"Log out"), self.__clicked_logout)
+		self.user_button.setMenu(self.logged_in_menu)
+		self.user_button.hide()
+		self.user_button.setFlat(True)
 
 		# Spinner icon
 		self.spinner = qta.icon('fa.refresh', color='green',
-					 animation=qta.Spin(self.statusbutton))
+					 animation=qta.Spin(self.login_button))
 
 		# Init user badge as logged out
 		self.handle_logout()
 
 		# Set up layout
-		grid = QtWidgets.QGridLayout()
-		grid.setSpacing(2)
-		grid.addWidget(self.avatar,1,0)
+		layout = QtWidgets.QGridLayout(self)
+		layout.addWidget(self.login_button, 1, 1)
+		layout.addWidget(self.user_button, 1, 1)
 
-		login_grid = QtWidgets.QGridLayout()
-		login_grid.setSpacing(2)
-		login_grid.addWidget(self.user_name,1,1)
-		login_grid.addWidget(self.statusbutton,2,1)
-
-		grid.addLayout(login_grid,1,1)
-		self.setLayout(grid)
+		self.setContentsMargins(0, 0, 0, 0)
 
 	def current_user(self):
 		""" Checks the current status of the user."""
 		return self.manager.logged_in_user
 
 	# PyQt slots
-	def __handle_click(self):
-		button = self.sender()
-		logging.info("Button {} clicked".format(button.text()))
-		if button.text() == self.login_text:
+	def __open_osf_website(self):
+		webbrowser.open(osf.website_url)
+
+	def __clicked_login(self):
+		if not self.manager.logged_in_user:
 			self.login_request.emit()
-		elif button.text() == self.logout_text:
-			button.setText(self.logging_out_text)
-			QtCore.QCoreApplication.instance().processEvents()
-			self.logout_request.emit()
+
+	def __clicked_logout(self):
+		self.user_button.hide()
+		self.login_button.show()
+		self.login_button.setText(self.logging_out_text)
+		QtCore.QCoreApplication.instance().processEvents()
+		self.logout_request.emit()
 
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
-		self.statusbutton.setIcon(self.spinner)
-		self.statusbutton.setText(self.logging_in_text)
+		self.login_button.setIcon(self.spinner)
+		self.login_button.setText(self.logging_in_text)
 		# Get logged in user from manager, if something goes wrong, reset the login
 		# button status
 		self.manager.get_logged_in_user(
@@ -168,10 +174,9 @@ class UserBadge(QtWidgets.QWidget):
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected """
-		self.user = None
-		self.user_name.setText("")
-		self.avatar.setPixmap(self.osf_logo_pixmap)
-		self.statusbutton.setText(self.login_text)
+		# self.avatar.setPixmap(self.osf_logo_pixmap)
+		self.login_button.setIcon(self.osf_icon)
+		self.login_button.setText(self.login_text)
 
 	# Other callback functions
 
@@ -189,15 +194,15 @@ class UserBadge(QtWidgets.QWidget):
 			avatar_img = requests.get(avatar_url).content
 			pixmap = QtGui.QPixmap()
 			pixmap.loadFromData(avatar_img)
-			pixmap = pixmap.scaled(self.image_size)
 
-			# Update sub-widgets
-			self.user_name.setText(full_name)
-			self.avatar.setPixmap(pixmap)
-			self.statusbutton.setText(self.logout_text)
-			self.statusbutton.setIcon(QtGui.QIcon())
-		except:
+			self.user_button.setText(full_name)
+			self.user_button.setIcon(QtGui.QIcon(pixmap))
+
+			self.login_button.hide()
+			self.user_button.show()
+		except Exception as e:
 			# Reset button to login status if something goes wrong
+			warnings.warn("An error occured: {}".format(e))
 			self.handle_logout()
 
 class OSFExplorer(QtWidgets.QWidget):
@@ -935,7 +940,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			# is incomplete
 			kwargs['new_item_data'] = new_item_data
 			
-			pp.pprint(new_item_data)
+			# pp.pprint(new_item_data)
 
 			self.manager.get(
 				info_url,
@@ -948,6 +953,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		item = json.loads(safe_decode(reply.readAll().data()))
 		new_item, kind = self.tree.add_item(parent_item, item['data'])
 		kwargs['new_item'] = new_item
+		# Perform the afterUploadCallback if it has been specified
 		after_upload_cb = kwargs.pop('afterUploadCallback')
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
