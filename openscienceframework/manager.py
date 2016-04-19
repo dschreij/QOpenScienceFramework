@@ -349,7 +349,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
 
 	@check_network_accessibility
-	def put(self, url, data_to_send, callback, *args, **kwargs):
+	def put(self, url, callback, *args, **kwargs):
 		""" Perform a HTTP PUT request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This method should be used
 		to upload larger sets of data such as files.
@@ -358,17 +358,17 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		----------
 		url : string / QtCore.QUrl
 			The target url/endpoint to perform the PUT request on.
-		data_to_send : QIODevice
-			The file to upload (QFile or other QIODevice type)
 		callback : function
 			The function to call once the request is finished.
-		uploadProgess : function (defualt: None)
+		data_to_send : QIODevice (default : None)
+			The file to upload (QFile or other QIODevice type)
+		uploadProgess : callable (defualt: None)
 			The slot (callback function) for the downloadProgress signal of the
 			reply object. This signal is emitted after a certain amount of bytes
 			is received, and can be used for instance to update a download progress
 			dialog box. The callback function should have two parameters to which
 			the transfered and total bytes can be assigned.
-		errorCallback : function (default: None)
+		errorCallback : callable (default: None)
 			function to call whenever an error occurs. Should be able to accept
 			the reply object as an argument. This function is also called if the
 			operation is aborted by the user him/herself.
@@ -384,8 +384,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		"""
 		# First check the correctness of the url and callback parameters
 		url = self.__check_request_parameters(url, callback)
+		# Don't use pop() here as it will cause a segmentation fault!
+		data_to_send = kwargs.get('data_to_send')
 
-		if not isinstance(data_to_send, QtCore.QIODevice):
+		if not data_to_send is None and not isinstance(data_to_send, QtCore.QIODevice):
 			raise TypeError("The data_to_send should be of type QtCore.QIODevice")
 
 		request = QtNetwork.QNetworkRequest(url)
@@ -405,7 +407,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if isinstance(progressDialog, QtWidgets.QProgressDialog):
 			progressDialog.canceled.connect(reply.abort)
 			reply.setProperty('progressDialog', progressDialog)
-		else:
+		elif not progressDialog is None:
 			logging.error("progressDialog is not a QtWidgets.QProgressDialog")
 
 		# If provided, connect the abort signal to the reply's abort() slot
@@ -444,10 +446,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		"""
 		# First check the correctness of the url and callback parameters
 		url = self.__check_request_parameters(url, callback)
-
 		request = QtNetwork.QNetworkRequest(url)
-
-		logging.info("GET {}".format(url))
 
 		# Add OAuth2 token
 		if not self.add_token(request):
@@ -657,8 +656,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			return
 
 		source_file.open(QtCore.QIODevice.ReadOnly)
-		kwargs['source_file'] = source_file
-		self.put(url, source_file, self.__upload_finished, *args, **kwargs)
+		self.put(url, self.__upload_finished, data_to_send=source_file, *args, **kwargs)
 
 	#--- PyQt Slots
 
@@ -766,11 +764,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			fcb(reply, *args, **kwargs)
 
 	def __upload_finished(self, reply, *args, **kwargs):
-		if not 'source_file' in kwargs or not isinstance(kwargs['source_file'], 
+		if not 'data_to_send' in kwargs or not isinstance(kwargs['data_to_send'], 
 			QtCore.QIODevice):
 			raise AttributeError("No valid open file handle")
 		# Close the source file
-		kwargs['source_file'].close()
+		kwargs['data_to_send'].close()
 
 		# If another external callback function was provided, call it below
 		fcb = kwargs.pop('finishedCallback',None)
