@@ -390,6 +390,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			'fa.refresh', color='green', animation=qta.Spin(self.refresh_button))
 		self.refresh_button.setIconSize(self.button_icon_size)
 		self.refresh_button.clicked.connect(self.__clicked_refresh_tree)
+		self.refresh_button.setToolTip(_(u"Refresh"))
 		self.refresh_button.setDisabled(True)
 
 		# Other buttons, depend on config settings of OSF explorer
@@ -401,6 +402,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.new_folder_button = QtWidgets.QPushButton(self.new_folder_icon, _('New folder'))
 		self.new_folder_button.setIconSize(self.button_icon_size)
 		self.new_folder_button.clicked.connect(self.__clicked_new_folder)
+		self.new_folder_button.setToolTip(_(u"Create a new folder at the currently"
+			" selected location"))
 		self.new_folder_button.setDisabled(True)		
 
 		self.delete_icon = QtGui.QIcon.fromTheme(
@@ -410,6 +413,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.delete_button = QtWidgets.QPushButton(self.delete_icon, _('Delete'))
 		self.delete_button.setIconSize(self.button_icon_size)
 		self.delete_button.clicked.connect(self.__clicked_delete)
+		self.delete_button.setToolTip(_(u"Delete the currently selected file or "
+			"folder"))
 		self.delete_button.setDisabled(True)		
 
 		self.download_icon = QtGui.QIcon.fromTheme(
@@ -420,6 +425,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			_('Download'))
 		self.download_button.setIconSize(self.button_icon_size)
 		self.download_button.clicked.connect(self.__clicked_download_file)
+		self.download_button.setToolTip(_(u"Download the currently selected file"))
 		self.download_button.setDisabled(True)
 
 		self.upload_icon = QtGui.QIcon.fromTheme(
@@ -430,6 +436,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			_('Upload'))
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
 		self.upload_button.setIconSize(self.button_icon_size)
+		self.upload_button.setToolTip(_(u"Upload a file to the currently selected"
+			" folder"))
 		self.upload_button.setDisabled(True)
 
 		# Set up the general button bar layouts
@@ -471,7 +479,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		labelStyle = 'font-weight: bold'
 
 		self.common_fields = ['Name','Type']
-		self.file_fields = ['Size','Last touched','Created','Modified']
+		self.file_fields = ['Size','Created','Modified']
 
 		self.properties = {}
 		for field in self.common_fields + self.file_fields:
@@ -608,7 +616,6 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		name = attributes.get("name", "Unspecified")
 		filesize = attributes.get("size", "Unspecified")
-		last_touched = attributes.get("last_touched", None)
 		created = attributes.get("date_created", "Unspecified")
 		modified = attributes.get("date_modified", "Unspecified")
 
@@ -645,21 +652,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		if filesize != "Unspecified" and isinstance(filesize, int):
 			filesize = humanize.naturalsize(filesize)
 
-		# Last touched will be None if the file has never been 'touched'
-		# Change this to "Never"
-		if not last_touched is None:
-			# Format last touched time
-			ltArrow = arrow.get(last_touched)
-			last_touched = self.datedisplay.format(
-				ltArrow.format(self.timeformat),
-				ltArrow.humanize(locale=self.locale)
-			)
-		else:
-			last_touched = _("Never")
-
 		# Format created time
 		if created != "Unspecified":
-			cArrow = arrow.get(created)
+			cArrow = arrow.get(created).to('local')
 			created = self.datedisplay.format(
 				cArrow.format(self.timeformat),
 				cArrow.humanize(locale=self.locale)
@@ -667,7 +662,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		# Format modified time
 		if modified != "Unspecified":
-			mArrow = arrow.get(modified)
+			mArrow = arrow.get(modified).to('local')
 			modified = self.datedisplay.format(
 				mArrow.format(self.timeformat),
 				mArrow.humanize(locale=self.locale)
@@ -677,7 +672,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Name"][1].setText(name)
 		self.properties["Type"][1].setText(filetype)
 		self.properties["Size"][1].setText(filesize)
-		self.properties["Last touched"][1].setText(last_touched)
 		self.properties["Created"][1].setText(created)
 		self.properties["Modified"][1].setText(modified)
 
@@ -717,7 +711,6 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Just to be sure (even though it's useless as these fields are hidden)
 		# clear the contents of the fields below
 		self.properties["Size"][1].setText('')
-		self.properties["Last touched"][1].setText('')
 		self.properties["Created"][1].setText('')
 		self.properties["Modified"][1].setText('')
 
@@ -1382,9 +1375,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		providers = {
 			'osfstorage'   : osf_logo_path,
-			'github'       : 'github',
+			'github'       : 'web-github',
 			'dropbox'      : 'dropbox',
-			'googledrive'  : 'google',
+			'googledrive'  : 'web-google-drive',
+			'box'          : 'web-microsoft-onedrive',
+			'cloudfiles'   : 'web-microsoft-onedrive',
+			'dataverse'    : 'web-microsoft-onedrive',
+			'figshare'     : 'web-microsoft-onedrive',
+			's3'           : 'web-microsoft-onedrive',
 		}
 
 		if datatype == 'project':
