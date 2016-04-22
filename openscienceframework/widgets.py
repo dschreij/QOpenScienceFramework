@@ -45,10 +45,8 @@ pp = pprint.PrettyPrinter(indent=2)
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
-osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
-	'resources/img/cos-white2.png'))
-osf_blacklogo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
-	'resources/img/cos-black.png'))
+osf_logo_path = os.path.join(os.path.dirname(__file__), 'img/cos-white2.png')
+osf_blacklogo_path = os.path.join(os.path.dirname(__file__),'img/cos-black.png')
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -187,29 +185,29 @@ class UserBadge(QtWidgets.QWidget):
 	# Other callback functions
 
 	def __set_badge_contents(self, reply):
+		""" Sets the user's information in the badge """
+		# Convert bytes to string and load the json data
+		user = json.loads(safe_decode(reply.readAll().data()))
+		# Get user's name
 		try:
-			# Convert bytes to string and load the json data
-			user = json.loads(safe_decode(reply.readAll().data()))
-			# Get user's name
-			try:
-				full_name = user["data"]["attributes"]["full_name"]
-				# Download avatar image from the specified url
-				avatar_url = user["data"]["links"]["profile_image"]
-			except osf.OSFInvalidResponse as e:
-				raise osf.OSFInvalidResponse("Invalid user data format: {}".format(e))
-			avatar_img = requests.get(avatar_url).content
-			pixmap = QtGui.QPixmap()
-			pixmap.loadFromData(avatar_img)
+			full_name = user["data"]["attributes"]["full_name"]
+			# Download avatar image from the specified url
+			avatar_url = user["data"]["links"]["profile_image"]
+		except KeyError as e:
+			raise osf.OSFInvalidResponse("Invalid user data format: {}".format(e))
+		self.user_button.setText(full_name)
+		self.login_button.hide()
+		self.user_button.show()
+		# Load the user image in the photo area
+		self.manager.get(avatar_url, self.__set_user_photo)
 
-			self.user_button.setText(full_name)
-			self.user_button.setIcon(QtGui.QIcon(pixmap))
+	def __set_user_photo(self, reply):
+		""" Sets the photo of the user in the userbadge """
+		avatar_img = reply.readAll().data()
+		pixmap = QtGui.QPixmap()
+		pixmap.loadFromData(avatar_img)
+		self.user_button.setIcon(QtGui.QIcon(pixmap))
 
-			self.login_button.hide()
-			self.user_button.show()
-		except Exception as e:
-			# Reset button to login status if something goes wrong
-			warnings.warn("An error occured: {}".format(e))
-			self.handle_logout()
 
 class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
@@ -424,7 +422,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.download_button = QtWidgets.QPushButton(self.download_icon, 
 			_('Download'))
 		self.download_button.setIconSize(self.button_icon_size)
-		self.download_button.clicked.connect(self.__clicked_download_file)
+		self.download_button.clicked.connect(self._clicked_download_file)
 		self.download_button.setToolTip(_(u"Download the currently selected file"))
 		self.download_button.setDisabled(True)
 
@@ -531,7 +529,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		
 		# Actions only allowd on files
 		if kind == "file":
-			menu.addAction(self.download_icon, _(u"Download file"), self.__clicked_download_file)
+			menu.addAction(self.download_icon, _(u"Download file"), self._clicked_download_file)
 
 		# Actions only allowed on folders
 		if kind == "folder":
@@ -830,7 +828,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
 
-	def __clicked_download_file(self):
+	def _clicked_download_file(self):
 		""" Action to be performed when download button is clicked """
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
@@ -1152,7 +1150,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# determine icons. Defaults to False.
 
 		if isinstance(use_theme, basestring):
-			logging.info('Using icon theme of {}'.format(use_theme))
 			QtGui.QIcon.setThemeName(os.path.basename(use_theme))
 			# Win and OSX don't support native themes
 			# so set the theming dir explicitly
@@ -1160,7 +1157,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			os.path.exists(os.path.abspath(theme_path)):
 				QtGui.QIcon.setThemeSearchPaths(QtGui.QIcon.themeSearchPaths() \
 					+ [theme_path])
-				logging.info(QtGui.QIcon.themeSearchPaths())
 
 		# Set up general window
 		self.resize(400,500)

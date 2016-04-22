@@ -94,7 +94,6 @@ class LoginWindow(WebView):
 
 		r_url = redirectUrl.toString()
 		if osf.redirect_uri in r_url:
-			logging.info("Token URL: {}".format(r_url))
 			try:
 				self.token = osf.parse_token_from_url(r_url)
 			except ValueError as e:
@@ -116,7 +115,6 @@ class LoginWindow(WebView):
 
 		# QWebEngineView receives token here.
 		if url.hasFragment():
-			logging.info("Token URL: {}".format(url_string))
 			try:
 				self.token = osf.parse_token_from_url(url_string)
 			except ValueError as e:

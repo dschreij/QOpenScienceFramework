@@ -46,7 +46,7 @@ class OSFInvalidResponse(Exception):
 
 #%%------------------ Main configuration and helper functions ------------------
 
-def reset_session():
+def create_session():
 	""" Creates/resets and OAuth 2 session, with the specified data. """
 	global client_id
 	global redirect_uri
@@ -64,7 +64,7 @@ def reset_session():
 	return session
 
 # Create an intial session object
-session = reset_session()
+session = create_session()
 
 # Generate correct URLs
 auth_url = base_url + "oauth2/authorize"

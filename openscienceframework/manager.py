@@ -20,18 +20,18 @@ import time
 
 #OSF modules
 import openscienceframework.connection as osf
-from openscienceframework import widgets, events, loginwindow
-
-# Easier function decorating
-from functools import wraps
-
-# PyQt modules
-from qtpy import QtCore, QtNetwork, QtWidgets
+# PyQt abstraction layer
 import qtpy
-
 # Python warnings
 import warnings
+# UUID generation
+import uuid
 
+from openscienceframework import widgets, events, loginwindow
+# Easier function decorating
+from functools import wraps
+# PyQt modules
+from qtpy import QtCore, QtNetwork, QtWidgets
 # Python 2 and 3 compatiblity settings
 from openscienceframework.compat import *
 
@@ -40,9 +40,9 @@ _ = lambda s: s
 
 class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	"""
-	The connection manager does much of the heavy lifting in communicating with the
-	OSF. It checks if the app is still authorized to send requests, and also checks
-	for responses indicating this is not the case."""
+	The connection manager does most of the heavy lifting in communicating with the
+	OSF. It is responsible for all the HTTP requests and the correct treatment of
+	its responses and status codes. """
 
 	# The maximum number of allowed redirects
 	MAX_REDIRECTS = 5
@@ -50,6 +50,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	warning_message = QtCore.pyqtSignal('QString','QString')
 	info_message = QtCore.pyqtSignal('QString','QString')
 	success_message = QtCore.pyqtSignal('QString','QString')
+
+	# Dictionary holding requests in progress, so that they can be repeated if
+	# mid-request it is discovered that the OAuth2 token is no longer valid.
+	pending_requests = {}
 
 	def __init__(self, tokenfile="token.json", notifier=None):
 		""" Constructor """
@@ -81,8 +85,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.browser = loginwindow.LoginWindow()
 		# Connect browsers logged in event to that of dispatcher's
 		self.browser.logged_in.connect(self.dispatcher.dispatch_login)
-
 		self.logged_in_user = {}
+
+		self.config_mgr = QtNetwork.QNetworkConfigurationManager(self)
 
 	#--- Login and Logout functions
 
@@ -142,7 +147,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			osf.session.token = token
 			return True
 		else:
-			osf.reset_session()
+			osf.session = osf.create_session()
 			os.remove(tokenfile)
 			logging.info("Token expired; need log-in")
 			return False
@@ -150,17 +155,32 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	#--- Communication with OSF API
 
 	def check_network_accessibility(func):
-		""" Checks if network is accessible """
+		""" Checks if network is accessible and buffers the network request so
+		that it can be resent if it fails due to an invalidated OAuth2 token. In
+		this case the user will be presented with the login screen again. If
+		the same user successfully logs in again, the request will be resent. """
+
 		@wraps(func)
 		def func_wrapper(inst, *args, **kwargs):
-			if inst.networkAccessible() == inst.NotAccessible:
-				self.error_message.emit(
+			if not inst.config_mgr.isOnline():
+				inst.error_message.emit(
 					"No network access",
-					"Your network connection is down or you currently have"
-					" no Internet access."
+					_(u"Your network connection is down or you currently have"
+					" no Internet access.")
 				)
 				return
 			else:
+				if inst.logged_in_user:
+					# Create an internal ID for this request
+					request_id=uuid.uuid4()
+					current_request = lambda: func(inst, *args, **kwargs)
+					# Add tuple with current user, and request to be performed
+					# to the pending request dictionary
+					inst.pending_requests[request_id] = (
+						inst.logged_in_user['data']['id'], 
+						current_request)
+					# Add current request id to kwargs of function being called
+					kwargs['_request_id'] = request_id
 				return func(inst, *args, **kwargs)
 		return func_wrapper
 
@@ -207,7 +227,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if not callable(callback):
 			raise TypeError("callback should be a function or callable.")
 		return url
-
 
 	@check_network_accessibility
 	def get(self, url, callback, *args, **kwargs):
@@ -302,7 +321,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This request is mainly used to send
 		small amounts of data to the OSF framework (use PUT for larger files, as this is also
-		required by the WaterButler service used for OSF)
+		required by the WaterButler service used by the OSF)
 
 		Parameters
 		----------
@@ -327,8 +346,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Add OAuth2 token
 		if not self.add_token(request):
-			self.warning_message.emit('Warning',
-				_(u"Token could not be added to the request"))
+			warnings.warn(_(u"Token could not be added to the request"))
 
 		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
 		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
@@ -663,20 +681,16 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def __reply_finished(self, callback, *args, **kwargs):
 		reply = self.sender()
 		request = reply.request()
-
+		# Get the error callback function, if set
 		errorCallback = kwargs.get('errorCallback', None)
+		# Get the request id, if set (only for authenticated requests, if a user
+		# is logged in), so it can be repeated if the user is required to 
+		# reauthenticate.
+		current_request_id = kwargs.pop('_request_id', None)
 
 		# If an error occured, just show a simple QMessageBox for now
 		if reply.error() != reply.NoError:
-			# Don't show error notification if user manually cancelled operation.
-			# This is undesirable most of the time, and when it is required, it
-			# can be implemented by using the errorCallback function
-			if reply.error() != reply.OperationCanceledError:
-				self.error_message.emit(
-					str(reply.attribute(request.HttpStatusCodeAttribute)),
-					reply.errorString()
-				)
-			# User not authenticated to perform this request
+			# User not/no longer authenticated to perform this request
 			# Show login window again
 			if reply.error() == reply.AuthenticationRequiredError:
 				# If access is denied, the user's token must have expired
@@ -684,12 +698,35 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				# show the login window again
 				self.dispatcher.dispatch_logout()
 				self.show_login_window()
-				
-			# Call error callback
+			# For all other errors
+			else:
+				# Don't show error notification if user manually cancelled operation.
+				# This is undesirable most of the time, and when it is required, it
+				# can be implemented by using the errorCallback function
+				if reply.error() != reply.OperationCanceledError:
+					self.error_message.emit(
+						str(reply.attribute(request.HttpStatusCodeAttribute)),
+						reply.errorString()
+					)
+
+				# Remove this request from pending requests because it should not
+				# be repeated upon reauthentication of the user
+				if not current_request_id is None:
+					self.pending_requests.pop(current_request_id, None)
+				# Close any remaining file handles that were created for upload
+				# or download
+				self.__close_file_handles(*args, **kwargs)
+
+			# Call error callback, if set
 			if callable(errorCallback):
 				errorCallback(reply)
 			reply.deleteLater()
 			return
+
+		# For all other options that follow below, this request can be erased
+		# from pending requests.
+		if not current_request_id is None:
+			self.pending_requests.pop(current_request_id, None)
 
 		# Check if the reply indicates a redirect
 		if reply.attribute(request.HttpStatusCodeAttribute) in [301,302]:
@@ -704,11 +741,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				)
 				if callable(errorCallback):
 					errorCallback(reply)
+				# Close any remaining file handles that were created for upload
+				# or download
+				self.__close_file_handles(*args, **kwargs)
 				reply.deleteLater()
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-			logging.info('Redirected to {}'.format(redirect_url))
+			# For now, the redirects only work for GET operations (but to my 
+			# knowledge, those are the only operations they occur for)
 			if reply.operation() == self.GetOperation:
 				self.get(redirect_url, callback, *args, **kwargs)
 		else:
@@ -775,15 +816,39 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if callable(fcb):
 			fcb(reply, *args, **kwargs)
 
+	def __close_file_handles(self, *args, **kwargs):
+		""" Closes any open file handles after a failed transfer. Called by
+		__reply_finished when a HTTP response code indicating an error has been 
+		received """
+		# When a download is failed, close the file handle stored in tmp_file
+		tmp_file = kwargs.pop('tmp_file', None)
+		if isinstance(tmp_file, QtCore.QIODevice):
+			tmp_file.close()
+		# File uploads are stored in data_to_send	
+		data_to_send = kwargs.pop('data_to_send', None)
+		if isinstance(data_to_send, QtCore.QIODevice):
+			data_to_send.close()
+
+	### Other callbacks
+
 	def handle_login(self):
 		self.get_logged_in_user(self.set_logged_in_user)
 
 	def handle_logout(self):
-		# self.osf.reset_session()
 		self.logged_in_user = {}
-
-	### Other callbacks
 
 	def set_logged_in_user(self, user_data):
 		""" Callback function - Locally saves the data of the currently logged_in user """
 		self.logged_in_user = json.loads(safe_decode(user_data.readAll().data()))
+
+		# If user had any pending requests from previous login, execute them now
+		for (user_id, request) in self.pending_requests.items():
+			if user_id != self.logged_in_user['data']['id']:
+				continue
+			# And execute the request
+			request()
+
+		# and delete them
+		self.pending_requests = {}
+
+

@@ -16,7 +16,6 @@ import openscienceframework.connection as osf
 
 # PyQt modules
 from qtpy import QtCore, QtWidgets
-import qtpy
 
 class EventDispatcher(QtCore.QObject):
 	""" This class fires events to connected classes, which are henceforth
@@ -122,7 +121,6 @@ class TokenFileListener(object):
 	def handle_login(self):
 		if osf.session.token:
 			tokenstr = json.dumps(osf.session.token)
-			logging.info("Writing token file to {}".format(self.tokenfile))
 			with open(self.tokenfile,'w') as f:
 				f.write(tokenstr)
 		else:
@@ -132,7 +130,6 @@ class TokenFileListener(object):
 		if os.path.isfile(self.tokenfile):
 			try:
 				os.remove(self.tokenfile)
-				logging.info("Deleted {}".format(self.tokenfile))
 			except Exception as e:
 				logging.warning("WARNING: {}".format(e.message))
 
