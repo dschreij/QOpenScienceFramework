@@ -4,16 +4,20 @@ This repository should contain everything you need to start off with connecting 
 ## Installation
 Make sure you have the following modules available (all should be easy to get with anaconda and/or pip
 
-- pyqt4 or pyqt5 (easiest to install via Homebrew [http://brew.sh] or Anaconda [http://continuum.io])
+- pyqt4 or pyqt5 (https://www.riverbankcomputing.com/software/pyqt/intro)
 - qtpy (https://github.com/spyder-ide/qtpy)
 - qtawesome (https://github.com/spyder-ide/qtawesome)
 - requests_oauthlib (https://github.com/requests/requests-oauthlib)
 - fileinspector (https://github.com/dschreij/fileinspector)
+- arrow (http://crsmithdev.com/arrow/pytho)
+- humanize (https://pypi.python.org/pypi/humanize)
 - python-magic (optional)
 
 ## Running
 If you have all above modules installed, you should be able to perform a test run with
 
-    python test.py
+    python example.py
 
 This should load and display all widgets that can be used.
+
+More documentation will soon follow
