@@ -1,3 +1,0 @@
-import openscienceframework.connection
-import openscienceframework.manager
-import openscienceframework.widgets

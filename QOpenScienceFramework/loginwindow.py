@@ -27,10 +27,9 @@ except ImportError:
 	from qtpy.QtWebEngineWidgets import QWebEngineView as WebView
 
 # OSF connection interface
-import openscienceframework.connection as osf
-
+import QOpenScienceFramework.connection as osf
 # Python 2 and 3 compatiblity settings
-from openscienceframework.compat import *
+from QOpenScienceFramework.compat import *
 
 osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
 	'resources/img/cos-white2.png'))

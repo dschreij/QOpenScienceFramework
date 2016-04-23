@@ -19,21 +19,21 @@ import json
 import time
 
 #OSF modules
-import openscienceframework.connection as osf
-# PyQt abstraction layer
-import qtpy
+import QOpenScienceFramework.connection as osf
 # Python warnings
 import warnings
 # UUID generation
 import uuid
 
-from openscienceframework import widgets, events, loginwindow
+# OSF modules
+from QOpenScienceFramework import events, loginwindow
+# Python 2 and 3 compatiblity settings
+from QOpenScienceFramework.compat import *
+
 # Easier function decorating
 from functools import wraps
 # PyQt modules
 from qtpy import QtCore, QtNetwork, QtWidgets
-# Python 2 and 3 compatiblity settings
-from openscienceframework.compat import *
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -55,9 +55,14 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	# mid-request it is discovered that the OAuth2 token is no longer valid.
 	pending_requests = {}
 
-	def __init__(self, tokenfile="token.json", notifier=None):
+	def __init__(self, *args, **kwargs):
 		""" Constructor """
-		super(ConnectionManager, self).__init__()
+		# See if tokenfile and notifier are specified as keyword args
+		tokenfile = kwargs.pop("tokenfile", "token.json")
+		notifier  = kwargs.pop("notifier", None)
+
+		# Call parent's constructor
+		super(ConnectionManager, self).__init__(*args, **kwargs)
 		self.tokenfile = tokenfile
 		self.dispatcher = events.EventDispatcher()
 
@@ -83,6 +88,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Init browser in which login page is displayed
 		self.browser = loginwindow.LoginWindow()
+		# Make sure browser closes if parent QWidget closes
+		if isinstance(self.parent(), QtWidgets.QWidget):
+			self.parent().destroyed.connect(self.browser.close)
+
 		# Connect browsers logged in event to that of dispatcher's
 		self.browser.logged_in.connect(self.dispatcher.dispatch_login)
 		self.logged_in_user = {}
@@ -605,9 +614,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		errorCallback : function (default: None)
 			function to call whenever an error occurs. Should be able to accept
 			the reply object as an argument.
-		progressDialog : QtWidgets.QProgressDialog (default : None)
-			The dialog to send the progress indication to. Will be included in the
-			reply object so that it is accessible from the downloadProgress slot
+		progressDialog : dict (default : None)
+			A dictionary containing data about the file to be transferred. It
+			should have two entries:
+			filename: The name of the file
+			filesize: the size of the file in bytes
 		"""
 
 		# Check if destination is a string
@@ -621,16 +632,12 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			self.error_message.emit(_("{} is not a valid destination").format(destination))
 			return
 		kwargs['destination'] = destination
-
-		# Create tempfile
-		tmp_file = QtCore.QTemporaryFile()
-		tmp_file.open(QtCore.QIODevice.WriteOnly)
-		kwargs['tmp_file'] = tmp_file
-
-		# Callback function for when bytes are received
-		kwargs['readyRead'] = self.__download_readyRead
-		self.get(url, self.__download_finished, *args, **kwargs)
-
+		kwargs['download_url'] = url
+		# Extra call to get() to make sure OAuth2 token is still valid before download
+		# is initiated. If not, this way the request can be repeated after the user 
+		# reauthenticates
+		self.get_logged_in_user(self.__download, *args, **kwargs)
+		
 	def upload_file(self, url, source_file, *args, **kwargs):
 		""" Upload a file to the specified destination on the OSF
 
@@ -651,30 +658,18 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		errorCallback : function (default: None)
 			function to call whenever an error occurs. Should be able to accept
 			the reply object as an argument.
-		progressDialog : QtWidgets.QProgressDialog (default : None)
-			The dialog to send the progress indication to. Will be included in the
-			reply object so that it is accessible from the downloadProgress slot
+		progressDialog : dict (default : None)
+			A dictionary containing data about the file to be transferred. It
+			should have two entries:
+			filename: The name of the file
+			filesize: the size of the file in bytes
 		"""
-		# Put checks for the url to be a string or QUrl
-
-		# Check source file
-		if isinstance(source_file, basestring):
-			# Check if the specified file exists, because a situation is possible in which
-			# the user has deleted the file in the meantime in another program.
-			# show a message box, but do not raise an exception, because we don't want this
-			# to completely crash our program.
-			if not os.path.isfile(os.path.abspath(source_file)):
-				self.error_message.emit(_("{} is not a valid source file").format(source_file))
-				return
-
-			# Open source file for reading
-			source_file = QtCore.QFile(source_file)
-		elif not isinstance(source_file, QtCore.QIODevice):
-			self.error_message.emit(_("{} is not a string or QIODevice instance").format(source_file))
-			return
-
-		source_file.open(QtCore.QIODevice.ReadOnly)
-		self.put(url, self.__upload_finished, data_to_send=source_file, *args, **kwargs)
+		# Extra call to get() to make sure OAuth2 token is still valid before download
+		# is initiated. If not, this way the request can be repeated after the user 
+		# reauthenticates
+		kwargs['upload_url'] = url
+		kwargs['source_file'] = source_file
+		self.get_logged_in_user(self.__upload, *args, **kwargs)
 
 	#--- PyQt Slots
 
@@ -766,6 +761,54 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# Cleanup, mark the reply object for deletion
 		reply.deleteLater()
 
+	def __create_progress_dialog(self, text, filesize):
+		""" Creates a progress dialog 
+		
+		Parameters
+		----------
+		text : str
+			The label to display on the dialog
+		filesize : int
+			The size of the file being transfered in bytes
+
+		Returns
+		-------
+		QtWidgets.QProgressDialog
+		"""
+		progress_dialog = QtWidgets.QProgressDialog()
+		progress_dialog.hide()
+		progress_dialog.setLabelText(text)
+		progress_dialog.setMinimum(0)
+		progress_dialog.setMaximum(filesize)
+		return progress_dialog
+
+	def __transfer_progress(self, transfered, total):
+		self.sender().property('progressDialog').setValue(transfered)
+
+	def __download(self, reply, download_url, *args, **kwargs):
+		""" The real download function, that is a callback for get_logged_in_user() 
+		in download_file() """
+		# Create tempfile
+		tmp_file = QtCore.QTemporaryFile()
+		tmp_file.open(QtCore.QIODevice.WriteOnly)
+		kwargs['tmp_file'] = tmp_file
+
+		progressDialog = kwargs.get('progressDialog', None)
+		if isinstance(progressDialog, dict):
+			try:
+				text = _("Downloading") + " " + progressDialog['filename']
+				size = progressDialog['filesize']
+			except KeyError as e:
+				raise KeyError("progressDialog missing field {}".format(e))
+			progress_indicator = self.__create_progress_dialog(text, size)
+			kwargs['progressDialog'] = progress_indicator
+			kwargs['downloadProgress'] = self.__transfer_progress
+
+		# Callback function for when bytes are received
+		kwargs['readyRead'] = self.__download_readyRead
+		# Download the file with a get request	
+		self.get(download_url, self.__download_finished, *args, **kwargs)
+
 	def __download_readyRead(self, *args, **kwargs):
 		reply = self.sender()
 		data = reply.readAll()
@@ -774,6 +817,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['tmp_file'].write(data)
 
 	def __download_finished(self, reply, *args, **kwargs):
+		progressDialog = kwargs.pop('progressDialog', None)
+		if isinstance(progressDialog, QtWidgets.QWidget):
+			progressDialog.deleteLater()
 		# Do some checks to see if the required data has been passed.
 		if not 'destination' in kwargs:
 			raise AttributeError("No destination passed")
@@ -804,7 +850,45 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if callable(fcb):
 			fcb(reply, *args, **kwargs)
 
+	def __upload(self, reply, upload_url, source_file, *args, **kwargs):
+		""" Callback for get_logged_in_user() in upload_file() """
+		# Put checks for the url to be a string or QUrl
+		
+		# Check source file
+		if isinstance(source_file, basestring):
+			# Check if the specified file exists, because a situation is possible in which
+			# the user has deleted the file in the meantime in another program.
+			# show a message box, but do not raise an exception, because we don't want this
+			# to completely crash our program.
+			if not os.path.isfile(os.path.abspath(source_file)):
+				self.error_message.emit(_("{} is not a valid source file").format(source_file))
+				return
+
+			# Open source file for reading
+			source_file = QtCore.QFile(source_file)
+		elif not isinstance(source_file, QtCore.QIODevice):
+			self.error_message.emit(_("{} is not a string or QIODevice instance").format(source_file))
+			return
+
+		progressDialog = kwargs.pop('progressDialog', None)
+		if isinstance(progressDialog, dict):
+			try:
+				text = _("Uploading") + " " + os.path.basename(progressDialog['filename'])
+				size = progressDialog['filesize']
+			except KeyError as e:
+				raise KeyError("progressDialog is missing field {}".format(e))
+			progress_indicator = self.__create_progress_dialog(text, size)
+			kwargs['progressDialog'] = progress_indicator
+			kwargs['uploadProgress'] = self.__transfer_progress
+
+		source_file.open(QtCore.QIODevice.ReadOnly)
+		self.put(upload_url, self.__upload_finished, data_to_send=source_file, 
+			*args, **kwargs)
+
 	def __upload_finished(self, reply, *args, **kwargs):
+		progressDialog = kwargs.pop('progressDialog', None)
+		if isinstance(progressDialog, QtWidgets.QWidget):
+			progressDialog.deleteLater()
 		if not 'data_to_send' in kwargs or not isinstance(kwargs['data_to_send'], 
 			QtCore.QIODevice):
 			raise AttributeError("No valid open file handle")
@@ -842,13 +926,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.logged_in_user = json.loads(safe_decode(user_data.readAll().data()))
 
 		# If user had any pending requests from previous login, execute them now
-		for (user_id, request) in self.pending_requests.items():
-			if user_id != self.logged_in_user['data']['id']:
-				continue
-			# And execute the request
-			request()
-
-		# and delete them
+		for (user_id, request) in self.pending_requests.values():
+			if user_id == self.logged_in_user['data']['id']:
+				request()
 		self.pending_requests = {}
+
 
 

@@ -13,23 +13,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import platform
 import json
 import logging
 import webbrowser
-import warnings
 logging.basicConfig(level=logging.INFO)
 
-# QT classes
-# Required QT classes
-import qtpy
-from qtpy import QtGui, QtCore, QtWidgets, QtNetwork
 # QtAwesome icon fonts for spinners
 import qtawesome as qta
 # OSF connection interface
-import openscienceframework.connection as osf
-# For performing HTTP requests
-import requests
+import QOpenScienceFramework.connection as osf
 # Fileinspector for determining filetypes
 import fileinspector
 # For presenting numbers in human readible formats
@@ -38,12 +30,15 @@ import humanize
 import arrow
 # Unix style filename matching
 import fnmatch
+# QT classes
+# Required QT classes
+from qtpy import QtGui, QtCore, QtWidgets, QtNetwork
 
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
 
 # Python 2 and 3 compatiblity settings
-from openscienceframework.compat import *
+from QOpenScienceFramework.compat import *
 
 osf_logo_path = os.path.join(os.path.dirname(__file__), 'img/cos-white2.png')
 osf_blacklogo_path = os.path.join(os.path.dirname(__file__),'img/cos-black.png')
@@ -176,7 +171,7 @@ class UserBadge(QtWidgets.QWidget):
 			errorCallback=self.handle_logout
 		)
 
-	def handle_logout(self):
+	def handle_logout(self, *args):
 		""" Callback function for EventDispatcher when a logout event is detected """
 		# self.avatar.setPixmap(self.osf_logo_pixmap)
 		self.login_button.setIcon(self.osf_icon)
@@ -207,7 +202,6 @@ class UserBadge(QtWidgets.QWidget):
 		pixmap = QtGui.QPixmap()
 		pixmap.loadFromData(avatar_img)
 		self.user_button.setIcon(QtGui.QIcon(pixmap))
-
 
 class OSFExplorer(QtWidgets.QWidget):
 	""" An explorer of the current user's OSF account """
@@ -855,21 +849,17 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.last_dl_destination_folder = os.path.split(destination)[0]
 			# Configure progress dialog (only if filesize is known)
 			if data['attributes']['size']:
-				download_progress_dialog = QtWidgets.QProgressDialog()
-				download_progress_dialog.hide()
-				download_progress_dialog.setLabelText(_("Downloading") + " " + filename)
-				download_progress_dialog.setMinimum(0)
-				download_progress_dialog.setMaximum(data['attributes']['size'])
-				progress_cb = self._transfer_progress
+				progress_dialog_data={
+					"filename": filename,
+					"filesize": data['attributes']['size']
+				}
 			else:
-				download_progress_dialog = None
-				progress_cb = None
+				progress_dialog_data = None
 			# Download the file
 			self.manager.download_file(
 				download_url,
 				destination,
-				downloadProgress=progress_cb,
-				progressDialog=download_progress_dialog,
+				progressDialog=progress_dialog_data,
 				finishedCallback=self.__download_finished
 			)
 
@@ -933,17 +923,15 @@ class OSFExplorer(QtWidgets.QWidget):
 				upload_url = old_item_data['links']['upload']
 				upload_url += '?kind=file'
 
-			progress_dialog = QtWidgets.QProgressDialog()
-			progress_dialog.hide()
-			progress_dialog.setLabelText(_("Uploading") + " " + file_to_upload.fileName())
-			progress_dialog.setMinimum(0)
-			progress_dialog.setMaximum(file_to_upload.size())
+			progress_dialog_data={
+				"filename": file_to_upload.fileName(),
+				"filesize": file_to_upload.size()
+			}
 
 			self.manager.upload_file(
 				upload_url,
 				file_to_upload,
-				uploadProgress=self._transfer_progress,
-				progressDialog=progress_dialog,
+				progressDialog=progress_dialog_data,
 				finishedCallback=self._upload_finished,
 				selectedTreeItem=selected_item,
 				updateIndex=index_if_present
@@ -971,19 +959,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.manager.put(
 			new_folder_url,
 			self._upload_finished,
-			progressDialog=None,
 			selectedTreeItem=selected_item
 		)
 
-	def __download_finished(self, reply, progressDialog, *args, **kwargs):
+	def __download_finished(self, reply, *args, **kwargs):
 		self.manager.success_message.emit('Download finished','Your download completed successfully')
-		if isinstance(progressDialog, QtWidgets.QWidget):
-			progressDialog.deleteLater()
 
-	def _upload_finished(self, reply, progressDialog, *args, **kwargs):
-		if isinstance(progressDialog, QtWidgets.QWidget):
-			progressDialog.deleteLater()
-
+	def _upload_finished(self, reply, *args, **kwargs):
 		# See if upload action was triggered by interaction on a tree item 
 		selectedTreeItem = kwargs.get('selectedTreeItem')
 		# The new item data should be returned in the reply
@@ -992,29 +974,31 @@ class OSFExplorer(QtWidgets.QWidget):
 		# new_item_data is only reliable for osfstorage for now, so simply
 		# refresh the whole tree if data is from another provider.
 		if not selectedTreeItem:
-			self.__clicked_refresh_tree()
-			after_upload_cb = kwargs.pop('afterUploadCallback', None)
-			if callable(after_upload_cb):
-				after_upload_cb(*args, **kwargs)
+			self.__upload_refresh_tree(*args, **kwargs)
 		else:
+			# See if object is still alive (could be deleted after user has had
+			# to reauthenticate)
+			try:
+				selectedTreeItem.parent()
+			except RuntimeError:
+				# if not, simple refresh the whole tree
+				self.__upload_refresh_tree(*args, **kwargs)
+				return
+
 			try:
 				provider = new_item_data['data']['attributes']['provider']
 			except KeyError as e:
 				raise osf.OSFInvalidResponse(
 					u'Could not parse provider from OSF response: {}'.format(e))
-
 			# OSF storage is easy. Just take the newly returned path
-			if new_item_data['data']['attributes']['provider'] == 'osfstorage':
+			if provider == 'osfstorage':
 				info_url = osf.api_call('file_info', 
 					new_item_data['data']['attributes']['path'])
 			# All other repo's are a bit more difficult...
 			else:
 				# Don't even bother for folders and simple refresh the whole tree
 				if new_item_data['data']['attributes']['kind'] == 'folder':
-					self.__clicked_refresh_tree()
-					after_upload_cb = kwargs.pop('afterUploadCallback', None)
-					if callable(after_upload_cb):
-						after_upload_cb(*args, **kwargs)
+					self.__upload_refresh_tree(*args, **kwargs)
 					return
 
 				# If kind is a file, try to add it to the tree incrementally
@@ -1032,15 +1016,10 @@ class OSFExplorer(QtWidgets.QWidget):
 						info_url = info_url[:-1]
 				else:
 					### Files uploaded to subfolders don't work well yet, because OSF
-					# returns a crappy upload response. Simply refresh the whole tree
-
+					## returns a crappy upload response. Simply refresh the whole tree
 					# info_url = osf.api_call('file_info', 
 					# 	new_item_data['data']['attributes']['path'])
-
-					self.__clicked_refresh_tree()
-					after_upload_cb = kwargs.pop('afterUploadCallback', None)
-					if callable(after_upload_cb):
-						after_upload_cb(*args, **kwargs)
+					self.__upload_refresh_tree(*args, **kwargs)
 					return
 
 			# Refresh info for the new file as the returned representation
@@ -1056,6 +1035,14 @@ class OSFExplorer(QtWidgets.QWidget):
 				selectedTreeItem,
 				*args, **kwargs
 			)
+
+	def __upload_refresh_tree(self, *args, **kwargs):
+		""" Called by _upload_finished() if the whole tree needs to be 
+		refreshed """
+		self.__clicked_refresh_tree()
+		after_upload_cb = kwargs.pop('afterUploadCallback', None)
+		if callable(after_upload_cb):
+			after_upload_cb(*args, **kwargs)
 			
 	def __upload_refresh_item(self, reply, parent_item, *args, **kwargs):
 		item = json.loads(safe_decode(reply.readAll().data()))
@@ -1072,9 +1059,6 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def __item_deleted(self, reply, item):
 		item.parent().removeChild(item)
-
-	def _transfer_progress(self, transfered, total):
-		self.sender().property('progressDialog').setValue(transfered)
 
 	def __tree_refresh_finished(self):
 		""" Event fired when the tree refresh is finished """

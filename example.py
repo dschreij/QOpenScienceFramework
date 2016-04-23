@@ -21,10 +21,10 @@ logging.basicConfig(level=logging.INFO)
 # Required QT classes
 from qtpy import QtWidgets, QtCore
 # Widgets
-from openscienceframework import widgets, events
-from openscienceframework import connection as osf
+from QOpenScienceFramework import widgets, events
+from QOpenScienceFramework import connection as osf
 # Event dispatcher and listeners
-from openscienceframework.manager import ConnectionManager
+from QOpenScienceFramework.manager import ConnectionManager
 
 class InvalidateButton(QtWidgets.QWidget):
 	""" Just a button to tamper with the OSF session and see what the app does
@@ -49,7 +49,7 @@ class StandAlone(object):
 	def __init__(self):
 		tokenfile = os.path.abspath("token.json")
 		# Create manager object
-		self.manager = ConnectionManager(tokenfile)
+		self.manager = ConnectionManager(tokenfile=tokenfile)
 
 		# Init and set up user badge
 		self.user_badge = widgets.UserBadge(self.manager)

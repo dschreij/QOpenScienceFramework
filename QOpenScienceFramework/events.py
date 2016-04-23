@@ -12,7 +12,7 @@ import os
 import json
 
 #OSF modules
-import openscienceframework.connection as osf
+import QOpenScienceFramework.connection as osf
 
 # PyQt modules
 from qtpy import QtCore, QtWidgets

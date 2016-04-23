@@ -1,0 +1,3 @@
+import QOpenScienceFramework.connection
+import QOpenScienceFramework.manager
+import QOpenScienceFramework.widgets
