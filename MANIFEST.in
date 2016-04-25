@@ -1,0 +1,3 @@
+recursive-include QOpenScienceFramework *
+global-exclude *.pyc
+global-exclude *.pyo

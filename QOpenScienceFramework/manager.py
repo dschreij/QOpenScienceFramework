@@ -56,7 +56,20 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	pending_requests = {}
 
 	def __init__(self, *args, **kwargs):
-		""" Constructor """
+		""" Constructor.
+
+		Parameters
+		----------
+		tokenfile : str (default: 'token.json')
+			The path to the file in which the token information should be stored.
+		notifier : QtCore.QObject (default: None)
+			The object containing pyqt slots / callables to which this object's
+			message signals can be connected. The object should contain the following
+			slots / callable names: info, error, success, warning. Each of these
+			should expect two strings. This object is repsonsible for displaying
+			the messages, or passing them on to a different object responsible for
+			the display.
+		"""
 		# See if tokenfile and notifier are specified as keyword args
 		tokenfile = kwargs.pop("tokenfile", "token.json")
 		notifier  = kwargs.pop("notifier", None)
@@ -75,10 +88,16 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 					'from QtCore.QObject')
 			if not hasattr(notifier, 'info'):
 				raise AttributeError('notifier object is missing a pyqt slot '
-					' named info(str)')
+					' named info(str, str)')
 			if not hasattr(notifier, 'error'):
 				raise AttributeError('notifier object is missing a pyqt slot '
-					' named error(str)')
+					' named error(str, str)')
+			if not hasattr(notifier, 'success'):
+				raise AttributeError('notifier object is missing a pyqt slot '
+					' named success(str, str)')
+			if not hasattr(notifier, 'warning'):
+				raise AttributeError('notifier object is missing a pyqt slot '
+					' named warning(str, str)')
 			self.notifier = notifier
 
 		self.error_message.connect(self.notifier.error)
@@ -88,6 +107,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Init browser in which login page is displayed
 		self.browser = loginwindow.LoginWindow()
+		self.browser.setWindowTitle(_(u"Log in to OSF"))
 		# Make sure browser closes if parent QWidget closes
 		if isinstance(self.parent(), QtWidgets.QWidget):
 			self.parent().destroyed.connect(self.browser.close)
@@ -113,7 +133,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.show_login_window()
 
 	def show_login_window(self):
-		""" Show the QWebView window with the login page of OSF """
+		""" Shows the QWebView window with the login page of OSF """
 		auth_url, state = osf.get_authorization_url()
 
 		# Set up browser
@@ -123,21 +143,33 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.browser.show()
 
 	def logout(self):
-		""" Logout from OSF """
+		""" Logs out from OSF """
 		if osf.is_authorized() and osf.session.access_token:
 			self.post(
 				osf.logout_url,
+				self.__logout_succeeded,
 				{'token':osf.session.access_token},
-				self.__logout_succeeded
 			)
 
 	def __logout_succeeded(self,data,*args):
+		""" Callback for logout(). Called when logout has succeeded. This function
+		will then dispatch the logout signal to all other connected elements. """
 		self.dispatcher.dispatch_logout()
 
 	def check_for_stored_token(self, tokenfile):
 		""" Checks if valid token information is stored in a token.json file at
 		the supplied location. If not, or if the oken is invalid/expired, it returns
-		False"""
+		False
+
+		Parameters
+		----------
+		tokenfile : str
+			Path to the token file
+
+		Returns
+		-------
+		True if a volid token was found at tokenfile, False otherwise
+		"""
 
 		logging.info("Looking for token at {}".format(tokenfile))
 
@@ -164,10 +196,12 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	#--- Communication with OSF API
 
 	def check_network_accessibility(func):
-		""" Checks if network is accessible and buffers the network request so
-		that it can be resent if it fails due to an invalidated OAuth2 token. In
-		this case the user will be presented with the login screen again. If
-		the same user successfully logs in again, the request will be resent. """
+		""" Decorator function, not to be called directly.
+		Checks if network is accessible and buffers the network request so
+		that it can be sent again if it fails the first time, due to an invalidated 
+		OAuth2 token. In this case the user will be presented with the login 
+		screen again. If the same user successfully logs in again, the request 
+		will be resent. """
 
 		@wraps(func)
 		def func_wrapper(inst, *args, **kwargs):
@@ -200,6 +234,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		----------
 		request : QtNetwork.QNetworkRequest
 			The network request item in whose header to add the OAuth2 token
+
+		Returns
+		-------
+		bool : True if token could successfully be added to the request, False
+		if not
 		"""
 		if osf.is_authorized():
 			name = safe_encode("Authorization")
@@ -326,7 +365,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return reply
 
 	@check_network_accessibility
-	def post(self, url, data_to_send, callback, *args, **kwargs):
+	def post(self, url, callback, data_to_send, *args, **kwargs):
 		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This request is mainly used to send
 		small amounts of data to the OSF framework (use PUT for larger files, as this is also
@@ -336,13 +375,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		----------
 		url : string / QtCore.QUrl
 			The target url/endpoint to perform the POST request on.
+		callback : function
+			The function to call once the request is finished.
 		data_to_send : dict
 			The data to send with the POST request. keys will be used as variable names
 			and values will be used as the variable values.
-		callback : function
-			The function to call once the request is finished.
 		*args (optional)
 			Any other arguments that you want to have passed to callable.
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
 		"""
 		# First check the correctness of the url and callback parameters
 		url = self.__check_request_parameters(url, callback)
@@ -408,6 +449,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			the operation can be aborted from outside if necessary.
 		*args (optional)
 			Any other arguments that you want to have passed to the callback
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
 		"""
 		# First check the correctness of the url and callback parameters
 		url = self.__check_request_parameters(url, callback)
@@ -619,6 +662,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			should have two entries:
 			filename: The name of the file
 			filesize: the size of the file in bytes
+		*args (optional)
+			Any other arguments that you want to have passed to the callback
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
 		"""
 
 		# Check if destination is a string
@@ -663,6 +710,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			should have two entries:
 			filename: The name of the file
 			filesize: the size of the file in bytes
+		*args (optional)
+			Any other arguments that you want to have passed to the callback
+		**kwargs (optional)
+			Any other keywoard arguments that you want to have passed to the callback
 		"""
 		# Extra call to get() to make sure OAuth2 token is still valid before download
 		# is initiated. If not, this way the request can be repeated after the user 
@@ -783,6 +834,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return progress_dialog
 
 	def __transfer_progress(self, transfered, total):
+		""" callback for a reply object """
 		self.sender().property('progressDialog').setValue(transfered)
 
 	def __download(self, reply, download_url, *args, **kwargs):
@@ -810,6 +862,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get(download_url, self.__download_finished, *args, **kwargs)
 
 	def __download_readyRead(self, *args, **kwargs):
+		""" callback for a reply object to indicate that data is ready to be 
+		written to a buffer. """
+
 		reply = self.sender()
 		data = reply.readAll()
 		if not 'tmp_file' in kwargs or not isinstance(kwargs['tmp_file'], QtCore.QTemporaryFile):
@@ -817,6 +872,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['tmp_file'].write(data)
 
 	def __download_finished(self, reply, *args, **kwargs):
+		""" Callback for a reply object of a GET request, indicating that all
+		expected data has been received. """
+
 		progressDialog = kwargs.pop('progressDialog', None)
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
@@ -851,7 +909,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			fcb(reply, *args, **kwargs)
 
 	def __upload(self, reply, upload_url, source_file, *args, **kwargs):
-		""" Callback for get_logged_in_user() in upload_file() """
+		""" Callback for get_logged_in_user() in upload_file(). Does the real
+		uploading. """
 		# Put checks for the url to be a string or QUrl
 		
 		# Check source file
@@ -886,6 +945,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			*args, **kwargs)
 
 	def __upload_finished(self, reply, *args, **kwargs):
+		""" Callback for the reply object of a PUT request, indicating that all
+		data has been sent. """
 		progressDialog = kwargs.pop('progressDialog', None)
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
@@ -916,9 +977,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	### Other callbacks
 
 	def handle_login(self):
+		""" Handles the login event received after login. """
 		self.get_logged_in_user(self.set_logged_in_user)
 
 	def handle_logout(self):
+		""" Handles the logout event received after a logout """
 		self.logged_in_user = {}
 
 	def set_logged_in_user(self, user_data):
@@ -930,6 +993,3 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			if user_id == self.logged_in_user['data']['id']:
 				request()
 		self.pending_requests = {}
-
-
-

@@ -31,8 +31,7 @@ import QOpenScienceFramework.connection as osf
 # Python 2 and 3 compatiblity settings
 from QOpenScienceFramework.compat import *
 
-osf_logo_path = safe_str(os.path.join(os.path.dirname(os.path.dirname(__file__)),
-	'resources/img/cos-white2.png'))
+osf_logo_path = os.path.join(os.path.dirname(__file__), 'img/cos-white2.png')
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -57,7 +56,7 @@ class LoginWindow(WebView):
 
 			# Connect event that is fired if a HTTP request is completed.
 			self.nam.finished.connect(self.checkResponse)
-		except Exception as e:
+		except:
 			pass
 			# Connect event that is fired if a HTTP request is completed.
 			# self.finished.connect(self.checkResponse)
@@ -83,7 +82,7 @@ class LoginWindow(WebView):
 		statuscode = reply.attribute(request.HttpStatusCodeAttribute)
 		# The accesstoken is given with a 302 statuscode to redirect
 
-		# Stop if statuscode is not 302
+		# Stop if statuscode is not 302 (HTTP Redirect)
 		if statuscode != 302:
 			return
 
@@ -121,7 +120,3 @@ class LoginWindow(WebView):
 			else:	
 				self.logged_in.emit()
 				self.hide()
-
-		# if not osf.base_url in url_string and not osf.redirect_uri in url_string:
-		# 	logging.warning("URL CHANGED: Unexpected url: {}".format(url_string))
-

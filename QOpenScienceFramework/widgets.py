@@ -81,7 +81,16 @@ class UserBadge(QtWidgets.QWidget):
 	login_request = QtCore.pyqtSignal()
 
 	def __init__(self, manager, icon_size=None):
-		""" Constructor """
+		""" Constructor 
+
+		Parameters
+		----------
+		manager : manger.ConnectionManager
+			The object taking care of all the communication with the OSF
+		iconsize : QtCore.QSize (default: None)
+			The size of the icon to use for the osf logo and user photo, if not
+			passed a size of 40x40 is used.
+		"""
 		super(UserBadge, self).__init__()
 
 		# button texts
@@ -142,24 +151,35 @@ class UserBadge(QtWidgets.QWidget):
 		self.layout().setContentsMargins(0, 0, 0, 0)
 
 	def current_user(self):
-		""" Checks the current status of the user."""
+		""" Checks the current status of the user.
+
+		Returns
+		-------
+		dict : contains the information of the logged in user, or is empty if no
+		user is currently logged in.
+		"""
 		return self.manager.logged_in_user
 
 	# PyQt slots
 	def __open_osf_website(self):
+		""" Opens the OSF website in the OS default browser """
 		webbrowser.open(osf.website_url)
 
 	def __clicked_login(self):
+		""" Handles a click on the login button """
 		if not self.manager.logged_in_user:
 			self.login_request.emit()
 
 	def __clicked_logout(self):
+		""" Handles a click on the logout button """
 		self.user_button.hide()
 		self.login_button.show()
 		self.login_button.setText(self.logging_out_text)
 		QtCore.QCoreApplication.instance().processEvents()
 		self.logout_request.emit()
 
+	# Other callback functions
+	
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
 		self.login_button.setIcon(self.spinner)
@@ -173,16 +193,14 @@ class UserBadge(QtWidgets.QWidget):
 
 	def handle_logout(self, *args):
 		""" Callback function for EventDispatcher when a logout event is detected """
-		# self.avatar.setPixmap(self.osf_logo_pixmap)
 		self.login_button.setIcon(self.osf_icon)
 		self.login_button.setText(self.login_text)
-
-	# Other callback functions
 
 	def __set_badge_contents(self, reply):
 		""" Sets the user's information in the badge """
 		# Convert bytes to string and load the json data
 		user = json.loads(safe_decode(reply.readAll().data()))
+
 		# Get user's name
 		try:
 			full_name = user["data"]["attributes"]["full_name"]
@@ -224,6 +242,8 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		Parameters
 		----------
+		manager : manger.ConnectionManager
+			The object taking care of all the communication with the OSF
 		tree_widget : ProjectTree (default: None)
 			The kind of object, which can be project, folder or file
 		locale : string (default: en-us)
@@ -245,17 +265,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.setWindowIcon(osf_icon)
 
 		# Set up the title widget (so much code for a simple header with image...)
-		title_widget = QtWidgets.QWidget(self)
-		title_widget.setLayout(QtWidgets.QHBoxLayout(self))
+		self.title_widget = QtWidgets.QWidget(self)
+		self.title_widget.setLayout(QtWidgets.QHBoxLayout(self))
 		title_logo = QtWidgets.QLabel(self)
 		title_logo.setPixmap(osf_icon.pixmap(QtCore.QSize(50,50)))
 		title_label = QtWidgets.QLabel("<h1>Open Science Framework</h1>", self)
-		title_widget.layout().addWidget(title_logo)
-		title_widget.layout().addWidget(title_label)
-		title_widget.layout().addStretch(1)
-		title_widget.setContentsMargins(0,0,0,0)
-		title_widget.layout().setContentsMargins(0,0,0,0)
-		title_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum, 
+		self.title_widget.layout().addWidget(title_logo)
+		self.title_widget.layout().addWidget(title_label)
+		self.title_widget.layout().addStretch(1)
+		self.title_widget.setContentsMargins(0,0,0,0)
+		self.title_widget.layout().setContentsMargins(0,0,0,0)
+		self.title_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, 
 			QtWidgets.QSizePolicy.Fixed)
 
 		## globally accessible items
@@ -347,7 +367,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		content_layout.addWidget(self.login_required_overlay, 1, 1)
 
 		# Add to layout
-		self.main_layout.addWidget(title_widget)
+		self.main_layout.addWidget(self.title_widget)
 		self.main_layout.addWidget(content_pane)
 		self.main_layout.addWidget(self.buttonbar)
 		self.setLayout(self.main_layout)
@@ -357,7 +377,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.tree.itemSelectionChanged.connect(self.__slot_itemSelectionChanged)
 		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
 
-	#--- Private functions
+	### Private functions
 
 	def __resizeImagePreview(self, event):
 		""" Resize the image preview (if there is any) after a resize event """
@@ -369,6 +389,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.image_space.setPixmap(pm)
 
 	def __create_buttonbar(self):
+		""" Creates the button bar at the bottom of the explorer """
 		# General buttonbar widget
 		buttonbar = QtWidgets.QWidget()
 		buttonbar_hbox = QtWidgets.QHBoxLayout(buttonbar)
@@ -462,6 +483,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		return buttonbar
 
 	def __create_properties_pane(self):
+		""" Creates the panel showing the selected item's properties on the right """
 		# Box to show the properties of the selected item
 		properties_pane = QtWidgets.QFormLayout()
 		properties_pane.setFormAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignLeft)
@@ -488,16 +510,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		return properties_pane
 
-	def __show_tree_context_menu(self, e):
-		item = self.tree.itemAt(e.pos())
-		if item is None:
-			return
-
-		context_menu = self.create_context_menu(item)
-		if not context_menu is None:
-			context_menu.popup(e.globalPos())
-
-	#--- Public functions
+	### Public functions
 	def create_context_menu(self, item):
 		""" Creates a context menu for the currently selected TreeWidgetItem.
 		Menu contents differ depending on if the selected item is a file or a
@@ -594,7 +607,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def set_file_properties(self, data):
 		"""
-		Fills the contents of the properties pane for files. Makes sure the
+		Fills the contents of the properties panel for files. Makes sure the
 		extra fields concerning files are shown.
 
 		Parameters
@@ -622,7 +635,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 				if fileinspector.determine_category(filetype) == "image":
 					# Download and display image if it is not too big.
-					if filesize <= self.preview_size_limit:
+					if not filesize is None and  filesize <= self.preview_size_limit:
 						self.img_preview_progress_bar.setValue(0)
 						self.img_preview_progress_bar.show()
 						self.manager.get(
@@ -738,7 +751,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		if value:
 			logging.warning("Unknown options: {}".value.keys())
 		
-	#--- PyQT slots
+	### PyQT slots
+	
+	def __show_tree_context_menu(self, e):
+		""" Shows the context menu when a tree item is right clicked """
+		item = self.tree.itemAt(e.pos())
+		if item is None:
+			return
+
+		context_menu = self.create_context_menu(item)
+		if not context_menu is None:
+			context_menu.popup(e.globalPos())
 
 	def __slot_currentItemChanged(self, item, col):
 		""" Handles the QTreeWidget currentItemChanged event """
@@ -823,7 +846,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.tree.refresh_contents()
 
 	def _clicked_download_file(self):
-		""" Action to be performed when download button is clicked """
+		""" Action to be performed when download button is clicked. Downloads the
+		selected file to the user specified location. """
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
 		download_url = data['links']['download']
@@ -864,6 +888,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			)
 
 	def __clicked_delete(self):
+		""" Handles a click on the delete button. Deletes the selected file or
+		folder. """
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
 
@@ -879,6 +905,8 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.manager.delete(delete_url, self.__item_deleted, selected_item)
 
 	def __clicked_upload_file(self):
+		""" Handles a click on the upload button. Prepares for upload of a file
+		to the currently selected folder. """
 		selected_item = self.tree.currentItem()
 		data = selected_item.data(0, QtCore.Qt.UserRole)
 		upload_url = data['links']['upload']
@@ -966,6 +994,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.manager.success_message.emit('Download finished','Your download completed successfully')
 
 	def _upload_finished(self, reply, *args, **kwargs):
+		""" Callback for reply() object after an upload is finished """
 		# See if upload action was triggered by interaction on a tree item 
 		selectedTreeItem = kwargs.get('selectedTreeItem')
 		# The new item data should be returned in the reply
@@ -1025,9 +1054,6 @@ class OSFExplorer(QtWidgets.QWidget):
 			# Refresh info for the new file as the returned representation
 			# is incomplete
 			kwargs['new_item_data'] = new_item_data
-			
-			# pp.pprint(new_item_data)
-			# print(info_url)
 
 			self.manager.get(
 				info_url,
@@ -1045,6 +1071,9 @@ class OSFExplorer(QtWidgets.QWidget):
 			after_upload_cb(*args, **kwargs)
 			
 	def __upload_refresh_item(self, reply, parent_item, *args, **kwargs):
+		""" Called by __upload_finished, if it is possible to add the new item
+		at the correct position in the tree, without refreshing the whole tree.
+		"""
 		item = json.loads(safe_decode(reply.readAll().data()))
 		# Remove old item first, before adding new one
 		updateIndex = kwargs.get('updateIndex')
@@ -1058,10 +1087,12 @@ class OSFExplorer(QtWidgets.QWidget):
 			after_upload_cb(*args, **kwargs)
 
 	def __item_deleted(self, reply, item):
+		""" Callback for when an item has been successfully deleted from the OSF.
+		Removes the item from the tree. """
 		item.parent().removeChild(item)
 
 	def __tree_refresh_finished(self):
-		""" Event fired when the tree refresh is finished """
+		""" Slot for the event fired when the tree refresh is finished """
 		self.refresh_button.setIcon(self.refresh_icon)
 		self.refresh_button.setDisabled(False)
 
@@ -1078,10 +1109,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setDisabled(True)
 		self.login_required_overlay.setVisible(True)
 
+	def closeEvent(self, event):
+		""" Reimplementation of closeEvent. Makes sure the login window also
+		closes if the explorer closes. """
+		super(OSFExplorer, self).closeEvent(event)
+		self.manager.browser.close()
+
 	#--- Other callback functions
 
 	def __set_image_preview(self, img_content):
-		""" Callback for set_file_properties() """
+		""" Callback for set_file_properties(). Sets the preview of an image in
+		the properties panel. """
 		# Create a pixmap from the just received data
 		self.current_img_preview = QtGui.QPixmap()
 		self.current_img_preview.loadFromData(img_content.readAll())
@@ -1123,8 +1161,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		Parameters
 		----------
-		use_theme : string (optional)
+		manager : manger.ConnectionManager
+			The object taking care of all the communication with the OSF
+		use_theme : string (default: None)
 			The name of the icon theme to use.
+		theme_path : The path to the folder at which the icon theme is located
+			Relevant only on Windows and OSX as the location of icon themes on
+			Linux is standardized.
 		"""
 		super(ProjectTree, self).__init__()
 
@@ -1197,6 +1240,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		self.expanded_items.discard(data['id'])
 
 	def __populate_error(self, reply):
+		""" Callback for when an error occured while populating the tree. """
 		# Reset active requests after error
 		try:
 			self.active_requests.remove(reply)
@@ -1205,9 +1249,6 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		if not self.active_requests:
 			self.refreshFinished.emit()
-		else:
-			# isRefreshing will be set to False in refreshFinished()
-			self.isRefreshing = False
 
 	def __refresh_finished(self):
 		""" Expands all treewidget items again that were expanded before the
@@ -1351,7 +1392,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		Returns
 		-------
-		QIcon : The icon for the current file/object type """
+		QtGui.QIcon : The icon for the current file/object type """
 
 		providers = {
 			'osfstorage'   : osf_logo_path,
@@ -1402,6 +1443,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		return QtGui.QIcon(osf_logo_path)
 
 	def refresh_contents(self):
+		""" Refreshes the contents of the tree """
 		# If tree is already refreshing, don't start again, as this will result
 		# in a crash
 		if self.isRefreshing == True:
@@ -1454,12 +1496,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		Populates the tree with content retrieved from a certain entrypoint,
 		specified as an api endpoint of the OSF, such a a project or certain
 		folder inside a project. The JSON representation that the api endpoint
-		returns is used to build the tree contents.
+		returns is used to build the tree contents. This function is called
+		recursively to construct the whole tree of contents on the OSF.
 
 		Parameters
 		----------
-		entrypoint : string
-			uri to the OSF api from where the
+		reply : QtNetwork.QNetworkReply
+			The data from the OSF to create the node in the tree for.
 		parent : QtWidgets.QTreeWidgetItem (options)
 			The parent item to which the generated tree should be attached.
 			Is mainly used for the recursiveness that this function implements.
@@ -1521,6 +1564,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			)
 		# Clear the tree to be sure
 		self.clear()
+		# Start populating the tree
 		req = self.manager.get(
 			user_nodes_api_call,
 			self.populate_tree,

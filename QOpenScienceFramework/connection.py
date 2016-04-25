@@ -29,10 +29,8 @@ from oauthlib.oauth2 import MobileApplicationClient
 from functools import wraps
 
 # Load settings file containing required OAuth2 parameters
-with open(os.path.join(os.path.dirname(__file__), 'test-settings.json')) as fp:
+with open(os.path.join(os.path.dirname(__file__), 'settings.json')) as fp:
 	settings = json.load(fp)
-client_id = settings['client_id']
-redirect_uri = settings['redirect_uri']
 base_url = settings['base_url']
 api_base_url = settings['api_base_url']
 scope = settings['scope']
@@ -44,12 +42,22 @@ TokenExpiredError = requests_oauthlib.oauth2_session.TokenExpiredError
 class OSFInvalidResponse(Exception):
 	pass
 
+session = None
+
 #%%------------------ Main configuration and helper functions ------------------
 
 def create_session():
 	""" Creates/resets and OAuth 2 session, with the specified data. """
-	global client_id
-	global redirect_uri
+	global session
+	global settings 
+
+	try:
+		client_id = settings['client_id']
+		redirect_uri = settings['redirect_uri']
+	except KeyError as e:
+		raise KeyError("The OAuth2 settings dictionary is missing the {} entry. "
+			"Please add it to the QOpenScienceFramework.connection.settings "
+			"dicationary before trying to create a new session".format(e))
 
 	# Set up requests_oauthlib object
 	mobile_app_client = MobileApplicationClient(client_id)
@@ -61,10 +69,6 @@ def create_session():
 		scope=scope,
 		redirect_uri=redirect_uri,
 	)
-	return session
-
-# Create an intial session object
-session = create_session()
 
 # Generate correct URLs
 auth_url = base_url + "oauth2/authorize"
