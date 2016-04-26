@@ -91,7 +91,7 @@ class LoginWindow(WebView):
 			return
 
 		r_url = redirectUrl.toString()
-		if osf.redirect_uri in r_url:
+		if osf.settings['redirect_uri'] in r_url:
 			try:
 				self.token = osf.parse_token_from_url(r_url)
 			except ValueError as e:
