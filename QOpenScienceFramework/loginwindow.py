@@ -30,8 +30,9 @@ except ImportError:
 import QOpenScienceFramework.connection as osf
 # Python 2 and 3 compatiblity settings
 from QOpenScienceFramework.compat import *
+from QOpenScienceFramework import dirname
 
-osf_logo_path = os.path.join(os.path.dirname(__file__), 'img/cos-white2.png')
+osf_logo_path = os.path.join(dirname, 'img/cos-white2.png')
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -96,7 +97,7 @@ class LoginWindow(WebView):
 				self.token = osf.parse_token_from_url(r_url)
 			except ValueError as e:
 				logging.warning(e)
-			else:	
+			else:
 				self.logged_in.emit()
 				self.hide()
 
@@ -117,6 +118,6 @@ class LoginWindow(WebView):
 				self.token = osf.parse_token_from_url(url_string)
 			except ValueError as e:
 				logging.warning(e)
-			else:	
+			else:
 				self.logged_in.emit()
 				self.hide()

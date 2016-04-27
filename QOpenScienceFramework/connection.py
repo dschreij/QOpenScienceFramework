@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from QOpenScienceFramework.compat import *
 
 # Import basics
 import os
@@ -27,9 +28,10 @@ import requests_oauthlib
 from oauthlib.oauth2 import MobileApplicationClient
 # Easier function decorating
 from functools import wraps
+from QOpenScienceFramework import dirname
 
 # Load settings file containing required OAuth2 parameters
-with open(os.path.join(os.path.dirname(__file__), 'settings.json')) as fp:
+with open(os.path.join(dirname, 'settings.json')) as fp:
 	settings = json.load(fp)
 base_url = settings['base_url']
 api_base_url = settings['api_base_url']
@@ -49,7 +51,7 @@ session = None
 def create_session():
 	""" Creates/resets and OAuth 2 session, with the specified data. """
 	global session
-	global settings 
+	global settings
 
 	try:
 		client_id = settings['client_id']
@@ -107,7 +109,7 @@ def check_for_active_session():
 	if session is None:
 		raise RuntimeError("Session is not yet initialized, use connection."
 			"session = connection.create_session()")
-		
+
 
 #%%--------------------------- Oauth communiucation ----------------------------
 
@@ -256,9 +258,3 @@ def direct_api_call(api_call):
 
 if __name__ == "__main__":
 	print(get_authorization_url())
-
-
-
-
-
-

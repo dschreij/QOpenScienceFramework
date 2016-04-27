@@ -13,6 +13,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import sys
 import json
 import logging
 import webbrowser
@@ -39,9 +40,9 @@ pp = pprint.PrettyPrinter(indent=2)
 
 # Python 2 and 3 compatiblity settings
 from QOpenScienceFramework.compat import *
-
-osf_logo_path = os.path.join(os.path.dirname(__file__), 'img/cos-white2.png')
-osf_blacklogo_path = os.path.join(os.path.dirname(__file__),'img/cos-black.png')
+from QOpenScienceFramework import dirname
+osf_logo_path = os.path.join(dirname, 'img/cos-white2.png')
+osf_blacklogo_path = os.path.join(dirname, 'img/cos-black.png')
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -81,7 +82,7 @@ class UserBadge(QtWidgets.QWidget):
 	login_request = QtCore.pyqtSignal()
 
 	def __init__(self, manager, icon_size=None):
-		""" Constructor 
+		""" Constructor
 
 		Parameters
 		----------
@@ -179,7 +180,7 @@ class UserBadge(QtWidgets.QWidget):
 		self.logout_request.emit()
 
 	# Other callback functions
-	
+
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected """
 		self.login_button.setIcon(self.spinner)
@@ -275,7 +276,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.title_widget.layout().addStretch(1)
 		self.title_widget.setContentsMargins(0,0,0,0)
 		self.title_widget.layout().setContentsMargins(0,0,0,0)
-		self.title_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, 
+		self.title_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
 			QtWidgets.QSizePolicy.Fixed)
 
 		## globally accessible items
@@ -345,17 +346,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.buttonbar = self.__create_buttonbar()
 
 		# Add splitter to extra parent widget to allow overlay
-		
+
 		self.login_required_overlay = QtWidgets.QLabel(
 			_(u"Log in to the OSF to use this module"))
 		self.login_required_overlay.setStyleSheet(
 			"""
-			font-size: 20px; 
+			font-size: 20px;
 			background: rgba(250, 250, 250, 0.75);
 			""")
 		self.login_required_overlay.setAlignment(
 			QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-		
+
 		# Content pane with tree and properties view
 		# Also has overlay showing login required message when use is logged
 		# out
@@ -417,7 +418,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.new_folder_button.clicked.connect(self.__clicked_new_folder)
 		self.new_folder_button.setToolTip(_(u"Create a new folder at the currently"
 			" selected location"))
-		self.new_folder_button.setDisabled(True)		
+		self.new_folder_button.setDisabled(True)
 
 		self.delete_icon = QtGui.QIcon.fromTheme(
 			'user-trash-symbolic',
@@ -428,13 +429,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.delete_button.clicked.connect(self.__clicked_delete)
 		self.delete_button.setToolTip(_(u"Delete the currently selected file or "
 			"folder"))
-		self.delete_button.setDisabled(True)		
+		self.delete_button.setDisabled(True)
 
 		self.download_icon = QtGui.QIcon.fromTheme(
 			'go-down',
 			qta.icon('fa.cloud-download')
 		)
-		self.download_button = QtWidgets.QPushButton(self.download_icon, 
+		self.download_button = QtWidgets.QPushButton(self.download_icon,
 			_('Download'))
 		self.download_button.setIconSize(self.button_icon_size)
 		self.download_button.clicked.connect(self._clicked_download_file)
@@ -445,7 +446,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			'go-up',
 			qta.icon('fa.cloud-upload')
 		)
-		self.upload_button = QtWidgets.QPushButton(self.upload_icon, 
+		self.upload_button = QtWidgets.QPushButton(self.upload_icon,
 			_('Upload'))
 		self.upload_button.clicked.connect(self.__clicked_upload_file)
 		self.upload_button.setIconSize(self.button_icon_size)
@@ -464,7 +465,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		buttonbar_hbox.addWidget(self.upload_button)
 
 		# Make sure the button bar is vertically as small as possible.
-		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum, 
+		buttonbar.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
 			QtWidgets.QSizePolicy.Fixed)
 
 		# Store the above buttons (except refresh) into a variable which later
@@ -533,7 +534,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			item_is_repo = False
 
 		menu = QtWidgets.QMenu(self.tree)
-		
+
 		# Actions only allowd on files
 		if kind == "file":
 			menu.addAction(self.download_icon, _(u"Download file"), self._clicked_download_file)
@@ -544,14 +545,14 @@ class OSFExplorer(QtWidgets.QWidget):
 			menu.addAction(self.new_folder_icon, _(u"Create new folder"), self.__clicked_new_folder)
 
 		# Only allow deletion of files and subfolders of repos
-		if kind == "file" or not item_is_repo: 
+		if kind == "file" or not item_is_repo:
 			menu.addAction(self.delete_icon, _(u"Delete"), self.__clicked_delete)
-		
+
 		return menu
 
 	def add_buttonset(self, title, buttons):
 		""" Adds a set of buttons that can be referenced by 'title'. With
-		set_buttonset(title) the buttons can be switched to this set. 
+		set_buttonset(title) the buttons can be switched to this set.
 
 		Parameters
 		----------
@@ -584,7 +585,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def show_buttonset(self, title):
 		""" Sets the buttonset to show and hides all others
-		
+
 		Parameters
 		----------
 		title : str
@@ -652,7 +653,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		# If filesize is None, default to the value 'Unspecified'
 		if filesize is None:
 			filesize = "Unspecified"
-		# If filesize is a number do some reformatting of the data to make it 
+		# If filesize is a number do some reformatting of the data to make it
 		# look nicer for us humans
 		if filesize != "Unspecified" and isinstance(filesize, int):
 			filesize = humanize.naturalsize(filesize)
@@ -721,7 +722,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def set_config(self, config):
 		""" Function that sets the config. Is equal to setting the config variable
-		directly by using OSFExplorer.config = <config dict> 
+		directly by using OSFExplorer.config = <config dict>
 
 		Parameters
 		----------
@@ -750,9 +751,9 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		if value:
 			logging.warning("Unknown options: {}".value.keys())
-		
+
 	### PyQT slots
-	
+
 	def __show_tree_context_menu(self, e):
 		""" Shows the context menu when a tree item is right clicked """
 		item = self.tree.itemAt(e.pos())
@@ -832,7 +833,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 	def __clicked_refresh_tree(self):
-		""" Refresh the tree contents and animate the refresh button while this 
+		""" Refresh the tree contents and animate the refresh button while this
 		process is in progress. """
 
 		# Don't do anything if the refresh button is disabled. This probably
@@ -856,7 +857,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		# See if a previous folder was set, and if not, try to set
 		# the user's home folder as a starting folder
 		if not hasattr(self, 'last_dl_destination_folder'):
-			self.last_dl_destination_folder = os.path.expanduser(safe_str("~"))
+			self.last_dl_destination_folder = safe_decode(
+				os.path.expanduser(safe_str("~")),
+				enc=sys.getfilesystemencoding())
 
 		destination = QtWidgets.QFileDialog.getSaveFileName(self,
 			_("Save file as"),
@@ -950,7 +953,6 @@ class OSFExplorer(QtWidgets.QWidget):
 				# Get file specific update utrl
 				upload_url = old_item_data['links']['upload']
 				upload_url += '?kind=file'
-
 			progress_dialog_data={
 				"filename": file_to_upload.fileName(),
 				"filesize": file_to_upload.size()
@@ -972,8 +974,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Get new folder link from data
 		new_folder_url = data['links']['new_folder']
 
-		new_folder_name, ok = QtWidgets.QInputDialog.getText(self, 
-			_(u'Create new folder'), 
+		new_folder_name, ok = QtWidgets.QInputDialog.getText(self,
+			_(u'Create new folder'),
 			_(u'Please enter the folder name:')
 		)
 		new_folder_name = safe_decode(new_folder_name)
@@ -995,7 +997,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 	def _upload_finished(self, reply, *args, **kwargs):
 		""" Callback for reply() object after an upload is finished """
-		# See if upload action was triggered by interaction on a tree item 
+		# See if upload action was triggered by interaction on a tree item
 		selectedTreeItem = kwargs.get('selectedTreeItem')
 		# The new item data should be returned in the reply
 		new_item_data = json.loads(safe_decode(reply.readAll().data()))
@@ -1021,7 +1023,7 @@ class OSFExplorer(QtWidgets.QWidget):
 					u'Could not parse provider from OSF response: {}'.format(e))
 			# OSF storage is easy. Just take the newly returned path
 			if provider == 'osfstorage':
-				info_url = osf.api_call('file_info', 
+				info_url = osf.api_call('file_info',
 					new_item_data['data']['attributes']['path'])
 			# All other repo's are a bit more difficult...
 			else:
@@ -1046,7 +1048,7 @@ class OSFExplorer(QtWidgets.QWidget):
 				else:
 					### Files uploaded to subfolders don't work well yet, because OSF
 					## returns a crappy upload response. Simply refresh the whole tree
-					# info_url = osf.api_call('file_info', 
+					# info_url = osf.api_call('file_info',
 					# 	new_item_data['data']['attributes']['path'])
 					self.__upload_refresh_tree(*args, **kwargs)
 					return
@@ -1063,13 +1065,13 @@ class OSFExplorer(QtWidgets.QWidget):
 			)
 
 	def __upload_refresh_tree(self, *args, **kwargs):
-		""" Called by _upload_finished() if the whole tree needs to be 
+		""" Called by _upload_finished() if the whole tree needs to be
 		refreshed """
 		self.__clicked_refresh_tree()
 		after_upload_cb = kwargs.pop('afterUploadCallback', None)
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
-			
+
 	def __upload_refresh_item(self, reply, parent_item, *args, **kwargs):
 		""" Called by __upload_finished, if it is possible to add the new item
 		at the correct position in the tree, without refreshing the whole tree.
@@ -1272,7 +1274,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		self.isRefreshing = False
 	### Properties
-	
+
 	@property
 	def filter(self):
 	    return self._filter
@@ -1316,7 +1318,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					item.setHidden(False)
 					iterator += 1
 					continue
-				
+
 				# Check if filter extension is contained in filename
 				item_data = item.data(0, QtCore.Qt.UserRole)
 				filename = item_data['attributes']['name']
@@ -1340,7 +1342,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			iterator += 1
 
 	### Public functions
-	
+
 	def set_filter(self, filetypes):
 		self.filter = filetypes
 
@@ -1586,21 +1588,3 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		self.active_requests = []
 		self.previously_selected_item = None
 		self.clear()
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
