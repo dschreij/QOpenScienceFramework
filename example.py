@@ -26,6 +26,7 @@ from QOpenScienceFramework import widgets, events
 from QOpenScienceFramework import connection as osf
 # Event dispatcher and listeners
 from QOpenScienceFramework.manager import ConnectionManager
+from QOpenScienceFramework.compat import *
 
 ####### CONFIGURE THE CLIENT ID AND REDIRECT URI HERE. REGISTER AT OSF.IO ######
 client_id = "<YOUR_CLIENT_ID_HERE>"
@@ -70,7 +71,7 @@ class StandAlone(object):
 		osf.settings.update(server_settings)
 		osf.create_session()
 
-		tmp_dir = tempfile.gettempdir()
+		tmp_dir = safe_decode(tempfile.gettempdir())
 		tokenfile = os.path.join(tmp_dir, u"osf_token.json")
 		# Create manager object
 		self.manager = ConnectionManager(tokenfile=tokenfile)
