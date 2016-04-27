@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 import sys
 import os
 import logging
+import tempfile
 logging.basicConfig(level=logging.INFO)
 
 # Required QT classes
@@ -25,6 +26,11 @@ from QOpenScienceFramework import widgets, events
 from QOpenScienceFramework import connection as osf
 # Event dispatcher and listeners
 from QOpenScienceFramework.manager import ConnectionManager
+
+####### CONFIGURE THE CLIENT ID AND REDIRECT URI HERE. REGISTER AT OSF.IO ######
+client_id = "<YOUR_CLIENT_ID_HERE>"
+redirect_uri = "<YOUR_REDIRECT_URI_HERE>"
+################################################################################
 
 class InvalidateButton(QtWidgets.QWidget):
 	""" Just a button to tamper with the OSF session and see what the app does
@@ -47,7 +53,25 @@ class StandAlone(object):
 	purposes. """
 
 	def __init__(self):
-		tokenfile = os.path.abspath("token.json")
+		# Check if client_id and redirect_uri have been changed
+		if client_id == "<YOUR_CLIENT_ID_HERE>":
+			raise RuntimeError("Please enter the client_id you have registered"
+				" for your app at the OSF")
+		if redirect_uri == "<YOUR_REDIRECT_URI_HERE>":
+			raise RuntimeError("Please enter the redirect uri you have registered"
+				" for your app at the OSF")
+
+		# Set OSF server settings
+		server_settings = {
+		 	"client_id"		: client_id,
+			"redirect_uri"	: redirect_uri,
+		}
+		# Add these settings to the general settings
+		osf.settings.update(server_settings)
+		osf.create_session()
+
+		tmp_dir = tempfile.gettempdir()
+		tokenfile = os.path.join(tmp_dir, u"osf_token.json")
 		# Create manager object
 		self.manager = ConnectionManager(tokenfile=tokenfile)
 

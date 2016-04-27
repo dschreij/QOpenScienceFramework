@@ -69,6 +69,7 @@ def create_session():
 		scope=scope,
 		redirect_uri=redirect_uri,
 	)
+	return session
 
 # Generate correct URLs
 auth_url = base_url + "oauth2/authorize"
@@ -101,7 +102,15 @@ def api_call(command, *args):
 	"""
 	return api_base_url + api_calls[command].format(*args)
 
+def check_for_active_session():
+	""" Checks if a session object has been created and returns an Error otherwise."""
+	if session is None:
+		raise RuntimeError("Session is not yet initialized, use connection."
+			"session = connection.create_session()")
+		
+
 #%%--------------------------- Oauth communiucation ----------------------------
+
 
 def get_authorization_url():
 	""" Generate the URL at which an OAuth2 token for the OSF can be requested
@@ -111,10 +120,12 @@ def get_authorization_url():
 	-------
 	string : The complete uri for the api endpoint
 	"""
+	check_for_active_session()
 	return session.authorization_url(auth_url)
 
 def parse_token_from_url(url):
 	""" Parse token from url fragment """
+	check_for_active_session()
 	token = session.token_from_fragment(url)
 	# Call logged_in function to notify event listeners that user is logged in
 	if is_authorized():
@@ -122,12 +133,15 @@ def parse_token_from_url(url):
 	else:
 		logging.debug("ERROR: Token received, but user not authorized")
 
+
 def is_authorized():
 	""" Convenience function simply returning OAuth2Session.authorized. """
+	check_for_active_session()
 	return session.authorized
 
 def token_valid():
 	""" Checks if OAuth token is present, and if so, if it has not expired yet. """
+	check_for_active_session()
 	if not hasattr(session,"token") or not session.token:
 		return False
 	return session.token["expires_at"] > time.time()
@@ -204,6 +218,7 @@ def requires_authentication(func):
 def logout():
 	""" Logs out the user, and resets the global session object. """
 	global session
+	check_for_active_session()
 	resp = session.post(logout_url,{
 		"token": session.access_token
 	})
