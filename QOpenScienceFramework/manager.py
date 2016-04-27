@@ -198,9 +198,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	def check_network_accessibility(func):
 		""" Decorator function, not to be called directly.
 		Checks if network is accessible and buffers the network request so
-		that it can be sent again if it fails the first time, due to an invalidated 
-		OAuth2 token. In this case the user will be presented with the login 
-		screen again. If the same user successfully logs in again, the request 
+		that it can be sent again if it fails the first time, due to an invalidated
+		OAuth2 token. In this case the user will be presented with the login
+		screen again. If the same user successfully logs in again, the request
 		will be resent. """
 
 		@wraps(func)
@@ -220,7 +220,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 					# Add tuple with current user, and request to be performed
 					# to the pending request dictionary
 					inst.pending_requests[request_id] = (
-						inst.logged_in_user['data']['id'], 
+						inst.logged_in_user['data']['id'],
 						current_request)
 					# Add current request id to kwargs of function being called
 					kwargs['_request_id'] = request_id
@@ -271,7 +271,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if not isinstance(url, QtCore.QUrl) and not isinstance(url, basestring):
 			raise TypeError("url should be a string or QUrl object")
 		if not isinstance(url, QtCore.QUrl):
-			url = get_QUrl(url)
+			url = QtCore.QUrl(url)
 		if not callable(callback):
 			raise TypeError("callback should be a function or callable.")
 		return url
@@ -322,7 +322,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if not self.add_token(request):
 			self.warning_message.emit('Warning',
 				_(u"Token could not be added to the request"))
-			
+
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
 		kwargs['redirect_count'] = kwargs.get('redirect_count',0)
@@ -681,10 +681,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['destination'] = destination
 		kwargs['download_url'] = url
 		# Extra call to get() to make sure OAuth2 token is still valid before download
-		# is initiated. If not, this way the request can be repeated after the user 
+		# is initiated. If not, this way the request can be repeated after the user
 		# reauthenticates
 		self.get_logged_in_user(self.__download, *args, **kwargs)
-		
+
 	def upload_file(self, url, source_file, *args, **kwargs):
 		""" Upload a file to the specified destination on the OSF
 
@@ -716,7 +716,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			Any other keywoard arguments that you want to have passed to the callback
 		"""
 		# Extra call to get() to make sure OAuth2 token is still valid before download
-		# is initiated. If not, this way the request can be repeated after the user 
+		# is initiated. If not, this way the request can be repeated after the user
 		# reauthenticates
 		kwargs['upload_url'] = url
 		kwargs['source_file'] = source_file
@@ -730,7 +730,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# Get the error callback function, if set
 		errorCallback = kwargs.get('errorCallback', None)
 		# Get the request id, if set (only for authenticated requests, if a user
-		# is logged in), so it can be repeated if the user is required to 
+		# is logged in), so it can be repeated if the user is required to
 		# reauthenticate.
 		current_request_id = kwargs.pop('_request_id', None)
 
@@ -794,7 +794,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				return
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
-			# For now, the redirects only work for GET operations (but to my 
+			# For now, the redirects only work for GET operations (but to my
 			# knowledge, those are the only operations they occur for)
 			if reply.operation() == self.GetOperation:
 				self.get(redirect_url, callback, *args, **kwargs)
@@ -813,8 +813,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		reply.deleteLater()
 
 	def __create_progress_dialog(self, text, filesize):
-		""" Creates a progress dialog 
-		
+		""" Creates a progress dialog
+
 		Parameters
 		----------
 		text : str
@@ -838,7 +838,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.sender().property('progressDialog').setValue(transfered)
 
 	def __download(self, reply, download_url, *args, **kwargs):
-		""" The real download function, that is a callback for get_logged_in_user() 
+		""" The real download function, that is a callback for get_logged_in_user()
 		in download_file() """
 		# Create tempfile
 		tmp_file = QtCore.QTemporaryFile()
@@ -858,11 +858,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Callback function for when bytes are received
 		kwargs['readyRead'] = self.__download_readyRead
-		# Download the file with a get request	
+		# Download the file with a get request
 		self.get(download_url, self.__download_finished, *args, **kwargs)
 
 	def __download_readyRead(self, *args, **kwargs):
-		""" callback for a reply object to indicate that data is ready to be 
+		""" callback for a reply object to indicate that data is ready to be
 		written to a buffer. """
 
 		reply = self.sender()
@@ -912,7 +912,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		""" Callback for get_logged_in_user() in upload_file(). Does the real
 		uploading. """
 		# Put checks for the url to be a string or QUrl
-		
 		# Check source file
 		if isinstance(source_file, basestring):
 			# Check if the specified file exists, because a situation is possible in which
@@ -941,7 +940,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			kwargs['uploadProgress'] = self.__transfer_progress
 
 		source_file.open(QtCore.QIODevice.ReadOnly)
-		self.put(upload_url, self.__upload_finished, data_to_send=source_file, 
+		self.put(upload_url, self.__upload_finished, data_to_send=source_file,
 			*args, **kwargs)
 
 	def __upload_finished(self, reply, *args, **kwargs):
@@ -950,7 +949,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		progressDialog = kwargs.pop('progressDialog', None)
 		if isinstance(progressDialog, QtWidgets.QWidget):
 			progressDialog.deleteLater()
-		if not 'data_to_send' in kwargs or not isinstance(kwargs['data_to_send'], 
+		if not 'data_to_send' in kwargs or not isinstance(kwargs['data_to_send'],
 			QtCore.QIODevice):
 			raise AttributeError("No valid open file handle")
 		# Close the source file
@@ -963,13 +962,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	def __close_file_handles(self, *args, **kwargs):
 		""" Closes any open file handles after a failed transfer. Called by
-		__reply_finished when a HTTP response code indicating an error has been 
+		__reply_finished when a HTTP response code indicating an error has been
 		received """
 		# When a download is failed, close the file handle stored in tmp_file
 		tmp_file = kwargs.pop('tmp_file', None)
 		if isinstance(tmp_file, QtCore.QIODevice):
 			tmp_file.close()
-		# File uploads are stored in data_to_send	
+		# File uploads are stored in data_to_send
 		data_to_send = kwargs.pop('data_to_send', None)
 		if isinstance(data_to_send, QtCore.QIODevice):
 			data_to_send.close()
