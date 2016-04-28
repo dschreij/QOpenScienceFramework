@@ -195,7 +195,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	#--- Communication with OSF API
 
-	def check_network_accessibility(func):
+	def buffer_network_request(func):
 		""" Decorator function, not to be called directly.
 		Checks if network is accessible and buffers the network request so
 		that it can be sent again if it fails the first time, due to an invalidated
@@ -205,26 +205,27 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		@wraps(func)
 		def func_wrapper(inst, *args, **kwargs):
-			if not inst.config_mgr.isOnline():
-				inst.error_message.emit(
-					"No network access",
-					_(u"Your network connection is down or you currently have"
-					" no Internet access.")
-				)
-				return
-			else:
-				if inst.logged_in_user:
-					# Create an internal ID for this request
-					request_id=uuid.uuid4()
-					current_request = lambda: func(inst, *args, **kwargs)
-					# Add tuple with current user, and request to be performed
-					# to the pending request dictionary
-					inst.pending_requests[request_id] = (
-						inst.logged_in_user['data']['id'],
-						current_request)
-					# Add current request id to kwargs of function being called
-					kwargs['_request_id'] = request_id
-				return func(inst, *args, **kwargs)
+			# # Not working correctly when packaged, so disable for now
+			# if not inst.config_mgr.isOnline():
+			# 	inst.error_message.emit(
+			# 		"No network access",
+			# 		_(u"Your network connection is down or you currently have"
+			# 		" no Internet access.")
+			# 	)
+			# 	return
+			# else:
+			if inst.logged_in_user:
+				# Create an internal ID for this request
+				request_id=uuid.uuid4()
+				current_request = lambda: func(inst, *args, **kwargs)
+				# Add tuple with current user, and request to be performed
+				# to the pending request dictionary
+				inst.pending_requests[request_id] = (
+					inst.logged_in_user['data']['id'],
+					current_request)
+				# Add current request id to kwargs of function being called
+				kwargs['_request_id'] = request_id
+			return func(inst, *args, **kwargs)
 		return func_wrapper
 
 	def add_token(self, request):
@@ -276,7 +277,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			raise TypeError("callback should be a function or callable.")
 		return url
 
-	@check_network_accessibility
+	@buffer_network_request
 	def get(self, url, callback, *args, **kwargs):
 		""" Perform a HTTP GET request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
@@ -364,7 +365,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		)
 		return reply
 
-	@check_network_accessibility
+	@buffer_network_request
 	def post(self, url, callback, data_to_send, *args, **kwargs):
 		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This request is mainly used to send
@@ -416,7 +417,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		reply = super(ConnectionManager, self).post(request, final_postdata)
 		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
 
-	@check_network_accessibility
+	@buffer_network_request
 	def put(self, url, callback, *args, **kwargs):
 		""" Perform a HTTP PUT request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This method should be used
@@ -491,7 +492,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		if callable(ulpCallback):
 			reply.uploadProgress.connect(ulpCallback)
 
-	@check_network_accessibility
+	@buffer_network_request
 	def delete(self, url, callback, *args, **kwargs):
 		""" Perform a HTTP DELETE request. The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
