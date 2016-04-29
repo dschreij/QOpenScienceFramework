@@ -2,7 +2,7 @@
 This repository should contain everything you need to start off with connecting your python application to the Open Science Framework (https://osf.io). It offers python functions that translate to Open Science Framework API endpoints, and also a set of PyQt widgets (should work with both pyqt4 and pyqt5 thanks to qtpy) that are designed to display and interact with information obtained through the OSF API.
 
 ## Installation
-Make sure you have the following modules available (all should be easy to get with anaconda and/or pip
+Make sure you have the following modules available (all should be easy to get with anaconda and/or pip)
 
 - pyqt4 or pyqt5 (https://www.riverbankcomputing.com/software/pyqt/intro)
 - qtpy (https://github.com/spyder-ide/qtpy)

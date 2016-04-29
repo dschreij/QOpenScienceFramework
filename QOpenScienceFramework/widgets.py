@@ -917,7 +917,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		# See if a previous folder was set, and if not, try to set
 		# the user's home folder as a starting folder
 		if not hasattr(self, 'last_open_destination_folder'):
-			self.last_open_destination_folder = os.path.expanduser(safe_str("~"))
+			self.last_open_destination_folder = safe_decode(
+				os.path.expanduser(safe_str("~")),
+				enc=sys.getfilesystemencoding())
 
 		file_to_upload = QtWidgets.QFileDialog.getOpenFileName(self,
 			_("Select file for upload"),
