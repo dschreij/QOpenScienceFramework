@@ -1540,6 +1540,26 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				if req:
 					self.active_requests.append(req)
 
+		# If the results are paginated, see if there is another page that needs
+		# to be processed
+		try:
+			next_page_url = osf_response['links']['next']
+		except AttributeError as e:
+			raise osf.OSFInvalidResponse("Invalid OSF data format for next page of "
+				"results. Missing attribute: {}".format(e))
+
+		if not next_page_url is None:
+			req = self.manager.get(
+				next_page_url,
+				self.populate_tree,
+				parent,
+				errorCallback=self.__populate_error
+			)
+			# If something went wrong, req should be None
+			if req:
+				self.active_requests.append(req)
+
+		# Remove current reply from list of active requests (assuming it finished)
 		try:
 			self.active_requests.remove(reply)
 		except ValueError:
