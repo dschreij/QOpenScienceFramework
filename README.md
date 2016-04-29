@@ -9,7 +9,7 @@ Make sure you have the following modules available (all should be easy to get wi
 - qtawesome (https://github.com/spyder-ide/qtawesome)
 - requests_oauthlib (https://github.com/requests/requests-oauthlib)
 - fileinspector (https://github.com/dschreij/fileinspector)
-- arrow (http://crsmithdev.com/arrow/pytho)
+- arrow (http://crsmithdev.com/arrow/)
 - humanize (https://pypi.python.org/pypi/humanize)
 - python-magic (optional)
 

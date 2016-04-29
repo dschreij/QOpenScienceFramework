@@ -984,6 +984,9 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		# Remove illegal filesystem characters (mainly for Windows)
 		new_folder_name = "".join(i for i in new_folder_name if i not in r'\/:*?"<>|')
+		# Check again
+		if not len(new_folder_name):
+			return
 
 		new_folder_url += "&name={}".format(new_folder_name)
 		self.manager.put(
@@ -1154,6 +1157,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 	# Event fired when refresh of tree is finished
 	refreshFinished = QtCore.pyqtSignal()
+	# Maximum of items to return per request (e.g. files in a folder). OSF 
+	# automatically paginates its results
+	ITEMS_PER_PAGE = 50
 
 	def __init__(self, manager, use_theme=None, theme_path='./resources/iconthemes'):
 		""" Constructor
@@ -1530,6 +1536,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				except AttributeError as e:
 					raise osf.OSFInvalidResponse("Invalid api call for getting next"
 						"entry point: {}".format(e))
+				# Add page size parameter to url to let more than 10 results per page be
+				# returned
+				next_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
 				req = self.manager.get(
 					next_entrypoint,
 					self.populate_tree,
@@ -1586,6 +1595,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			)
 		# Clear the tree to be sure
 		self.clear()
+		# Add the max items to return per request to the api url
+		user_nodes_api_call += "?page[size]={}".format(self.ITEMS_PER_PAGE)
+
 		# Start populating the tree
 		req = self.manager.get(
 			user_nodes_api_call,
