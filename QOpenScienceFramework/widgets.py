@@ -1065,7 +1065,6 @@ class OSFExplorer(QtWidgets.QWidget):
 
 			# Refresh info for the new file as the returned representation
 			# is incomplete
-			kwargs['new_item_data'] = new_item_data
 
 			self.manager.get(
 				info_url,
