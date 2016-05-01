@@ -17,6 +17,7 @@ import sys
 import json
 import logging
 import webbrowser
+import warnings
 logging.basicConfig(level=logging.INFO)
 
 # QtAwesome icon fonts for spinners
@@ -217,9 +218,12 @@ class UserBadge(QtWidgets.QWidget):
 
 	def __set_user_photo(self, reply):
 		""" Sets the photo of the user in the userbadge """
-		avatar_img = reply.readAll().data()
-		pixmap = QtGui.QPixmap()
-		pixmap.loadFromData(avatar_img)
+		avatar_data = reply.readAll().data()
+		avatar_img = QtGui.QImage()
+		success = avatar_img.loadFromData(avatar_data)
+		if not success:
+			warnings.warn("Could not load user's profile picture")
+		pixmap = QtGui.QPixmap.fromImage(avatar_img)
 		self.user_button.setIcon(QtGui.QIcon(pixmap))
 
 class OSFExplorer(QtWidgets.QWidget):
@@ -1032,7 +1036,10 @@ class OSFExplorer(QtWidgets.QWidget):
 					new_item_data['data']['attributes']['path'])
 			# All other repo's are a bit more difficult...
 			else:
-				# Don't even bother for folders and simple refresh the whole tree
+				# Don't even bother for folders and simply refresh the whole tree.
+				# OSF does not provide possibility to get folder information (in
+				# contrast to folder contents) for newly created folders in external
+				# repositories
 				if new_item_data['data']['attributes']['kind'] == 'folder':
 					self.__upload_refresh_tree(*args, **kwargs)
 					return
@@ -1040,23 +1047,21 @@ class OSFExplorer(QtWidgets.QWidget):
 				# If kind is a file, try to add it to the tree incrementally
 				# (thus without refreshing the whole tree). At the moment, this
 				# only works well for osfstorage...
-				node_data = selectedTreeItem.data(0,QtCore.Qt.UserRole)
-				node_id = node_data['id']
-				# Protocol for direct repository entries is a bit different than for
-				# subfolders
-				if ':' in node_id:
-					project_id, repo = node_id.split(':')
-					info_url = osf.api_call('repo_files', project_id, new_item_data['data']['id'])
-					# Remove trailing slash, as it in this case throws off osf api
-					if info_url[-1] == u"/":
-						info_url = info_url[:-1]
-				else:
-					### Files uploaded to subfolders don't work well yet, because OSF
-					## returns a crappy upload response. Simply refresh the whole tree
-					# info_url = osf.api_call('file_info',
-					# 	new_item_data['data']['attributes']['path'])
-					self.__upload_refresh_tree(*args, **kwargs)
-					return
+				try:
+					project_id = new_item_data['data']['attributes']['resource']
+					temp_id = new_item_data['data']['id']
+				except KeyError as e:
+					raise osf.OSFInvalidResponse(
+						u'Could not parse provider from OSF response: {}'.format(e))
+
+				# Create an url for this file with which the complete information
+				# set can be retrieved
+				info_url = osf.api_call('repo_files', project_id, temp_id)
+				
+				# The repo_files api call adds a trailing slash, but this is invalid
+				# when requesting information about files. Remove it if present.
+				if info_url[-1] == u"/":
+					info_url = info_url[:-1]
 
 			# Refresh info for the new file as the returned representation
 			# is incomplete
@@ -1096,7 +1101,12 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __item_deleted(self, reply, item):
 		""" Callback for when an item has been successfully deleted from the OSF.
 		Removes the item from the tree. """
-		item.parent().removeChild(item)
+		# See if object is still alive (could be deleted after user has had
+		# to reauthenticate)
+		try:
+			item.parent().removeChild(item)
+		except RuntimeError as e:
+			warnings.warn("Deleting item failed: {}".format(e))
 
 	def __tree_refresh_finished(self):
 		""" Slot for the event fired when the tree refresh is finished """
