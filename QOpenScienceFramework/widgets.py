@@ -74,6 +74,14 @@ def check_if_opensesame_file(filename, os3_only=False):
 		return True
 	return False
 
+class QElidedLabel(QtWidgets.QLabel):
+	""" Label that elides its contents by overwriting paintEvent"""
+	def paintEvent(self, event):
+		painter = QtGui.QPainter(self)
+		metrics = QtGui.QFontMetrics(self.font())
+		elided = metrics.elidedText(self.text(), QtCore.Qt.ElideRight, self.width())
+		painter.drawText(self.rect(), self.alignment(), elided)
+
 class UserBadge(QtWidgets.QWidget):
 	""" A Widget showing the logged in user """
 
@@ -129,8 +137,13 @@ class UserBadge(QtWidgets.QWidget):
 		self.user_button = QtWidgets.QPushButton(self)
 		self.user_button.setIconSize(self.icon_size)
 		self.logged_in_menu = QtWidgets.QMenu(self.login_button)
-		self.logged_in_menu.addAction(_(u"Visit osf.io"), self.__open_osf_website)
-		self.logged_in_menu.addAction(_(u"Log out"), self.__clicked_logout)
+		visit_osf_icon = QtGui.QIcon.fromTheme('web-browser', qta.icon('fa.globe'))
+		self.logged_in_menu.addAction(
+			visit_osf_icon, _(u"Visit osf.io"), self.__open_osf_website)
+		logout_icon = QtGui.QIcon.fromTheme('system-log-out', 
+			qta.icon('fa.sign-out'))
+		self.logged_in_menu.addAction(logout_icon, _(u"Log out"), 
+			self.__clicked_logout)
 		self.user_button.setMenu(self.logged_in_menu)
 		self.user_button.hide()
 		self.user_button.setFlat(True)
@@ -263,17 +276,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.setWindowTitle(_("Project explorer"))
 		self.resize(800,500)
 		# Set Window icon
-		if not os.path.isfile(osf_logo_path):
+		if not os.path.isfile(osf_blacklogo_path):
 			raise IOError("OSF logo not found at expected path: {}".format(
-				osf_logo_path))
-		osf_icon = QtGui.QIcon(osf_logo_path)
+				osf_blacklogo_path))
+		osf_icon = QtGui.QIcon(osf_blacklogo_path)
 		self.setWindowIcon(osf_icon)
 
 		# Set up the title widget (so much code for a simple header with image...)
 		self.title_widget = QtWidgets.QWidget(self)
 		self.title_widget.setLayout(QtWidgets.QHBoxLayout(self))
 		title_logo = QtWidgets.QLabel(self)
-		title_logo.setPixmap(osf_icon.pixmap(QtCore.QSize(50,50)))
+		title_logo.setPixmap(osf_icon.pixmap(QtCore.QSize(32,32)))
 		title_label = QtWidgets.QLabel("<h1>Open Science Framework</h1>", self)
 		self.title_widget.layout().addWidget(title_logo)
 		self.title_widget.layout().addWidget(title_label)
@@ -375,6 +388,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.main_layout.addWidget(self.title_widget)
 		self.main_layout.addWidget(content_pane)
 		self.main_layout.addWidget(self.buttonbar)
+		self.main_layout.setContentsMargins(12, 12, 12, 12)
 		self.setLayout(self.main_layout)
 
 		# Event connections
@@ -504,7 +518,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		for field in self.common_fields + self.file_fields:
 			label = QtWidgets.QLabel(_(field))
 			label.setStyleSheet(labelStyle)
-			value = QtWidgets.QLabel('')
+			value = QElidedLabel('')
+			value.setWindowFlags(QtCore.Qt.Dialog)
 			self.properties[field] = (label,value)
 			properties_pane.addRow(label,value)
 
@@ -541,12 +556,17 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		# Actions only allowd on files
 		if kind == "file":
-			menu.addAction(self.download_icon, _(u"Download file"), self._clicked_download_file)
+			menu.addAction(self.download_icon, _(u"Download file"), 
+				self._clicked_download_file)
 
 		# Actions only allowed on folders
 		if kind == "folder":
-			menu.addAction(self.upload_icon, _(u"Upload file to folder"), self.__clicked_upload_file)
-			menu.addAction(self.new_folder_icon, _(u"Create new folder"), self.__clicked_new_folder)
+			menu.addAction(self.upload_icon, _(u"Upload file to folder"), 
+				self.__clicked_upload_file)
+			menu.addAction(self.new_folder_icon, _(u"Create new folder"), 
+				self.__clicked_new_folder)
+			menu.addAction(self.refresh_icon, _(u"Refresh contents"), 
+				self.__clicked_partial_refresh)
 
 		# Only allow deletion of files and subfolders of repos
 		if kind == "file" or not item_is_repo:
@@ -705,7 +725,11 @@ class OSFExplorer(QtWidgets.QWidget):
 		# A node (i.e. a project) has title and category fields
 		if "title" in attributes and "category" in attributes:
 			self.properties["Name"][1].setText(attributes["title"])
-			self.properties["Type"][1].setText(attributes["category"])
+			if attributes["public"]:
+				level = "public"
+			else:
+				level = "private"
+			self.properties["Type"][1].setText(level + " " + attributes["category"])
 		elif "name" in attributes and "kind" in attributes:
 			self.properties["Name"][1].setText(attributes["name"])
 			self.properties["Type"][1].setText(attributes["kind"])
@@ -850,6 +874,17 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setIcon(self.refresh_icon_spinning)
 		self.tree.refresh_contents()
 
+	def __clicked_partial_refresh(self):
+		selected_item = self.tree.currentItem()
+		# Don't do anything if the refresh button is disabled. This probably
+		# means a refresh operation is in progress, and activating another one
+		# during this is asking for trouble.
+		if self.refresh_button.isEnabled() == False:
+			return
+		self.refresh_button.setDisabled(True)
+		self.refresh_button.setIcon(self.refresh_icon_spinning)
+		self.tree.refresh_children_of_node(selected_item)
+
 	def _clicked_download_file(self):
 		""" Action to be performed when download button is clicked. Downloads the
 		selected file to the user specified location. """
@@ -952,6 +987,16 @@ class OSFExplorer(QtWidgets.QWidget):
 			# If index_is_present is a number, it means the file is present
 			# and that file needs to be updated.
 			else:
+				reply = QtWidgets.QMessageBox.question(
+					self,
+					_("Please confirm"),
+					_("The selected folder already contains this file. Are you "
+						"sure you want to overwrite it?"),
+					QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes
+				)
+				if reply == QtWidgets.QMessageBox.No:
+					return
+
 				logging.info("File {} exists and will be updated".format(filename))
 				old_item = selected_item.child(index_if_present)
 				# Get data stored in item
@@ -989,7 +1034,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			return
 
 		# Remove illegal filesystem characters (mainly for Windows)
-		new_folder_name = "".join(i for i in new_folder_name if i not in r'\/:*?"<>|')
+		new_folder_name = u"".join(i for i in new_folder_name if i not in r'\/:*?"<>|')
 		# Check again
 		if not len(new_folder_name):
 			return
@@ -1036,11 +1081,12 @@ class OSFExplorer(QtWidgets.QWidget):
 					new_item_data['data']['attributes']['path'])
 			# All other repo's are a bit more difficult...
 			else:
-				# Don't even bother for folders and simply refresh the whole tree.
+				# Don't even bother for folders and simply refresh the tree.
 				# OSF does not provide possibility to get folder information (in
 				# contrast to folder contents) for newly created folders in external
 				# repositories
 				if new_item_data['data']['attributes']['kind'] == 'folder':
+					kwargs['entry_node'] = selectedTreeItem
 					self.__upload_refresh_tree(*args, **kwargs)
 					return
 
@@ -1076,7 +1122,17 @@ class OSFExplorer(QtWidgets.QWidget):
 	def __upload_refresh_tree(self, *args, **kwargs):
 		""" Called by _upload_finished() if the whole tree needs to be
 		refreshed """
-		self.__clicked_refresh_tree()
+
+		# If an entry node is specified, only refresh the children of that node,
+		# otherwise, refresh entire tree
+		entry_node = kwargs.pop('entry_node', None)
+		if entry_node is None:
+			self.__clicked_refresh_tree()
+		else:
+			self.refresh_button.setDisabled(True)
+			self.refresh_button.setIcon(self.refresh_icon_spinning)
+			self.tree.refresh_children_of_node(entry_node)	
+
 		after_upload_cb = kwargs.pop('afterUploadCallback', None)
 		if callable(after_upload_cb):
 			after_upload_cb(*args, **kwargs)
@@ -1090,7 +1146,11 @@ class OSFExplorer(QtWidgets.QWidget):
 		updateIndex = kwargs.get('updateIndex')
 		if not updateIndex is None:
 			parent_item.takeChild(updateIndex)
+		# Add the item as a new item to the tree
 		new_item, kind = self.tree.add_item(parent_item, item['data'])
+		# Set new item as currently selected item
+		self.tree.setCurrentItem(new_item)
+		# Store item in kwargs so callback functions can use it
 		kwargs['new_item'] = new_item
 		# Perform the afterUploadCallback if it has been specified
 		after_upload_cb = kwargs.pop('afterUploadCallback', None)
@@ -1414,7 +1474,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		QtGui.QIcon : The icon for the current file/object type """
 
 		providers = {
-			'osfstorage'   : osf_logo_path,
+			'osfstorage'   : osf_blacklogo_path,
 			'github'       : 'web-github',
 			'dropbox'      : 'dropbox',
 			'googledrive'  : 'web-google-drive',
@@ -1437,12 +1497,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			if name in providers:
 				return QtGui.QIcon.fromTheme(
 					providers[name],
-					QtGui.QIcon(osf_logo_path)
+					QtGui.QIcon(osf_blacklogo_path)
 				)
 			else:
 				return QtGui.QIcon.fromTheme(
 					datatype,
-					QtGui.QIcon(osf_logo_path)
+					QtGui.QIcon(osf_blacklogo_path)
 				)
 		elif datatype == 'file':
 			# check for OpenSesame extensions first. If this is not an OS file
@@ -1456,13 +1516,62 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				filetype,
 				QtGui.QIcon.fromTheme(
 					'text-x-generic',
-					QtGui.QIcon('osf_logo_path')
+					QtGui.QIcon(osf_blacklogo_path)
 				)
 			)
-		return QtGui.QIcon(osf_logo_path)
+		return QtGui.QIcon(osf_blacklogo_path)
+
+	def refresh_children_of_node(self, node):
+		""" In contrast to refresh_contents, which refreshes the whole tree from
+		the root, this function only refreshes the children of the passed node.
+
+		Parameters
+		----------
+		node : QtWidgets.QTreeWidgetItem
+			The tree item of which the children need to be refreshed.
+		"""
+		if not isinstance(node, QtWidgets.QTreeWidgetItem):
+			raise TypeError('node is not a tree widget item')
+
+		# If tree currently is refreshing, do nothing
+		if self.isRefreshing == True:
+			return
+		# Set flag that tree is currently refreshing
+		self.isRefreshing = True
+
+		try:
+			node_data = node.data(0, QtCore.Qt.UserRole)
+		except RuntimeError as e:
+			warnings.warn('Partial refresh attempted while tree item was already'
+				' deleted')
+			self.isRefreshing = False
+			return
+
+		try:
+			content_url = node_data['relationships']['files']['links'] \
+				['related']['href']
+		except KeyError as e:
+			self.isRefreshing = False
+			raise osf.OSFInvalidResponse('Invalid structure of tree item data '
+				': {}'.format(e))
+
+		# Delete the current children of the node to make place for the new ones
+		node.takeChildren()
+
+		# Retrieve the new listing of children from the OSF
+		req = self.manager.get(
+			content_url,
+			self.populate_tree,
+			node,
+			errorCallback=self.__populate_error
+		)
+
+		# If something went wrong, req should be None
+		if req:
+			self.active_requests.append(req)
 
 	def refresh_contents(self):
-		""" Refreshes the contents of the tree """
+		""" Refreshes all content of the tree """
 		# If tree is already refreshing, don't start again, as this will result
 		# in a crash
 		if self.isRefreshing == True:
