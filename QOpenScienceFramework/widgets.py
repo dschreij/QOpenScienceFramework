@@ -337,6 +337,10 @@ class OSFExplorer(QtWidgets.QWidget):
 		preview_area.addWidget(self.image_space)
 		preview_area.addWidget(self.img_preview_progress_bar)
 
+		# Create a widget that displays the link of the file on OSF
+		self.link_widget = self.__create_link_widget()
+		self.link_widget.hide()
+
 		## Create layouts
 
 		# The box layout holding all elements
@@ -348,6 +352,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		info_grid.setSpacing(10)
 		info_grid.addLayout(preview_area)
 		info_grid.addLayout(properties_pane)
+		info_grid.addStretch()
+		info_grid.addWidget(self.link_widget)
 
 		# The widget to hold the infogrid
 		self.info_frame = QtWidgets.QWidget()
@@ -397,6 +403,25 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.tree.refreshFinished.connect(self.__tree_refresh_finished)
 
 	### Private functions
+	def __create_link_widget(self):
+		wdgt = QtWidgets.QWidget(self)
+		layout = QtWidgets.QHBoxLayout(wdgt)
+
+		osf_link_label = QtWidgets.QLabel(_(u"Link"))
+		osf_link_label.setStyleSheet('font-weight: bold')
+		self.osf_link_field = QtWidgets.QLabel()
+		copy_icon = QtGui.QIcon.fromTheme('accessories-clipboard', 
+			qta.icon('fa.clipboard'))
+		button_copy_to_clipboard = QtWidgets.QPushButton(copy_icon, 
+			_(u"Copy"))
+		visit_osf_icon = QtGui.QIcon.fromTheme('web-browser', qta.icon('fa.globe'))
+		button_open_in_browser = QtWidgets.QPushButton(visit_osf_icon, 
+			_(u"View online"))
+		layout.addWidget(osf_link_label)
+		layout.addWidget(self.osf_link_field)
+		layout.addWidget(button_copy_to_clipboard)
+		layout.addWidget(button_open_in_browser)
+		return wdgt
 
 	def __resizeImagePreview(self, event):
 		""" Resize the image preview (if there is any) after a resize event """
@@ -726,9 +751,9 @@ class OSFExplorer(QtWidgets.QWidget):
 		if "title" in attributes and "category" in attributes:
 			self.properties["Name"][1].setText(attributes["title"])
 			if attributes["public"]:
-				level = "public"
+				level = "Public"
 			else:
-				level = "private"
+				level = "Private"
 			self.properties["Type"][1].setText(level + " " + attributes["category"])
 		elif "name" in attributes and "kind" in attributes:
 			self.properties["Name"][1].setText(attributes["name"])
@@ -808,7 +833,11 @@ class OSFExplorer(QtWidgets.QWidget):
 		data = item.data(0, QtCore.Qt.UserRole)
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
-			kind = data["attributes"]["category"]
+			if data["attributes"]["public"]:
+				access = "public "
+			else:
+				access = "private "
+			kind = access + data["attributes"]["category"]
 		if data['type'] == 'files':
 			name = data["attributes"]["name"]
 			kind = data["attributes"]["kind"]
@@ -822,11 +851,13 @@ class OSFExplorer(QtWidgets.QWidget):
 			self.upload_button.setDisabled(True)
 			self.delete_button.setDisabled(False)
 			self.new_folder_button.setDisabled(True)
+			self.link_widget.show()
 		elif kind == "folder":
 			self.set_folder_properties(data)
 			self.new_folder_button.setDisabled(False)
 			self.download_button.setDisabled(True)
 			self.upload_button.setDisabled(False)
+			self.link_widget.hide()
 			# Check if the parent node is a project
 			# If so the current 'folder' must be a storage provider (e.g. dropbox)
 			# which should not be allowed to be deleted.
@@ -1485,11 +1516,20 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			's3'           : 'web-microsoft-onedrive',
 		}
 
-		if datatype == 'project':
-			return QtGui.QIcon.fromTheme(
-				'gbrainy',
-				QtGui.QIcon(osf_logo_path)
-			)
+		if datatype.lower() in ['public project','private project']:
+			# return QtGui.QIcon.fromTheme(
+			# 	'gbrainy',
+			# 	QtGui.QIcon(osf_logo_path)
+			# )
+			if datatype.lower() == 'public project':
+				return qta.icon('fa.cube', 'fa.globe',
+					options=[
+						{},
+						{'scale_factor': 0.75,
+						'offset': (0.2, 0.20),
+						'color': 'green'}])
+			else:
+				return qta.icon('fa.cube')
 
 		if datatype in ['folder','folder-open']:
 			# Providers are also seen as folders, so if the current folder
@@ -1598,10 +1638,16 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	def add_item(self, parent, data):
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
+			if data["attributes"]["public"]:
+				access = "public "
+			else:
+				access = "private "
 			kind = data["attributes"]["category"]
+			icon_type = access + kind
 		if data['type'] == 'files':
 			name = data["attributes"]["name"]
 			kind = data["attributes"]["kind"]
+			icon_type = kind
 
 		values = [name, kind]
 		if "size" in data["attributes"] and data["attributes"]["size"]:
@@ -1611,7 +1657,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		item = QtWidgets.QTreeWidgetItem(parent, values)
 
 		# Set icon
-		icon = self.get_icon(kind, name)
+		icon = self.get_icon(icon_type, name)
 		item.setIcon(0, icon)
 
 		# Add data
@@ -1631,7 +1677,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		----------
 		reply : QtNetwork.QNetworkReply
 			The data from the OSF to create the node in the tree for.
-		parent : QtWidgets.QTreeWidgetItem (options)
+		parent : QtWidgets.QTreeWidgetItem (default: None)
 			The parent item to which the generated tree should be attached.
 			Is mainly used for the recursiveness that this function implements.
 			If not specified the invisibleRootItem() is used as a parent.
