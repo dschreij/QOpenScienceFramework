@@ -1,6 +1,6 @@
 {
 	"base_url"		: "https://accounts.osf.io/",
 	"api_base_url"	: "https://api.osf.io/v2/",
-	"website_url"	: "http://osf.io",
+	"website_url"	: "https://osf.io",
 	"scope"			: ["osf.full_read", "osf.full_write"]
 }

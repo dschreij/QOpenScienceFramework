@@ -163,8 +163,8 @@ class UserBadge(QtWidgets.QWidget):
 
 		self.login_button.setContentsMargins(0, 0, 0, 0)
 		self.user_button.setContentsMargins(0, 0, 0, 0)
-		self.setContentsMargins(0, 0, 0, 0)
 		self.layout().setContentsMargins(0, 0, 0, 0)
+		self.layout().setSpacing(0)
 
 	def current_user(self):
 		""" Checks the current status of the user.
@@ -439,7 +439,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.new_folder_button.setDisabled(True)
 
 		self.delete_icon = QtGui.QIcon.fromTheme(
-			'user-trash-symbolic',
+			'edit-delete',
 			qta.icon('fa.trash')
 		)
 		self.delete_button = QtWidgets.QPushButton(self.delete_icon, _('Delete'))
@@ -737,7 +737,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			else:
 				# Get the ID part of the filter parameter and generate the url
 				web_id = target.split("=")[1]
-				web_url = u"https://osf.io/{}".format(web_id)
+				web_url = u"{}/{}".format(osf.settings['website_url'], web_id)
 				a = u"<a href=\"{0}\">{0}</a>".format(web_url)
 				# Set the URL in the field
 				self.properties["Link"][1].setText(a)
@@ -1357,8 +1357,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			item.setIcon(0,self.get_icon('folder',data['attributes']['name']))
 		self.expanded_items.discard(data['id'])
 
-	def __populate_error(self, reply):
-		""" Callback for when an error occured while populating the tree. """
+	def __cleanup_reply(self, reply):
+		""" Callback for when an error occured while populating the tree, or when
+		populate_tree finished successfully. Removes the QNetworkReply
+		from the list of active HTTP operations. """
 		# Reset active requests after error
 		try:
 			self.active_requests.remove(reply)
@@ -1611,7 +1613,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			content_url,
 			self.populate_tree,
 			node,
-			errorCallback=self.__populate_error
+			errorCallback=self.__cleanup_reply
 		)
 
 		# If something went wrong, req should be None
@@ -1641,7 +1643,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			# If not, query the osf for the user data, and pass get_repo_contents
 			# ass the callback to which the received data should be sent.
 			self.manager.get_logged_in_user(
-				self.process_repo_contents, errorCallback=self.__populate_error)
+				self.process_repo_contents, errorCallback=self.__cleanup_reply)
 
 	def add_item(self, parent, data):
 		if data['type'] == 'nodes':
@@ -1700,8 +1702,17 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			parent = self.invisibleRootItem()
 
 		for entry in osf_response["data"]:
-			# Add item to the tree
-			item, kind = self.add_item(parent, entry)
+			# Add item to the tree. Check if object hasn't been deleted in the
+			# meantime
+			try:
+				item, kind = self.add_item(parent, entry)
+			except RuntimeError as e:
+				# If a runtime error occured the tree was probably reset or 
+				# another event  deleted treeWidgetItems. Not much that can be
+				# done here, so do some cleanup and quit
+				warnings.warn(e)
+				self.__cleanup_reply(reply)
+				return
 
 			if kind in ["project","folder"]:
 				try:
@@ -1717,7 +1728,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 					next_entrypoint,
 					self.populate_tree,
 					item,
-					errorCallback=self.__populate_error
+					errorCallback=self.__cleanup_reply
 				)
 				# If something went wrong, req should be None
 				if req:
@@ -1736,20 +1747,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				next_page_url,
 				self.populate_tree,
 				parent,
-				errorCallback=self.__populate_error
+				errorCallback=self.__cleanup_reply
 			)
 			# If something went wrong, req should be None
 			if req:
 				self.active_requests.append(req)
 
 		# Remove current reply from list of active requests (assuming it finished)
-		try:
-			self.active_requests.remove(reply)
-		except ValueError:
-			logging.info("Reply not found in active requests")
-
-		if not self.active_requests:
-			self.refreshFinished.emit()
+		self.__cleanup_reply(reply)
 
 	def process_repo_contents(self, logged_in_user):
 		""" Processes contents for the logged in user. Starts by listing
@@ -1776,7 +1781,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		req = self.manager.get(
 			user_nodes_api_call,
 			self.populate_tree,
-			errorCallback=self.__populate_error,
+			errorCallback=self.__cleanup_reply,
 		)
 		# If something went wrong, req should be None
 		if req:

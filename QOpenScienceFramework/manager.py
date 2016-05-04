@@ -141,6 +141,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		self.browser.load(browser_url)
 		self.browser.show()
+		self.browser.raise_()
+		self.browser.activateWindow()
 
 	def logout(self):
 		""" Logs out from OSF """
@@ -149,12 +151,17 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				osf.logout_url,
 				self.__logout_succeeded,
 				{'token':osf.session.access_token},
+				errorCallback=self.__logout_failed
 			)
 
-	def __logout_succeeded(self,data,*args):
-		""" Callback for logout(). Called when logout has succeeded. This function
+	def __logout_succeeded(self, data, *args):
+		""" Callback for logout(). Called when logout has failed. This function
 		will then dispatch the logout signal to all other connected elements. """
 		self.dispatcher.dispatch_logout()
+
+	def __logout_failed(self, data, *args):
+		""" Callback for logout(). Called when logout has failed. """
+		self.dispatcher.dispatch_login()
 
 	def check_for_stored_token(self, tokenfile):
 		""" Checks if valid token information is stored in a token.json file at
@@ -321,8 +328,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Add OAuth2 token
 		if not self.add_token(request):
-			self.warning_message.emit('Warning',
-				_(u"Token could not be added to the request"))
+			warnings.warn(_(u"Token could not be added to the request"))
 
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
@@ -466,8 +472,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Add OAuth2 token
 		if not self.add_token(request):
-			self.warning_message.emit('Warning',
-				_(u"Token could not be added to the request"))
+			warnings.warn(_(u"Token could not be added to the request"))
 
 		reply = super(ConnectionManager, self).put(request, data_to_send)
 		reply.finished.connect(lambda: self.__reply_finished(callback, *args, **kwargs))
@@ -521,8 +526,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Add OAuth2 token
 		if not self.add_token(request):
-			self.warning_message.emit('Warning',
-				_(u"Token could not be added to the request"))
+			warnings.warn(_(u"Token could not be added to the request"))
 
 		# Check if this is a redirect and keep a count to prevent endless
 		# redirects. If redirect_count is not set, init it to 0
