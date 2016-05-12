@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.events &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.events</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.events</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="c1"># Import basics</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="c1">#OSF modules</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+
+<span class="c1"># PyQt modules</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+<div class="viewcode-block" id="EventDispatcher"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher">[docs]</a><span class="k">class</span> <span class="nc">EventDispatcher</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; This class fires events to connected classes, which are henceforth</span>
+<span class="sd">	referenced to as &#39;listeners&#39;.</span>
+<span class="sd">	Basically EventDispatcher&#39;s purpose is to propagate login and logout events</span>
+<span class="sd">	to the QWidget subclasses that require authorization at the OSF to function</span>
+<span class="sd">	correctly, but of course this can be extended with other events that are relevant</span>
+<span class="sd">	for all listeners.</span>
+
+<span class="sd">	The only requirement for listener classes is that they implement a handling</span>
+<span class="sd">	function for each event that should be named &quot;handle_&lt;event_name&gt;&quot;. For example, to catch</span>
+<span class="sd">	a login event, a listener should have the function handle_login.&quot;&quot;&quot;</span>
+
+	<span class="c1"># List of possible events this dispatcher can emit</span>
+	<span class="n">logged_in</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt Signal emitted when a user just logged in. &quot;&quot;&quot;</span>
+	<span class="n">logged_out</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt Signal emitted when a user just logged out. &quot;&quot;&quot;</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor &quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">EventDispatcher</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EventDispatcher.add_listeners"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher.add_listeners">[docs]</a>	<span class="k">def</span> <span class="nf">add_listeners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_list</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Add one or more object(s) to the list of listeners.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		obj : object</span>
+<span class="sd">			the list of listeners to add. Listeners should implement handling \</span>
+<span class="sd">			functions which are called when certain events occur.</span>
+<span class="sd">			The list of functions that listeners should implement is currently:</span>
+
+<span class="sd">				- handle_login</span>
+<span class="sd">				- handle_logout</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># If the object passed is a list, add all object in the list</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj_list</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;List expected; {} received&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">obj_list</span><span class="p">)))</span>
+
+		<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj_list</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">add_listener</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="EventDispatcher.add_listener"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher.add_listener">[docs]</a>	<span class="k">def</span> <span class="nf">add_listener</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Add a new object to listen for the events.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		obj : object</span>
+<span class="sd">			the listener to add. Should implement handling functions which are</span>
+<span class="sd">			called when certain events occur. The list of functions that the</span>
+<span class="sd">			listener should implement is currently:</span>
+
+<span class="sd">				- handle_login</span>
+<span class="sd">				- handle_logout</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="s2">&quot;handle_login&quot;</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The passed item {} does not have the required &#39;handle_login&#39; function&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">handle_login</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="s2">&quot;handle_logout&quot;</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The passed item {} does not have the required &#39;handle_logout&#39; function&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_out</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">handle_logout</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EventDispatcher.remove_listener"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher.remove_listener">[docs]</a>	<span class="k">def</span> <span class="nf">remove_listener</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Remove a listener.</span>
+
+<span class="sd">		obj : object</span>
+<span class="sd">			The object that is to be disconnected</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		A reference to the current instance of this object (self).&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">handle_login</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_out</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">handle_logout</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="EventDispatcher.dispatch_login"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher.dispatch_login">[docs]</a>	<span class="k">def</span> <span class="nf">dispatch_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Convenience function to dispatch the login event. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EventDispatcher.dispatch_logout"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.EventDispatcher.dispatch_logout">[docs]</a>	<span class="k">def</span> <span class="nf">dispatch_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Convenience function to dispatch the logout event. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_out</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="TokenFileListener"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.TokenFileListener">[docs]</a><span class="k">class</span> <span class="nc">TokenFileListener</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; This listener stores the OAuth2 token after login and destroys it after</span>
+<span class="sd">	logout.&quot;&quot;&quot;</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tokenfile</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor &quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">TokenFileListener</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span> <span class="o">=</span> <span class="n">tokenfile</span>
+
+<div class="viewcode-block" id="TokenFileListener.handle_login"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.TokenFileListener.handle_login">[docs]</a>	<span class="k">def</span> <span class="nf">handle_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles the login event. </span>
+
+<span class="sd">		Stores the OAuth2 token in a file.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">token</span><span class="p">:</span>
+			<span class="n">tokenstr</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+			<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+				<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tokenstr</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error, could not find authentication token&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TokenFileListener.handle_logout"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.TokenFileListener.handle_logout">[docs]</a>	<span class="k">def</span> <span class="nf">handle_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles the logout event. </span>
+
+<span class="sd">		Deletes the file containing the OAuth2 token.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span><span class="p">):</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="Notifier"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.Notifier">[docs]</a><span class="k">class</span> <span class="nc">Notifier</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; This object receives error or info messages and displays them in a</span>
+<span class="sd">	QMessageBox notification box. It works with Qts signal slot architecture,</span>
+<span class="sd">	as in all functions are slots to which Qt signals should be connected.&quot;&quot;&quot;</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor &quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">Notifier</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+	<span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span> <span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Notifier.error"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.Notifier.error">[docs]</a>	<span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Show an error message in a &#39;critical&#39; QMessageBox.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The title of the box</span>
+<span class="sd">		message : str</span>
+<span class="sd">			The message to display</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+			<span class="n">title</span><span class="p">,</span>
+			<span class="n">message</span>
+		<span class="p">)</span></div>
+
+	<span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span> <span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Notifier.warning"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.Notifier.warning">[docs]</a>	<span class="k">def</span> <span class="nf">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Show a warning message in a &#39;warning&#39; QMessageBox.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The title of the box</span>
+<span class="sd">		message : str</span>
+<span class="sd">			The message to display</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+			<span class="n">title</span><span class="p">,</span>
+			<span class="n">message</span>
+		<span class="p">)</span></div>
+
+	<span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span> <span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Notifier.info"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.Notifier.info">[docs]</a>	<span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Show an info message in an &#39;information&#39; QMessageBox.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The title of the box</span>
+<span class="sd">		message : str</span>
+<span class="sd">			The message to display</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+			<span class="n">title</span><span class="p">,</span>
+			<span class="n">message</span>
+		<span class="p">)</span></div>
+
+	<span class="nd">@QtCore.pyqtSlot</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span> <span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Notifier.success"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.events.Notifier.success">[docs]</a>	<span class="k">def</span> <span class="nf">success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Show a success message in a &#39;success&#39; QMessageBox.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The title of the box</span>
+<span class="sd">		message : str</span>
+<span class="sd">			The message to display</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">information</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
+			<span class="n">title</span><span class="p">,</span>
+			<span class="n">message</span>
+		<span class="p">)</span></div></div>
+
+
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

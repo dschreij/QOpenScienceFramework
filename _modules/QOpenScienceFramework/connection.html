@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.connection &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.connection</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.connection</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module handles the OAuth2 authentication process and maintains the</span>
+<span class="sd">session (/token) information that is required to communicate with the OSF API</span>
+
+<span class="sd">It is also responsible for constructing the correct API calls/uris as specified by the</span>
+<span class="sd">OSF for the various types of information that can be requested.</span>
+
+<span class="sd">.. Note:: A lot of the functions that are available here have equivalents in the</span>
+<span class="sd">	ConnectionManager class. It is recommended to use those functions instead as they are</span>
+<span class="sd">	executed asynchronously and are used throughout the rest of the application.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># Import basics</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="c1"># Module for easy OAuth2 usage, based on the requests library,</span>
+<span class="c1"># which is the easiest way to perform HTTP requests.</span>
+
+<span class="c1"># OAuth2Session</span>
+<span class="kn">import</span> <span class="nn">requests_oauthlib</span>
+<span class="c1"># Mobile application client that does not need a client_secret</span>
+<span class="kn">from</span> <span class="nn">oauthlib.oauth2</span> <span class="kn">import</span> <span class="n">MobileApplicationClient</span>
+<span class="c1"># Easier function decorating</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">dirname</span>
+
+<span class="c1"># Load settings file containing required OAuth2 parameters</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;settings.json&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+	<span class="n">settings</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+<span class="n">base_url</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;base_url&#39;</span><span class="p">]</span>
+<span class="n">api_base_url</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;api_base_url&#39;</span><span class="p">]</span>
+<span class="n">scope</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;scope&#39;</span><span class="p">]</span>
+<span class="n">website_url</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;website_url&#39;</span><span class="p">]</span>
+
+<span class="c1"># Convenience reference</span>
+<span class="n">TokenExpiredError</span> <span class="o">=</span> <span class="n">requests_oauthlib</span><span class="o">.</span><span class="n">oauth2_session</span><span class="o">.</span><span class="n">TokenExpiredError</span>
+
+<span class="k">class</span> <span class="nc">OSFInvalidResponse</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+	<span class="k">pass</span>
+
+<span class="n">session</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="c1">#%%------------------ Main configuration and helper functions ------------------</span>
+
+<div class="viewcode-block" id="create_session"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.create_session">[docs]</a><span class="k">def</span> <span class="nf">create_session</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Creates/resets and OAuth 2 session, with the specified data. &quot;&quot;&quot;</span>
+	<span class="k">global</span> <span class="n">session</span>
+	<span class="k">global</span> <span class="n">settings</span>
+
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">client_id</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">]</span>
+		<span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;redirect_uri&#39;</span><span class="p">]</span>
+	<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+		<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;The OAuth2 settings dictionary is missing the {} entry. &quot;</span>
+			<span class="s2">&quot;Please add it to the QOpenScienceFramework.connection.settings &quot;</span>
+			<span class="s2">&quot;dicationary before trying to create a new session&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+	<span class="c1"># Set up requests_oauthlib object</span>
+	<span class="n">mobile_app_client</span> <span class="o">=</span> <span class="n">MobileApplicationClient</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span>
+
+	<span class="c1"># Create an OAuth2 session for the OSF</span>
+	<span class="n">session</span> <span class="o">=</span> <span class="n">requests_oauthlib</span><span class="o">.</span><span class="n">OAuth2Session</span><span class="p">(</span>
+		<span class="n">client_id</span><span class="p">,</span>
+		<span class="n">mobile_app_client</span><span class="p">,</span>
+		<span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span>
+		<span class="n">redirect_uri</span><span class="o">=</span><span class="n">redirect_uri</span><span class="p">,</span>
+	<span class="p">)</span>
+	<span class="k">return</span> <span class="n">session</span></div>
+
+<span class="c1"># Generate correct URLs</span>
+<span class="n">auth_url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s2">&quot;oauth2/authorize&quot;</span>
+<span class="n">token_url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s2">&quot;oauth2/token&quot;</span>
+<span class="n">logout_url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s2">&quot;oauth2/revoke&quot;</span>
+
+<span class="c1"># API configuration settings</span>
+<span class="n">api_calls</span> <span class="o">=</span> <span class="p">{</span>
+	<span class="s2">&quot;logged_in_user&quot;</span><span class="p">:</span><span class="s2">&quot;users/me/&quot;</span><span class="p">,</span>
+	<span class="s2">&quot;projects&quot;</span><span class="p">:</span><span class="s2">&quot;users/me/nodes/&quot;</span><span class="p">,</span>
+	<span class="s2">&quot;project_repos&quot;</span><span class="p">:</span><span class="s2">&quot;nodes/{}/files/&quot;</span><span class="p">,</span>
+	<span class="s2">&quot;repo_files&quot;</span><span class="p">:</span><span class="s2">&quot;nodes/{}/files/{}/&quot;</span><span class="p">,</span>
+	<span class="s2">&quot;file_info&quot;</span><span class="p">:</span><span class="s2">&quot;files/{}/&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="api_call"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.api_call">[docs]</a><span class="k">def</span> <span class="nf">api_call</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; generates and api endpoint. If arguments are required to build the endpoint</span>
+<span class="sd">	, they can be specified as extra arguments.</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	command : {&#39;logged_in_user&#39;, &#39;projects&#39;, &#39;project_repos&#39;, &#39;repo_files&#39;, &#39;file_info&#39;}</span>
+<span class="sd">		The key of the endpoint to look up in the api_calls dictionary</span>
+<span class="sd">	</span>
+<span class="sd">		Extra arguments passed to this function will be integrated into the API call \</span>
+<span class="sd">		at specified positions (marked by \{\}). The formats of the calls are as follows:</span>
+
+<span class="sd">			``logged_in_user: &quot;users/me/&quot;``</span>
+
+<span class="sd">			``projects: &quot;users/me/nodes/&quot;``</span>
+<span class="sd">			</span>
+<span class="sd">			``project_repos: &quot;nodes/\{\}/files/&quot;``</span>
+
+<span class="sd">			``repo_files: &quot;nodes/\{\}/files/\{\}/&quot;``</span>
+
+<span class="sd">			``file_info: &quot;files/\{\}/&quot;``</span>
+
+<span class="sd">	*args : various (optional)</span>
+<span class="sd">		Optional extra data which is needed to construct the correct api endpoint uri. \</span>
+<span class="sd">		Check the OSF API documentation for a list of variables that each type of \</span>
+<span class="sd">		call expects.</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	string : The complete uri for the api endpoint.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">return</span> <span class="n">api_base_url</span> <span class="o">+</span> <span class="n">api_calls</span><span class="p">[</span><span class="n">command</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="check_for_active_session"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.check_for_active_session">[docs]</a><span class="k">def</span> <span class="nf">check_for_active_session</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Checks if a session object has been created and raises a RuntimeError otherwise.&quot;&quot;&quot;</span>
+	<span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Session is not yet initialized, use connection.&quot;</span>
+			<span class="s2">&quot;session = connection.create_session()&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1">#%%--------------------------- Oauth communiucation ----------------------------</span>
+
+
+<div class="viewcode-block" id="get_authorization_url"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.get_authorization_url">[docs]</a><span class="k">def</span> <span class="nf">get_authorization_url</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Generate the URL at which an OAuth2 token for the OSF can be requested</span>
+<span class="sd">	with which OpenSesame can be allowed access to the user&#39;s account.</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	str</span>
+<span class="sd">		The complete uri for the api endpoint.</span>
+
+<span class="sd">	Raises</span>
+<span class="sd">	------</span>
+<span class="sd">	RuntimeError</span>
+<span class="sd">		When there is no active OAuth2 session.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">check_for_active_session</span><span class="p">()</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">authorization_url</span><span class="p">(</span><span class="n">auth_url</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="parse_token_from_url"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.parse_token_from_url">[docs]</a><span class="k">def</span> <span class="nf">parse_token_from_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; Parses token from url fragment </span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	url : str</span>
+<span class="sd">		The url to parse. Should have a hass fragment (#) after which the token</span>
+<span class="sd">		information is found.</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	str</span>
+<span class="sd">		The currently used OAuth2 access token.</span>
+
+<span class="sd">	Raises</span>
+<span class="sd">	------</span>
+<span class="sd">	RuntimeError</span>
+<span class="sd">		When there is no active OAuth2 session.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">check_for_active_session</span><span class="p">()</span>
+	<span class="n">token</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">token_from_fragment</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+	<span class="c1"># Call logged_in function to notify event listeners that user is logged in</span>
+	<span class="k">if</span> <span class="n">is_authorized</span><span class="p">():</span>
+		<span class="k">return</span> <span class="n">token</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ERROR: Token received, but user not authorized&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_authorized"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.is_authorized">[docs]</a><span class="k">def</span> <span class="nf">is_authorized</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Convenience function simply returning OAuth2Session.authorized. </span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	bool</span>
+<span class="sd">		True is the user is authorized, False if not</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">check_for_active_session</span><span class="p">()</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">authorized</span></div>
+
+<div class="viewcode-block" id="token_valid"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.token_valid">[docs]</a><span class="k">def</span> <span class="nf">token_valid</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Checks if OAuth token is present, and if so, if it has not expired yet. </span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	bool</span>
+<span class="sd">		True if the token is present and is valid, False otherwise</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">check_for_active_session</span><span class="p">()</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">token</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">False</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">token</span><span class="p">[</span><span class="s2">&quot;expires_at&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="requires_authentication"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.requires_authentication">[docs]</a><span class="k">def</span> <span class="nf">requires_authentication</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; Decorator function which checks if a user is authenticated before he</span>
+<span class="sd">	performs the desired action. It furthermore checks if the response has been</span>
+<span class="sd">	received without errors.&quot;&quot;&quot;</span>
+
+	<span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+	<span class="k">def</span> <span class="nf">func_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="c1"># Check first if a token is present in the first place</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">is_authorized</span><span class="p">():</span>
+			<span class="k">print</span><span class="p">(</span><span class="s2">&quot;You are not authenticated. Please log in first.&quot;</span><span class="p">)</span>
+			<span class="k">return</span> <span class="bp">False</span>
+		<span class="c1"># Check if token has not yet expired</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">token_valid</span><span class="p">():</span>
+			<span class="k">raise</span> <span class="n">TokenExpiredError</span><span class="p">(</span><span class="s2">&quot;The supplied token has expired&quot;</span><span class="p">)</span>
+
+		<span class="n">response</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+		<span class="c1"># Check response status code to be 200 (HTTP OK)</span>
+		<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+			<span class="c1"># Check if response is JSON format</span>
+			<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;content-type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">:</span>
+				<span class="c1"># See if you can decode the response to json.</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+				<span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="n">OSFInvalidResponse</span><span class="p">(</span>
+						<span class="s2">&quot;Could not decode response to JSON: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+				<span class="k">return</span> <span class="n">response</span>
+			<span class="c1"># Check if response is an octet stream (binary data format)</span>
+			<span class="c1"># and if so, return the raw content since its probably a download.</span>
+			<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;content-type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;application/octet-stream&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+		<span class="c1"># Anything else than a 200 code response is probably an error</span>
+		<span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;content-type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span><span class="s1">&#39;application/vnd.api+json&#39;</span><span class="p">]:</span>
+			<span class="c1"># See if you can decode the response to json.</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+			<span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s2">&quot;Could not decode response to JSON: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+			<span class="k">if</span> <span class="s2">&quot;errors&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="n">msg</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;detail&#39;</span><span class="p">]</span>
+				<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s1">&#39;An error occured, but OSF error </span><span class="se">\</span>
+<span class="s1">						message could not be retrieved. Invalid format?&#39;</span><span class="p">)</span>
+				<span class="c1"># Check if message involves an incorrecte token response</span>
+				<span class="k">if</span> <span class="n">msg</span> <span class="o">==</span> <span class="s2">&quot;User provided an invalid OAuth2 access token&quot;</span><span class="p">:</span>
+					<span class="n">logout</span><span class="p">()</span>
+					<span class="k">raise</span> <span class="n">TokenExpiredError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+		<span class="c1"># If no response has been returned by now, or no error has been raised,</span>
+		<span class="c1"># then something fishy is going on that should be reported as en Error</span>
+
+		<span class="c1"># Don&#39;t print out html pages or octet stream, as this is useless</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;content-type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;text/html&quot;</span><span class="p">,</span><span class="s2">&quot;application/octet-stream&quot;</span><span class="p">]:</span>
+			<span class="n">message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+		<span class="n">error_text</span> <span class="o">=</span> <span class="s1">&#39;Could not handle response {}: {}</span><span class="se">\n</span><span class="s1">Content Type: {}</span><span class="se">\n</span><span class="s1">{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+			<span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span>
+			<span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
+			<span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;content-type&#39;</span><span class="p">],</span>
+			<span class="n">message</span>
+		<span class="p">)</span>
+		<span class="k">raise</span> <span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="n">error_text</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">func_wrapper</span></div>
+
+<div class="viewcode-block" id="logout"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.logout">[docs]</a><span class="k">def</span> <span class="nf">logout</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Logs out the user, and resets the global session object. </span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	bool</span>
+<span class="sd">		True if logout was succesful, False if not.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">global</span> <span class="n">session</span>
+	<span class="n">check_for_active_session</span><span class="p">()</span>
+	<span class="n">resp</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">logout_url</span><span class="p">,{</span>
+		<span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">access_token</span>
+	<span class="p">})</span>
+	<span class="c1"># Code 204 (empty response) signifies success</span>
+	<span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">204</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User logged out&quot;</span><span class="p">)</span>
+		<span class="c1"># Reset session object</span>
+		<span class="n">session</span> <span class="o">=</span> <span class="n">reset_session</span><span class="p">()</span>
+		<span class="k">return</span> <span class="bp">True</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Error logging out&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">False</span></div>
+
+<span class="c1">#%% Functions interacting with the OSF API</span>
+
+<span class="nd">@requires_authentication</span>
+<div class="viewcode-block" id="get_logged_in_user"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.get_logged_in_user">[docs]</a><span class="k">def</span> <span class="nf">get_logged_in_user</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Gets the currently logged in user&#39;s data </span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	dict</span>
+<span class="sd">		The dict containing the returned JSON data</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;logged_in_user&quot;</span><span class="p">))</span></div>
+
+<span class="nd">@requires_authentication</span>
+<div class="viewcode-block" id="get_user_projects"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.get_user_projects">[docs]</a><span class="k">def</span> <span class="nf">get_user_projects</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot; Gets the currently logged in user&#39;s projects</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	dict</span>
+<span class="sd">		The dict containing the returned JSON data</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;projects&quot;</span><span class="p">))</span></div>
+
+<span class="nd">@requires_authentication</span>
+<div class="viewcode-block" id="get_project_repos"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.get_project_repos">[docs]</a><span class="k">def</span> <span class="nf">get_project_repos</span><span class="p">(</span><span class="n">project_id</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; Gets the data of the specified project</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	project_id : str</span>
+<span class="sd">		Reference to the project node on the OSF</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	dict</span>
+<span class="sd">		The dict containing the returned JSON data</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;project_repos&quot;</span><span class="p">,</span><span class="n">project_id</span><span class="p">))</span></div>
+
+<span class="nd">@requires_authentication</span>
+<div class="viewcode-block" id="get_repo_files"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.get_repo_files">[docs]</a><span class="k">def</span> <span class="nf">get_repo_files</span><span class="p">(</span><span class="n">project_id</span><span class="p">,</span> <span class="n">repo_name</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; Gets the data of the specified repository of the specified project.</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	project_id : str</span>
+<span class="sd">		Reference to the project node on the OSF</span>
+<span class="sd">	repo_name : {&#39;osfstorage&#39;,&#39;dropbox&#39;,&#39;github&#39;,&#39;figshare&#39;,&#39;s3&#39;,&#39;googledrive&#39;}</span>
+<span class="sd">		The repository to return the data of.</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	dict</span>
+<span class="sd">		The dict containing the returned JSON data</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;repo_files&quot;</span><span class="p">,</span><span class="n">project_id</span><span class="p">,</span> <span class="n">repo_name</span><span class="p">))</span></div>
+
+<span class="nd">@requires_authentication</span>
+<div class="viewcode-block" id="direct_api_call"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.connection.direct_api_call">[docs]</a><span class="k">def</span> <span class="nf">direct_api_call</span><span class="p">(</span><span class="n">api_call</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; Performs a direct api call. Can be used as the api call is already </span>
+<span class="sd">	constructed.</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	api_call: str</span>
+<span class="sd">		The api call to perform</span>
+
+<span class="sd">	Returns</span>
+<span class="sd">	-------</span>
+<span class="sd">	dict</span>
+<span class="sd">		The dict containing the returned JSON data</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+	<span class="k">print</span><span class="p">(</span><span class="n">get_authorization_url</span><span class="p">())</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

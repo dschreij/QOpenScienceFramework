@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.loginwindow &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.loginwindow</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.loginwindow</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># QT classes</span>
+<span class="c1"># Required QT classes</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtCore</span>
+
+<span class="c1"># QtWebKit is dropped in favour of QtWebEngine from Qt 5.6 on</span>
+<span class="k">try</span><span class="p">:</span>
+	<span class="kn">from</span> <span class="nn">qtpy.QtWebKit</span> <span class="kn">import</span> <span class="n">QWebView</span> <span class="k">as</span> <span class="n">WebView</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+	<span class="kn">from</span> <span class="nn">qtpy.QtWebEngineWidgets</span> <span class="kn">import</span> <span class="n">QWebEngineView</span> <span class="k">as</span> <span class="n">WebView</span>
+
+<span class="c1"># OSF connection interface</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+<span class="c1"># Python 2 and 3 compatiblity settings</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">dirname</span>
+
+<span class="n">osf_logo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-white2.png&#39;</span><span class="p">)</span>
+
+<span class="c1"># Dummy function later to be replaced for translation</span>
+<span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="LoginWindow"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.loginwindow.LoginWindow">[docs]</a><span class="k">class</span> <span class="nc">LoginWindow</span><span class="p">(</span><span class="n">WebView</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; A Login window for the OSF &quot;&quot;&quot;</span>
+	
+	<span class="c1"># Login event is emitted after successfull login</span>
+	<span class="n">logged_in</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; Event fired when user successfully logged in. &quot;&quot;&quot;</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">LoginWindow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+		<span class="k">try</span><span class="p">:</span>
+			<span class="c1"># Create Network Access Manager to listen to all outgoing</span>
+			<span class="c1"># HTTP requests. Necessary to work around the WebKit &#39;bug&#39; which</span>
+			<span class="c1"># causes it drop url fragments, and thus the access_token that the</span>
+			<span class="c1"># OSF Oauth system returns</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">page</span><span class="p">()</span><span class="o">.</span><span class="n">networkAccessManager</span><span class="p">()</span>
+
+			<span class="c1"># Connect event that is fired if a HTTP request is completed.</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nam</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkResponse</span><span class="p">)</span>
+		<span class="k">except</span><span class="p">:</span>
+			<span class="k">pass</span>
+			<span class="c1"># Connect event that is fired if a HTTP request is completed.</span>
+			<span class="c1"># self.finished.connect(self.checkResponse)</span>
+
+		<span class="c1"># Connect event that is fired after an URL is changed</span>
+		<span class="c1"># (does not fire on 301 redirects, hence the requirement of the NAM)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">urlChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_URL</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LoginWindow.checkResponse"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.loginwindow.LoginWindow.checkResponse">[docs]</a>	<span class="k">def</span> <span class="nf">checkResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Callback function. Do not use directly. </span>
+
+<span class="sd">		Callback for NetworkRequestManager.finished event</span>
+<span class="sd">		used to check if OAuth2 is redirecting to a link containing the token</span>
+<span class="sd">		string. This is necessary for the QtWebKit module, because it drops</span>
+<span class="sd">		fragments after being redirect to a different URL. QWebEngine uses the</span>
+<span class="sd">		check_URL function to check for the token fragment</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		reply : QtNetwork.QNetworkReply</span>
+<span class="sd">			The response object provided by NetworkRequestManager</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">request</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+		<span class="c1"># Get the HTTP statuscode for this response</span>
+		<span class="n">statuscode</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">HttpStatusCodeAttribute</span><span class="p">)</span>
+		<span class="c1"># The accesstoken is given with a 302 statuscode to redirect</span>
+
+		<span class="c1"># Stop if statuscode is not 302 (HTTP Redirect)</span>
+		<span class="k">if</span> <span class="n">statuscode</span> <span class="o">!=</span> <span class="mi">302</span><span class="p">:</span>
+			<span class="k">return</span>
+
+		<span class="n">redirectUrl</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">RedirectionTargetAttribute</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">redirectUrl</span><span class="o">.</span><span class="n">hasFragment</span><span class="p">():</span>
+			<span class="k">return</span>
+
+		<span class="n">r_url</span> <span class="o">=</span> <span class="n">redirectUrl</span><span class="o">.</span><span class="n">toString</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">osf</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;redirect_uri&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">r_url</span><span class="p">:</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">parse_token_from_url</span><span class="p">(</span><span class="n">r_url</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="LoginWindow.check_URL"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.loginwindow.LoginWindow.check_URL">[docs]</a>	<span class="k">def</span> <span class="nf">check_URL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function. Do not use directly.</span>
+<span class="sd">		</span>
+<span class="sd">		Calback for urlChanged event.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		command : url</span>
+<span class="sd">			New url, provided by the urlChanged event</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">url_string</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">toString</span><span class="p">()</span>
+
+		<span class="c1"># QWebEngineView receives token here.</span>
+		<span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">hasFragment</span><span class="p">():</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">parse_token_from_url</span><span class="p">(</span><span class="n">url_string</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,1215 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.manager &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.manager</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.manager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="c1"># Import basics</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c1">#OSF modules</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+<span class="c1"># Python warnings</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="c1"># UUID generation</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="c1"># OSF modules</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">events</span><span class="p">,</span> <span class="n">loginwindow</span>
+<span class="c1"># Python 2 and 3 compatiblity settings</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># Easier function decorating</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="c1"># PyQt modules</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtNetwork</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+<span class="c1"># Dummy function later to be replaced for translation</span>
+<span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="ConnectionManager"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager">[docs]</a><span class="k">class</span> <span class="nc">ConnectionManager</span><span class="p">(</span><span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkAccessManager</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The connection manager does most of the heavy lifting in communicating with the</span>
+<span class="sd">	OSF. It is responsible for all the HTTP requests and the correct treatment of</span>
+<span class="sd">	responses from the OSF. &quot;&quot;&quot;</span>
+
+	<span class="c1"># The maximum number of allowed redirects</span>
+	<span class="n">MAX_REDIRECTS</span> <span class="o">=</span> <span class="mi">5</span>
+	<span class="n">error_message</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span><span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+	<span class="sd">&quot;&quot;&quot;PyQt signal to send an error message.&quot;&quot;&quot;</span>
+	<span class="n">warning_message</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span><span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+	<span class="sd">&quot;&quot;&quot;PyQt signal to send a warning message.&quot;&quot;&quot;</span>
+	<span class="n">info_message</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span><span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+	<span class="sd">&quot;&quot;&quot;PyQt signal to send an info message.&quot;&quot;&quot;</span>
+	<span class="n">success_message</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="s1">&#39;QString&#39;</span><span class="p">,</span><span class="s1">&#39;QString&#39;</span><span class="p">)</span>
+	<span class="sd">&quot;&quot;&quot;PyQt signal to send a success message.&quot;&quot;&quot;</span>
+
+	<span class="c1"># Dictionary holding requests in progress, so that they can be repeated if</span>
+	<span class="c1"># mid-request it is discovered that the OAuth2 token is no longer valid.</span>
+	<span class="n">pending_requests</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="ConnectionManager.__init__"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		tokenfile : str (default: &#39;token.json&#39;)</span>
+<span class="sd">			The path to the file in which the token information should be stored.</span>
+<span class="sd">		notifier : QtCore.QObject (default: None)</span>
+<span class="sd">			The object containing pyqt slots / callables to which this object&#39;s</span>
+<span class="sd">			message signals can be connected. The object should contain the following</span>
+<span class="sd">			slots / functions: info, error, success, warning. Each of these</span>
+<span class="sd">			should expect two strings. This object is then repsonsible for displaying</span>
+<span class="sd">			the messages, or passing them on to another object responsible for</span>
+<span class="sd">			the display. </span>
+
+<span class="sd">			If ``None`` is passed, then a events.Notifier object is</span>
+<span class="sd">			created which simply displays all messages in QDialog boxes</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># See if tokenfile and notifier are specified as keyword args</span>
+		<span class="n">tokenfile</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;tokenfile&quot;</span><span class="p">,</span> <span class="s2">&quot;token.json&quot;</span><span class="p">)</span>
+		<span class="n">notifier</span>  <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;notifier&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+		<span class="c1"># Call parent&#39;s constructor</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">ConnectionManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span> <span class="o">=</span> <span class="n">tokenfile</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">EventDispatcher</span><span class="p">()</span>
+
+		<span class="c1"># Notifications</span>
+		<span class="k">if</span> <span class="n">notifier</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">notifier</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">Notifier</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">notifier</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;notifier needs to be a class that inherits &#39;</span>
+					<span class="s1">&#39;from QtCore.QObject&#39;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">notifier</span><span class="p">,</span> <span class="s1">&#39;info&#39;</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;notifier object is missing a pyqt slot &#39;</span>
+					<span class="s1">&#39; named info(str, str)&#39;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">notifier</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;notifier object is missing a pyqt slot &#39;</span>
+					<span class="s1">&#39; named error(str, str)&#39;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">notifier</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;notifier object is missing a pyqt slot &#39;</span>
+					<span class="s1">&#39; named success(str, str)&#39;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">notifier</span><span class="p">,</span> <span class="s1">&#39;warning&#39;</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;notifier object is missing a pyqt slot &#39;</span>
+					<span class="s1">&#39; named warning(str, str)&#39;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">notifier</span> <span class="o">=</span> <span class="n">notifier</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">notifier</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">info_message</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">notifier</span><span class="o">.</span><span class="n">info</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">success_message</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">notifier</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">warning_message</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">notifier</span><span class="o">.</span><span class="n">warning</span><span class="p">)</span>
+
+		<span class="c1"># Init browser in which login page is displayed</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span> <span class="o">=</span> <span class="n">loginwindow</span><span class="o">.</span><span class="n">LoginWindow</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Log in to OSF&quot;</span><span class="p">))</span>
+		<span class="c1"># Make sure browser closes if parent QWidget closes</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">(),</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">)</span>
+
+		<span class="c1"># Connect browsers logged in event to that of dispatcher&#39;s</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_login</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">config_mgr</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkConfigurationManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+	<span class="c1">### Private functions</span>
+	
+	<span class="k">def</span> <span class="nf">__logout_succeeded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for logout(). </span>
+<span class="sd">		Called when logout has succeeded. This function</span>
+<span class="sd">		dispatches the logout signal to all other connected elements. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_logout</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__logout_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for logout(). </span>
+<span class="sd">		Called when logout has failed. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_login</span><span class="p">()</span>
+
+	<span class="c1">### Login and Logout functions</span>
+
+<div class="viewcode-block" id="ConnectionManager.login"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.login">[docs]</a>	<span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Logs in a user. Checks if a token file is stored which can be used to </span>
+<span class="sd">		login a user. If not or the token file is invalid, it opens a browser </span>
+<span class="sd">		window through which a user can log in. After a successful login, the </span>
+<span class="sd">		browser widget fires the &#39;logged_in&#39; event. &quot;&quot;&quot;</span>
+
+		<span class="c1"># If a valid stored token is found, read that in an dispatch login event</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_for_stored_token</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenfile</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_login</span><span class="p">()</span>
+			<span class="k">return</span>
+		<span class="c1"># Otherwise, do the whole authentication dance</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">show_login_window</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.check_for_stored_token"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.check_for_stored_token">[docs]</a>	<span class="k">def</span> <span class="nf">check_for_stored_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokenfile</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Checks for stored token information. Checks if a token.json file can be</span>
+<span class="sd">		found at the supplied location and inspects if it is not expired.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		tokenfile : str</span>
+<span class="sd">			Path to the token file</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		bool</span>
+<span class="sd">			True if a valid token was found at tokenfile&#39;s location, False otherwise</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Looking for token at {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tokenfile</span><span class="p">))</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">tokenfile</span><span class="p">):</span>
+			<span class="k">return</span> <span class="bp">False</span>
+
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">token</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">tokenfile</span><span class="p">))</span>
+		<span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Token file could not be opened.&quot;</span><span class="p">)</span>
+			<span class="k">return</span> <span class="bp">False</span>
+
+		<span class="c1"># Check if token has not yet expired</span>
+		<span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;expires_at&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="p">:</span>
+			<span class="c1"># Load the token information in the session object</span>
+			<span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+			<span class="k">return</span> <span class="bp">True</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">osf</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">create_session</span><span class="p">()</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tokenfile</span><span class="p">)</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Token expired; need log-in&quot;</span><span class="p">)</span>
+			<span class="k">return</span> <span class="bp">False</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.show_login_window"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.show_login_window">[docs]</a>	<span class="k">def</span> <span class="nf">show_login_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Shows the login page on OSF. &quot;&quot;&quot;</span>
+		<span class="n">auth_url</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">get_authorization_url</span><span class="p">()</span>
+
+		<span class="c1"># Set up browser</span>
+		<span class="n">browser_url</span> <span class="o">=</span> <span class="n">get_QUrl</span><span class="p">(</span><span class="n">auth_url</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">browser_url</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">raise_</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">activateWindow</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.logout"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.logout">[docs]</a>	<span class="k">def</span> <span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Logs the current user out from OSF. &quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">osf</span><span class="o">.</span><span class="n">is_authorized</span><span class="p">()</span> <span class="ow">and</span> <span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">access_token</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+				<span class="n">osf</span><span class="o">.</span><span class="n">logout_url</span><span class="p">,</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__logout_succeeded</span><span class="p">,</span>
+				<span class="p">{</span><span class="s1">&#39;token&#39;</span><span class="p">:</span><span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">access_token</span><span class="p">},</span>
+				<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__logout_failed</span>
+			<span class="p">)</span></div>
+
+	<span class="c1">### Communication with OSF API</span>
+
+<div class="viewcode-block" id="ConnectionManager.buffer_network_request"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.buffer_network_request">[docs]</a>	<span class="k">def</span> <span class="nf">buffer_network_request</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Decorator function, not to be called directly.</span>
+<span class="sd">		Checks if network is accessible and buffers the network request so</span>
+<span class="sd">		that it can be sent again if it fails the first time, for instance due to </span>
+<span class="sd">		an invalidated OAuth2 token. In this case the user will be presented with </span>
+<span class="sd">		the login screen again. If the same user successfully logs in again, the </span>
+<span class="sd">		request will be resent. &quot;&quot;&quot;</span>
+
+		<span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+		<span class="k">def</span> <span class="nf">func_wrapper</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">logged_in_user</span><span class="p">:</span>
+				<span class="c1"># Create an internal ID for this request</span>
+				<span class="n">request_id</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span>
+				<span class="n">current_request</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">func</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+				<span class="c1"># Add tuple with current user, and request to be performed</span>
+				<span class="c1"># to the pending request dictionary</span>
+				<span class="n">inst</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">request_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+					<span class="n">inst</span><span class="o">.</span><span class="n">logged_in_user</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+					<span class="n">current_request</span><span class="p">)</span>
+				<span class="c1"># Add current request id to kwargs of function being called</span>
+				<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;_request_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_id</span>
+			<span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">func_wrapper</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.add_token"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.add_token">[docs]</a>	<span class="k">def</span> <span class="nf">add_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Adds the OAuth2 token to a HTTP request.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		request : QtNetwork.QNetworkRequest</span>
+<span class="sd">			The network request item in whose header to add the OAuth2 token</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		bool</span>
+<span class="sd">			True if token could successfully be added to the request, False if not</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">osf</span><span class="o">.</span><span class="n">is_authorized</span><span class="p">():</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">safe_encode</span><span class="p">(</span><span class="s2">&quot;Authorization&quot;</span><span class="p">)</span>
+			<span class="n">value</span> <span class="o">=</span> <span class="n">safe_encode</span><span class="p">(</span><span class="s2">&quot;Bearer {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">osf</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">access_token</span><span class="p">))</span>
+			<span class="n">request</span><span class="o">.</span><span class="n">setRawHeader</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+			<span class="k">return</span> <span class="bp">True</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">False</span></div>
+
+	<span class="c1">### Basic HTTP Functions</span>
+	<span class="k">def</span> <span class="nf">__check_request_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Check if the supplied url is of the correct type and if the callback</span>
+<span class="sd">		parameter is really a callable</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string or QtCore.QUrl</span>
+<span class="sd">			The target url/endpoint to perform the request on</span>
+<span class="sd">		callback : callable</span>
+<span class="sd">			The callback function</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtCore.QUrl</span>
+<span class="sd">			The url to send the request to in QUrl format (does nothing if url \</span>
+<span class="sd">			was already supplied as a QUrl)</span>
+
+<span class="sd">		Raises</span>
+<span class="sd">		------</span>
+<span class="sd">		TypeError</span>
+<span class="sd">			if url is not a QUrl or string, or if callback is not a callable</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QUrl</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;url should be a string or QUrl object&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QUrl</span><span class="p">):</span>
+			<span class="n">url</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QUrl</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">callback</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;callback should be a function or callable.&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">url</span>
+
+	<span class="nd">@buffer_network_request</span>
+<div class="viewcode-block" id="ConnectionManager.get"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get">[docs]</a>	<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Performs a HTTP GET request. </span>
+
+<span class="sd">		The OAuth2 token is automatically added to the</span>
+<span class="sd">		header if the request is going to an OSF server.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url/endpoint to perform the GET request on</span>
+<span class="sd">		callback : callable</span>
+<span class="sd">			The function to call once the request is finished successfully.</span>
+<span class="sd">		downloadProgess : function (defualt: None)</span>
+<span class="sd">			The slot (callback function) for the downloadProgress signal of the</span>
+<span class="sd">			reply object. This signal is emitted after a certain amount of bytes</span>
+<span class="sd">			is received, and can be used for instance to update a download progress</span>
+<span class="sd">			dialog box. The callback function should have two parameters to which</span>
+<span class="sd">			the transfered and total bytes can be assigned.</span>
+<span class="sd">		readyRead : function (default : None)</span>
+<span class="sd">			The slot (callback function) for the readyRead signal of the</span>
+<span class="sd">			reply object.</span>
+<span class="sd">		errorCallback : function (default: None)</span>
+<span class="sd">			function to call whenever an error occurs. Should be able to accept</span>
+<span class="sd">			the reply object as an argument. This function is also called if the</span>
+<span class="sd">			operation is aborted by the user him/herself.</span>
+<span class="sd">		progressDialog : QtWidgets.QProgressDialog (default: None)</span>
+<span class="sd">			The dialog to send the progress indication to. Will be included in the</span>
+<span class="sd">			reply object so that it is accessible in the downloadProgress slot, by</span>
+<span class="sd">			calling self.sender().property(&#39;progressDialog&#39;)</span>
+<span class="sd">		abortSignal : QtCore.pyqtSignal</span>
+<span class="sd">			This signal will be attached to the reply objects abort() slot, so that</span>
+<span class="sd">			the operation can be aborted from outside if necessary.</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to the callback</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply</span>
+<span class="sd">			The reply object for the current request. Note that if a 301 or 302</span>
+<span class="sd">			redirect has occurred, a new reply object has been made for the redirect</span>
+<span class="sd">			and the one returned here is no longer valid.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># First check the correctness of the url and callback parameters</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__check_request_parameters</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+
+		<span class="c1"># Create network request</span>
+		<span class="n">request</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkRequest</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+		<span class="c1"># Add OAuth2 token</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Token could not be added to the request&quot;</span><span class="p">))</span>
+
+		<span class="c1"># Check if this is a redirect and keep a count to prevent endless</span>
+		<span class="c1"># redirects. If redirect_count is not set, init it to 0</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+		<span class="n">reply</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ConnectionManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+		<span class="c1"># If provided, connect the abort signal to the reply&#39;s abort() slot</span>
+		<span class="n">abortSignal</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;abortSignal&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">abortSignal</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">abortSignal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+
+		<span class="c1"># Check if a QProgressDialog has been passed to which the download status</span>
+		<span class="c1"># can be reported. If so, add it as a property of the reply object</span>
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QProgressDialog</span><span class="p">):</span>
+			<span class="n">progressDialog</span><span class="o">.</span><span class="n">canceled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="n">progressDialog</span><span class="p">)</span>
+
+		<span class="c1"># Check if a callback has been specified to which the downloadprogress</span>
+		<span class="c1"># is to be reported</span>
+		<span class="n">dlpCallback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;downloadProgress&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">dlpCallback</span><span class="p">):</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">downloadProgress</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dlpCallback</span><span class="p">)</span>
+
+		<span class="c1"># Check if a callback has been specified for reply&#39;s readyRead() signal</span>
+		<span class="c1"># which emits as soon as data is available on the buffer and doesn&#39;t wait</span>
+		<span class="c1"># till the whole transfer is finished as the finished() callback does</span>
+		<span class="c1"># This is useful when downloading larger files</span>
+		<span class="n">rrCallback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;readyRead&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">rrCallback</span><span class="p">):</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">readyRead</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+				<span class="k">lambda</span><span class="p">:</span> <span class="n">rrCallback</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+			<span class="p">)</span>
+
+		<span class="n">reply</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+			<span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_finished</span><span class="p">(</span>
+				<span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+			<span class="p">)</span>
+		<span class="p">)</span>
+		<span class="k">return</span> <span class="n">reply</span></div>
+
+	<span class="nd">@buffer_network_request</span>
+<div class="viewcode-block" id="ConnectionManager.post"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.post">[docs]</a>	<span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">data_to_send</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Perform a HTTP POST request. </span>
+
+<span class="sd">		The OAuth2 token is automatically added to the</span>
+<span class="sd">		header if the request is going to an OSF server. This request is mainly used to send</span>
+<span class="sd">		small amounts of data to the OSF framework (use PUT for larger files, as this is also</span>
+<span class="sd">		required by the WaterButler service used by the OSF)</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url/endpoint to perform the POST request on.</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The function to call once the request is finished.</span>
+<span class="sd">		data_to_send : dict</span>
+<span class="sd">			The data to send with the POST request. keys will be used as variable names</span>
+<span class="sd">			and values will be used as the variable values.</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to callable.</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># First check the correctness of the url and callback parameters</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__check_request_parameters</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">data_to_send</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The POST data should be passed as a dict&quot;</span><span class="p">)</span>
+
+		<span class="n">request</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkRequest</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+		<span class="n">request</span><span class="o">.</span><span class="n">setHeader</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">ContentTypeHeader</span><span class="p">,</span><span class="s2">&quot;application/x-www-form-urlencoded&quot;</span><span class="p">);</span>
+
+		<span class="c1"># Add OAuth2 token</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Token could not be added to the request&quot;</span><span class="p">))</span>
+
+		<span class="c1"># Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the</span>
+		<span class="c1"># addQueryItem function in Qt5. This has moved to a differen QUrlQuery object</span>
+		<span class="k">if</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QT_VERSION_STR</span> <span class="o">&lt;</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span>
+			<span class="n">postdata</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QUrl</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">postdata</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QUrlQuery</span><span class="p">()</span>
+		<span class="c1"># Add data</span>
+		<span class="k">for</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">data_to_send</span><span class="p">:</span>
+			<span class="n">postdata</span><span class="o">.</span><span class="n">addQueryItem</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">data_to_send</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">varname</span><span class="p">))</span>
+		<span class="c1"># Convert to QByteArray for transport</span>
+		<span class="k">if</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QT_VERSION_STR</span> <span class="o">&lt;</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span>
+			<span class="n">final_postdata</span> <span class="o">=</span> <span class="n">postdata</span><span class="o">.</span><span class="n">encodedQuery</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">final_postdata</span> <span class="o">=</span> <span class="n">safe_encode</span><span class="p">(</span><span class="n">postdata</span><span class="o">.</span><span class="n">toString</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QUrl</span><span class="o">.</span><span class="n">FullyEncoded</span><span class="p">))</span>
+		<span class="c1"># Fire!</span>
+		<span class="n">reply</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ConnectionManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">final_postdata</span><span class="p">)</span>
+		<span class="n">reply</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_finished</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+
+	<span class="nd">@buffer_network_request</span>
+<div class="viewcode-block" id="ConnectionManager.put"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.put">[docs]</a>	<span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Perform a HTTP PUT request. </span>
+
+<span class="sd">		The OAuth2 token is automatically added to the</span>
+<span class="sd">		header if the request is going to an OSF server. This method should be used</span>
+<span class="sd">		to upload larger sets of data such as files.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url/endpoint to perform the PUT request on.</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The function to call once the request is finished.</span>
+<span class="sd">		data_to_send : QIODevice (default : None)</span>
+<span class="sd">			The file to upload (QFile or other QIODevice type)</span>
+<span class="sd">		uploadProgess : callable (defualt: None)</span>
+<span class="sd">			The slot (callback function) for the downloadProgress signal of the</span>
+<span class="sd">			reply object. This signal is emitted after a certain amount of bytes</span>
+<span class="sd">			is received, and can be used for instance to update a download progress</span>
+<span class="sd">			dialog box. The callback function should have two parameters to which</span>
+<span class="sd">			the transfered and total bytes can be assigned.</span>
+<span class="sd">		errorCallback : callable (default: None)</span>
+<span class="sd">			function to call whenever an error occurs. Should be able to accept</span>
+<span class="sd">			the reply object as an argument. This function is also called if the</span>
+<span class="sd">			operation is aborted by the user him/herself.</span>
+<span class="sd">		progressDialog : QtWidgets.QProgressDialog (default: None)</span>
+<span class="sd">			The dialog to send the progress indication to. Will be included in the</span>
+<span class="sd">			reply object so that it is accessible in the downloadProgress slot, by</span>
+<span class="sd">			calling self.sender().property(&#39;progressDialog&#39;)</span>
+<span class="sd">		abortSignal : QtCore.pyqtSignal</span>
+<span class="sd">			This signal will be attached to the reply objects abort() slot, so that</span>
+<span class="sd">			the operation can be aborted from outside if necessary.</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to the callback</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># First check the correctness of the url and callback parameters</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__check_request_parameters</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+		<span class="c1"># Don&#39;t use pop() here as it will cause a segmentation fault!</span>
+		<span class="n">data_to_send</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_to_send&#39;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">data_to_send</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_to_send</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The data_to_send should be of type QtCore.QIODevice&quot;</span><span class="p">)</span>
+
+		<span class="n">request</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkRequest</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+		<span class="c1"># request.setHeader(request.ContentTypeHeader,&quot;application/x-www-form-urlencoded&quot;);</span>
+
+		<span class="c1"># Add OAuth2 token</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Token could not be added to the request&quot;</span><span class="p">))</span>
+
+		<span class="n">reply</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ConnectionManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">data_to_send</span><span class="p">)</span>
+		<span class="n">reply</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_finished</span><span class="p">(</span><span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+		<span class="c1"># Check if a QProgressDialog has been passed to which the download status</span>
+		<span class="c1"># can be reported. If so, add it as a property of the reply object</span>
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QProgressDialog</span><span class="p">):</span>
+			<span class="n">progressDialog</span><span class="o">.</span><span class="n">canceled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="n">progressDialog</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="ow">not</span> <span class="n">progressDialog</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;progressDialog is not a QtWidgets.QProgressDialog&quot;</span><span class="p">)</span>
+
+		<span class="c1"># If provided, connect the abort signal to the reply&#39;s abort() slot</span>
+		<span class="n">abortSignal</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;abortSignal&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">abortSignal</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">abortSignal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+
+		<span class="c1"># Check if a callback has been specified to which the downloadprogress</span>
+		<span class="c1"># is to be reported</span>
+		<span class="n">ulpCallback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uploadProgress&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">ulpCallback</span><span class="p">):</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">uploadProgress</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">ulpCallback</span><span class="p">)</span></div>
+
+	<span class="nd">@buffer_network_request</span>
+<div class="viewcode-block" id="ConnectionManager.delete"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.delete">[docs]</a>	<span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Perform a HTTP DELETE request. </span>
+
+<span class="sd">		The OAuth2 token is automatically added to the</span>
+<span class="sd">		header if the request is going to an OSF server.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url/endpoint to perform the GET request on</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The function to call once the request is finished successfully.</span>
+<span class="sd">		errorCallback : function (default: None)</span>
+<span class="sd">			function to call whenever an error occurs. Should be able to accept</span>
+<span class="sd">			the reply object as an argument. This function is also called if the</span>
+<span class="sd">			operation is aborted by the user him/herself.</span>
+<span class="sd">		abortSignal : QtCore.pyqtSignal</span>
+<span class="sd">			This signal will be attached to the reply objects abort() slot, so that</span>
+<span class="sd">			the operation can be aborted from outside if necessary.</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to the callback</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># First check the correctness of the url and callback parameters</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__check_request_parameters</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+		<span class="n">request</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkRequest</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+		<span class="c1"># Add OAuth2 token</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Token could not be added to the request&quot;</span><span class="p">))</span>
+
+		<span class="c1"># Check if this is a redirect and keep a count to prevent endless</span>
+		<span class="c1"># redirects. If redirect_count is not set, init it to 0</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+		<span class="n">reply</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ConnectionManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">deleteResource</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+		<span class="c1"># If provided, connect the abort signal to the reply&#39;s abort() slot</span>
+		<span class="n">abortSignal</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;abortSignal&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">abortSignal</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">abortSignal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">abort</span><span class="p">)</span>
+
+		<span class="n">reply</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+			<span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_finished</span><span class="p">(</span>
+				<span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+			<span class="p">)</span>
+		<span class="p">)</span>
+		<span class="k">return</span> <span class="n">reply</span></div>
+
+	<span class="c1">### Convenience HTTP Functions</span>
+
+<div class="viewcode-block" id="ConnectionManager.get_logged_in_user"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get_logged_in_user">[docs]</a>	<span class="k">def</span> <span class="nf">get_logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Get logged in user information.</span>
+<span class="sd">		Contacts the OSF to request data of the currently logged in user</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The callback function to which the data should be delivered once the</span>
+<span class="sd">			request is finished</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply or None if something went wrong</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">api_call</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;logged_in_user&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.get_user_projects"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get_user_projects">[docs]</a>	<span class="k">def</span> <span class="nf">get_user_projects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Gets current user&#39;s projects. Retrieves a list of projects owned by </span>
+<span class="sd">		the currently logged in user from OSF</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The callback function to which the data should be delivered once the</span>
+<span class="sd">			request is finished</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply or None if something went wrong</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">api_call</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;projects&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.get_project_repos"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get_project_repos">[docs]</a>	<span class="k">def</span> <span class="nf">get_project_repos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_id</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Get repos for the specified project.</span>
+<span class="sd">		Retrieves a list of repositories from the OSF that belong to the passed</span>
+<span class="sd">		project id.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		project_id : string</span>
+<span class="sd">			The project id that OSF uses for this project (e.g. the node id)</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The callback function to which the data should be delivered once the</span>
+<span class="sd">			request is finished</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply or None if something went wrong</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">api_call</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;project_repos&quot;</span><span class="p">,</span> <span class="n">project_id</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.get_repo_files"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get_repo_files">[docs]</a>	<span class="k">def</span> <span class="nf">get_repo_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_id</span><span class="p">,</span> <span class="n">repo_name</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Retrieves files contained in a repository.</span>
+<span class="sd">		Retrieves a list of files from the OSF that belong to the indicated</span>
+<span class="sd">		repository of the passed project id.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		project_id : string</span>
+<span class="sd">			The project id that OSF uses for this project (e.g. the node id)</span>
+<span class="sd">		repo_name : string</span>
+<span class="sd">			The repository to get the files from. Should be something along the</span>
+<span class="sd">			lines of osfstorage, github, dropbox, etc. Check OSF documentation</span>
+<span class="sd">			for a full list of specifications.</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The callback function to which the data should be delivered once the</span>
+<span class="sd">			request is finished</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply or None if something went wrong</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">api_call</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;repo_files&quot;</span><span class="p">,</span><span class="n">project_id</span><span class="p">,</span> <span class="n">repo_name</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.get_file_info"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.get_file_info">[docs]</a>	<span class="k">def</span> <span class="nf">get_file_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_id</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Gets information about the specified file.</span>
+<span class="sd">		</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		file_id : string</span>
+<span class="sd">			The OSF file identifier (e.g. the node id).</span>
+<span class="sd">		callback : function</span>
+<span class="sd">			The callback function to which the data should be delivered once the</span>
+<span class="sd">			request is finished.</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtNetwork.QNetworkReply or None if something went wrong.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		
+		<span class="n">api_call</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s2">&quot;file_info&quot;</span><span class="p">,</span> <span class="n">file_id</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_call</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.download_file"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.download_file">[docs]</a>	<span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Downloads a file by a using HTTP GET request. </span>
+<span class="sd">		The OAuth2 token is automatically</span>
+<span class="sd">		added to the header if the request is going to an OSF server.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url that points to the file to download</span>
+<span class="sd">		destination : string</span>
+<span class="sd">			The path and filename with which the file should be saved.</span>
+<span class="sd">		finished_callback : function (default: None)</span>
+<span class="sd">			The function to call once the download is finished.</span>
+<span class="sd">		downloadProgress : function (default: None)</span>
+<span class="sd">			The slot (callback function) for the downloadProgress signal of the</span>
+<span class="sd">			reply object. This signal is emitted after a certain amount of bytes</span>
+<span class="sd">			is received, and can be used for instance to update a download progress</span>
+<span class="sd">			dialog box. The callback function should have two parameters to which</span>
+<span class="sd">			the transfered and total bytes can be assigned.</span>
+<span class="sd">		errorCallback : function (default: None)</span>
+<span class="sd">			function to call whenever an error occurs. Should be able to accept</span>
+<span class="sd">			the reply object as an argument.</span>
+<span class="sd">		progressDialog : dict (default : None)</span>
+<span class="sd">			A dictionary containing data about the file to be transferred. It</span>
+<span class="sd">			should have two entries:</span>
+<span class="sd">			filename: The name of the file</span>
+<span class="sd">			filesize: the size of the file in bytes</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to the callback</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># Check if destination is a string</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;destination should be a string&quot;</span><span class="p">)</span>
+		<span class="c1"># Check if the specified folder exists. However, because a situation is possible in which</span>
+		<span class="c1"># the user has selected a destination but deletes the folder in some other program in the meantime,</span>
+		<span class="c1"># show a message box, but do not raise an exception, because we don&#39;t want this to completely crash</span>
+		<span class="c1"># our program.</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">destination</span><span class="p">))[</span><span class="mi">0</span><span class="p">]):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;{} is not a valid destination&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+			<span class="k">return</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">destination</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;download_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">url</span>
+		<span class="c1"># Extra call to get() to make sure OAuth2 token is still valid before download</span>
+		<span class="c1"># is initiated. If not, this way the request can be repeated after the user</span>
+		<span class="c1"># reauthenticates</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__download</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.upload_file"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.upload_file">[docs]</a>	<span class="k">def</span> <span class="nf">upload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Uploads a file. </span>
+<span class="sd">		The file will be stored at the specified destination on the OSF.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		url : string / QtCore.QUrl</span>
+<span class="sd">			The target url that points to endpoint handling the upload</span>
+<span class="sd">		source : string / QtCore.QtFile</span>
+<span class="sd">			The path and file which should be uploaded.</span>
+<span class="sd">		finishedCallback : function (default: None)</span>
+<span class="sd">			The function to call once the upload is finished.</span>
+<span class="sd">		uploadProgress : function (default: None)</span>
+<span class="sd">			The slot (callback function) for the uploadProgress signal of the</span>
+<span class="sd">			reply object. This signal is emitted after a certain amount of bytes</span>
+<span class="sd">			is received, and can be used for instance to update a upload progress</span>
+<span class="sd">			dialog box. The callback function should have two parameters to which</span>
+<span class="sd">			the transfered and total bytes can be assigned.</span>
+<span class="sd">		errorCallback : function (default: None)</span>
+<span class="sd">			function to call whenever an error occurs. Should be able to accept</span>
+<span class="sd">			the reply object as an argument.</span>
+<span class="sd">		progressDialog : dict (default : None)</span>
+<span class="sd">			A dictionary containing data about the file to be transferred. It</span>
+<span class="sd">			should have two entries:</span>
+<span class="sd">			filename: The name of the file</span>
+<span class="sd">			filesize: the size of the file in bytes</span>
+<span class="sd">		*args (optional)</span>
+<span class="sd">			Any other arguments that you want to have passed to the callback</span>
+<span class="sd">		**kwargs (optional)</span>
+<span class="sd">			Any other keywoard arguments that you want to have passed to the callback</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Extra call to get() to make sure OAuth2 token is still valid before download</span>
+		<span class="c1"># is initiated. If not, this way the request can be repeated after the user</span>
+		<span class="c1"># reauthenticates</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;upload_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">url</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;source_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_file</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__upload</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+	<span class="c1">### PyQt Slots</span>
+
+	<span class="k">def</span> <span class="nf">__reply_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for any HTTP request &quot;&quot;&quot;</span>
+		<span class="n">reply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">()</span>
+		<span class="n">request</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+		<span class="c1"># Get the error callback function, if set</span>
+		<span class="n">errorCallback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errorCallback&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="c1"># Get the request id, if set (only for authenticated requests, if a user</span>
+		<span class="c1"># is logged in), so it can be repeated if the user is required to</span>
+		<span class="c1"># reauthenticate.</span>
+		<span class="n">current_request_id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_request_id&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+		<span class="c1"># If an error occured, just show a simple QMessageBox for now</span>
+		<span class="k">if</span> <span class="n">reply</span><span class="o">.</span><span class="n">error</span><span class="p">()</span> <span class="o">!=</span> <span class="n">reply</span><span class="o">.</span><span class="n">NoError</span><span class="p">:</span>
+			<span class="c1"># User not/no longer authenticated to perform this request</span>
+			<span class="c1"># Show login window again</span>
+			<span class="k">if</span> <span class="n">reply</span><span class="o">.</span><span class="n">error</span><span class="p">()</span> <span class="o">==</span> <span class="n">reply</span><span class="o">.</span><span class="n">AuthenticationRequiredError</span><span class="p">:</span>
+				<span class="c1"># If access is denied, the user&#39;s token must have expired</span>
+				<span class="c1"># or something like that. Dispatch the logout signal and</span>
+				<span class="c1"># show the login window again</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_logout</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">show_login_window</span><span class="p">()</span>
+			<span class="c1"># For all other errors</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="c1"># Don&#39;t show error notification if user manually cancelled operation.</span>
+				<span class="c1"># This is undesirable most of the time, and when it is required, it</span>
+				<span class="c1"># can be implemented by using the errorCallback function</span>
+				<span class="k">if</span> <span class="n">reply</span><span class="o">.</span><span class="n">error</span><span class="p">()</span> <span class="o">!=</span> <span class="n">reply</span><span class="o">.</span><span class="n">OperationCanceledError</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+						<span class="nb">str</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">HttpStatusCodeAttribute</span><span class="p">)),</span>
+						<span class="n">reply</span><span class="o">.</span><span class="n">errorString</span><span class="p">()</span>
+					<span class="p">)</span>
+
+				<span class="c1"># Remove this request from pending requests because it should not</span>
+				<span class="c1"># be repeated upon reauthentication of the user</span>
+				<span class="k">if</span> <span class="ow">not</span> <span class="n">current_request_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">current_request_id</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+				<span class="c1"># Close any remaining file handles that were created for upload</span>
+				<span class="c1"># or download</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__close_file_handles</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+			<span class="c1"># Call error callback, if set</span>
+			<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">errorCallback</span><span class="p">):</span>
+				<span class="n">errorCallback</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+			<span class="n">reply</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+			<span class="k">return</span>
+
+		<span class="c1"># For all other options that follow below, this request can be erased</span>
+		<span class="c1"># from pending requests.</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">current_request_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">current_request_id</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+		<span class="c1"># Check if the reply indicates a redirect</span>
+		<span class="k">if</span> <span class="n">reply</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">HttpStatusCodeAttribute</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">]:</span>
+			<span class="c1"># To prevent endless redirects, make a count of them and only</span>
+			<span class="c1"># allow a preset maximum</span>
+			<span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_REDIRECTS</span><span class="p">:</span>
+				<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Whoops, something is going wrong&quot;</span><span class="p">),</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Too Many redirects&quot;</span><span class="p">)</span>
+				<span class="p">)</span>
+				<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">errorCallback</span><span class="p">):</span>
+					<span class="n">errorCallback</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+				<span class="c1"># Close any remaining file handles that were created for upload</span>
+				<span class="c1"># or download</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__close_file_handles</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+				<span class="n">reply</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+				<span class="k">return</span>
+			<span class="c1"># Perform another request with the redirect_url and pass on the callback</span>
+			<span class="n">redirect_url</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">attribute</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">RedirectionTargetAttribute</span><span class="p">)</span>
+			<span class="c1"># For now, the redirects only work for GET operations (but to my</span>
+			<span class="c1"># knowledge, those are the only operations they occur for)</span>
+			<span class="k">if</span> <span class="n">reply</span><span class="o">.</span><span class="n">operation</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetOperation</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">redirect_url</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># Remove (potentially) internally used kwargs before passing</span>
+			<span class="c1"># data on to the callback</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;redirect_count&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;downloadProgress&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;uploadProgress&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;readyRead&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;errorCallback&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;abortSignal&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+			<span class="n">callback</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+		<span class="c1"># Cleanup, mark the reply object for deletion</span>
+		<span class="n">reply</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__create_progress_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">filesize</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Creates a progress dialog.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		text : str</span>
+<span class="sd">			The label to display on the dialog</span>
+<span class="sd">		filesize : int</span>
+<span class="sd">			The size of the file being transfered in bytes</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtWidgets.QProgressDialog</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">progress_dialog</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QProgressDialog</span><span class="p">()</span>
+		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setLabelText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="n">filesize</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">progress_dialog</span>
+
+	<span class="k">def</span> <span class="nf">__transfer_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transfered</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; callback for a reply object. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">()</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">transfered</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">download_url</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The real download function, that is a callback for get_logged_in_user()</span>
+<span class="sd">		in download_file() &quot;&quot;&quot;</span>
+		<span class="c1"># Create tempfile</span>
+		<span class="n">tmp_file</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QTemporaryFile</span><span class="p">()</span>
+		<span class="n">tmp_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="o">.</span><span class="n">WriteOnly</span><span class="p">)</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_file</span>
+
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Downloading&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">progressDialog</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span>
+				<span class="n">size</span> <span class="o">=</span> <span class="n">progressDialog</span><span class="p">[</span><span class="s1">&#39;filesize&#39;</span><span class="p">]</span>
+			<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;progressDialog missing field {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+			<span class="n">progress_indicator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_progress_dialog</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">progress_indicator</span>
+			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;downloadProgress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transfer_progress</span>
+
+		<span class="c1"># Callback function for when bytes are received</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;readyRead&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__download_readyRead</span>
+		<span class="c1"># Download the file with a get request</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">download_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__download_finished</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__download_readyRead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; callback for a reply object to indicate that data is ready to be</span>
+<span class="sd">		written to a buffer. &quot;&quot;&quot;</span>
+
+		<span class="n">reply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;tmp_file&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">],</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QTemporaryFile</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Missing file handle to write to&#39;</span><span class="p">)</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__download_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for a reply object of a GET request, indicating that all</span>
+<span class="sd">		expected data has been received. &quot;&quot;&quot;</span>
+
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+			<span class="n">progressDialog</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+		<span class="c1"># Do some checks to see if the required data has been passed.</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;destination&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No destination passed&quot;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;tmp_file&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">],</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QTemporaryFile</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No valid reference to temp file where data was saved&quot;</span><span class="p">)</span>
+
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="c1"># If a file with the same name already exists at the location, try to</span>
+		<span class="c1"># delete it.</span>
+		<span class="k">if</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QFile</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">]):</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QFile</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">]):</span>
+				<span class="c1"># If the destination file could not be deleted, notify the user</span>
+				<span class="c1"># of this and stop the operation</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Error saving file&quot;</span><span class="p">),</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Could not replace {}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">])</span>
+				<span class="p">)</span>
+				<span class="k">return</span>
+		<span class="c1"># Copy the temp file to its destination</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">]):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+				<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Error saving file&quot;</span><span class="p">),</span>
+				<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Could not save file to {}&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">])</span>
+			<span class="p">)</span>
+			<span class="k">return</span>
+
+		<span class="n">fcb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;finishedCallback&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fcb</span><span class="p">):</span>
+			<span class="n">fcb</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">upload_url</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for get_logged_in_user() in upload_file(). Does the real</span>
+<span class="sd">		uploading. &quot;&quot;&quot;</span>
+		<span class="c1"># Put checks for the url to be a string or QUrl</span>
+		<span class="c1"># Check source file</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+			<span class="c1"># Check if the specified file exists, because a situation is possible in which</span>
+			<span class="c1"># the user has deleted the file in the meantime in another program.</span>
+			<span class="c1"># show a message box, but do not raise an exception, because we don&#39;t want this</span>
+			<span class="c1"># to completely crash our program.</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">source_file</span><span class="p">)):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;{} is not a valid source file&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source_file</span><span class="p">))</span>
+				<span class="k">return</span>
+
+			<span class="c1"># Open source file for reading</span>
+			<span class="n">source_file</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QFile</span><span class="p">(</span><span class="n">source_file</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;{} is not a string or QIODevice instance&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source_file</span><span class="p">))</span>
+			<span class="k">return</span>
+
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Uploading&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">])</span>
+				<span class="n">size</span> <span class="o">=</span> <span class="n">progressDialog</span><span class="p">[</span><span class="s1">&#39;filesize&#39;</span><span class="p">]</span>
+			<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;progressDialog is missing field {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+			<span class="n">progress_indicator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_progress_dialog</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">progress_indicator</span>
+			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;uploadProgress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transfer_progress</span>
+
+		<span class="n">source_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="o">.</span><span class="n">ReadOnly</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">upload_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__upload_finished</span><span class="p">,</span> <span class="n">data_to_send</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span>
+			<span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__upload_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for the reply object of a PUT request, indicating that all</span>
+<span class="sd">		data has been sent. &quot;&quot;&quot;</span>
+		<span class="n">progressDialog</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progressDialog</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+			<span class="n">progressDialog</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;data_to_send&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;data_to_send&#39;</span><span class="p">],</span>
+			<span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No valid open file handle&quot;</span><span class="p">)</span>
+		<span class="c1"># Close the source file</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;data_to_send&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="c1"># If another external callback function was provided, call it below</span>
+		<span class="n">fcb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;finishedCallback&#39;</span><span class="p">,</span><span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fcb</span><span class="p">):</span>
+			<span class="n">fcb</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__close_file_handles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Closes any open file handles after a failed transfer. Called by</span>
+<span class="sd">		__reply_finished when a HTTP response code indicating an error has been</span>
+<span class="sd">		received &quot;&quot;&quot;</span>
+		<span class="c1"># When a download is failed, close the file handle stored in tmp_file</span>
+		<span class="n">tmp_file</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;tmp_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="p">):</span>
+			<span class="n">tmp_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="c1"># File uploads are stored in data_to_send</span>
+		<span class="n">data_to_send</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;data_to_send&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_to_send</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QIODevice</span><span class="p">):</span>
+			<span class="n">data_to_send</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+	<span class="c1">### Other callbacks</span>
+
+<div class="viewcode-block" id="ConnectionManager.handle_login"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.handle_login">[docs]</a>	<span class="k">def</span> <span class="nf">handle_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles the login event received after login. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_logged_in_user</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.handle_logout"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.handle_logout">[docs]</a>	<span class="k">def</span> <span class="nf">handle_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles the logout event received after a logout. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+<div class="viewcode-block" id="ConnectionManager.set_logged_in_user"><a class="viewcode-back" href="../../api.html#QOpenScienceFramework.manager.ConnectionManager.set_logged_in_user">[docs]</a>	<span class="k">def</span> <span class="nf">set_logged_in_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_data</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function, not to be called directly.</span>
+
+<span class="sd">		Locally saves the data of the currently logged_in user &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">user_data</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+
+		<span class="c1"># If user had any pending requests from previous login, execute them now</span>
+		<span class="k">for</span> <span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+			<span class="k">if</span> <span class="n">user_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span>
+				<span class="n">request</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span> <span class="o">=</span> <span class="p">{}</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

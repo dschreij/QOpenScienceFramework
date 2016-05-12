@@ -1,0 +1,2221 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API Reference &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="index.html"/>
+        <link rel="prev" title="Installation" href="installation.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.connection">Connection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.manager">ConnectionManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.events">Events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#widgets">Widgets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.loginwindow">LoginWindow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets">OSFExplorer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#projecttree">ProjectTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#userbadge">UserBadge</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/api.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-QOpenScienceFramework.connection">
+<span id="connection"></span><h2>Connection<a class="headerlink" href="#module-QOpenScienceFramework.connection" title="Permalink to this headline">¶</a></h2>
+<p>This module handles the OAuth2 authentication process and maintains the
+session (/token) information that is required to communicate with the OSF API</p>
+<p>It is also responsible for constructing the correct API calls/uris as specified by the
+OSF for the various types of information that can be requested.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A lot of the functions that are available here have equivalents in the
+ConnectionManager class. It is recommended to use those functions instead as they are
+executed asynchronously and are used throughout the rest of the application.</p>
+</div>
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.api_call">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">api_call</code><span class="sig-paren">(</span><em>command</em>, <em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#api_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.api_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates and api endpoint. If arguments are required to build the endpoint
+, they can be specified as extra arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>command</strong> : {&#8216;logged_in_user&#8217;, &#8216;projects&#8217;, &#8216;project_repos&#8217;, &#8216;repo_files&#8217;, &#8216;file_info&#8217;}</p>
+<blockquote>
+<div><p>The key of the endpoint to look up in the api_calls dictionary</p>
+<p>Extra arguments passed to this function will be integrated into the API call            at specified positions (marked by {}). The formats of the calls are as follows:</p>
+<blockquote>
+<div><p><code class="docutils literal"><span class="pre">logged_in_user:</span> <span class="pre">&quot;users/me/&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">projects:</span> <span class="pre">&quot;users/me/nodes/&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">project_repos:</span> <span class="pre">&quot;nodes/\{\}/files/&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">repo_files:</span> <span class="pre">&quot;nodes/\{\}/files/\{\}/&quot;</span></code></p>
+<p><code class="docutils literal"><span class="pre">file_info:</span> <span class="pre">&quot;files/\{\}/&quot;</span></code></p>
+</div></blockquote>
+</div></blockquote>
+<p><strong>*args</strong> : various (optional)</p>
+<blockquote>
+<div><p>Optional extra data which is needed to construct the correct api endpoint uri.          Check the OSF API documentation for a list of variables that each type of               call expects.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>string</strong> : The complete uri for the api endpoint.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.check_for_active_session">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">check_for_active_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#check_for_active_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.check_for_active_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a session object has been created and raises a RuntimeError otherwise.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.create_session">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">create_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#create_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.create_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates/resets and OAuth 2 session, with the specified data.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.direct_api_call">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">direct_api_call</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#direct_api_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.direct_api_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a direct api call. Can be used as the api call is already 
+constructed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>api_call: str</strong></p>
+<blockquote>
+<div><p>The api call to perform</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict</p>
+<blockquote class="last">
+<div><p>The dict containing the returned JSON data</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.get_authorization_url">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">get_authorization_url</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#get_authorization_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.get_authorization_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the URL at which an OAuth2 token for the OSF can be requested
+with which OpenSesame can be allowed access to the user&#8217;s account.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote>
+<div><p>The complete uri for the api endpoint.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>RuntimeError</strong></p>
+<blockquote class="last">
+<div><p>When there is no active OAuth2 session.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.get_logged_in_user">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">get_logged_in_user</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#get_logged_in_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.get_logged_in_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the currently logged in user&#8217;s data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict</p>
+<blockquote class="last">
+<div><p>The dict containing the returned JSON data</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.get_project_repos">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">get_project_repos</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#get_project_repos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.get_project_repos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the data of the specified project</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>project_id</strong> : str</p>
+<blockquote>
+<div><p>Reference to the project node on the OSF</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict</p>
+<blockquote class="last">
+<div><p>The dict containing the returned JSON data</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.get_repo_files">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">get_repo_files</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#get_repo_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.get_repo_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the data of the specified repository of the specified project.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>project_id</strong> : str</p>
+<blockquote>
+<div><p>Reference to the project node on the OSF</p>
+</div></blockquote>
+<p><strong>repo_name</strong> : {&#8216;osfstorage&#8217;,&#8217;dropbox&#8217;,&#8217;github&#8217;,&#8217;figshare&#8217;,&#8217;s3&#8217;,&#8217;googledrive&#8217;}</p>
+<blockquote>
+<div><p>The repository to return the data of.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict</p>
+<blockquote class="last">
+<div><p>The dict containing the returned JSON data</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.get_user_projects">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">get_user_projects</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#get_user_projects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.get_user_projects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the currently logged in user&#8217;s projects</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict</p>
+<blockquote class="last">
+<div><p>The dict containing the returned JSON data</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.is_authorized">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">is_authorized</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#is_authorized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.is_authorized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function simply returning OAuth2Session.authorized.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True is the user is authorized, False if not</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.logout">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs out the user, and resets the global session object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True if logout was succesful, False if not.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.parse_token_from_url">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">parse_token_from_url</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#parse_token_from_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.parse_token_from_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses token from url fragment</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The url to parse. Should have a hass fragment (#) after which the token
+information is found.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">str</p>
+<blockquote>
+<div><p>The currently used OAuth2 access token.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>RuntimeError</strong></p>
+<blockquote class="last">
+<div><p>When there is no active OAuth2 session.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.requires_authentication">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">requires_authentication</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#requires_authentication"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.requires_authentication" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator function which checks if a user is authenticated before he
+performs the desired action. It furthermore checks if the response has been
+received without errors.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="QOpenScienceFramework.connection.token_valid">
+<code class="descclassname">QOpenScienceFramework.connection.</code><code class="descname">token_valid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/connection.html#token_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.connection.token_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if OAuth token is present, and if so, if it has not expired yet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True if the token is present and is valid, False otherwise</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-QOpenScienceFramework.manager">
+<span id="connectionmanager"></span><h2>ConnectionManager<a class="headerlink" href="#module-QOpenScienceFramework.manager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="QOpenScienceFramework.manager.ConnectionManager">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.manager.</code><code class="descname">ConnectionManager</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtNetwork.QNetworkAccessManager</span></code></p>
+<p>The connection manager does most of the heavy lifting in communicating with the
+OSF. It is responsible for all the HTTP requests and the correct treatment of
+responses from the OSF.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.add_token" title="QOpenScienceFramework.manager.ConnectionManager.add_token"><code class="xref py py-obj docutils literal"><span class="pre">add_token</span></code></a>(request)</td>
+<td>Adds the OAuth2 token to a HTTP request.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.buffer_network_request" title="QOpenScienceFramework.manager.ConnectionManager.buffer_network_request"><code class="xref py py-obj docutils literal"><span class="pre">buffer_network_request</span></code></a>(func)</td>
+<td>Decorator function, not to be called directly.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.check_for_stored_token" title="QOpenScienceFramework.manager.ConnectionManager.check_for_stored_token"><code class="xref py py-obj docutils literal"><span class="pre">check_for_stored_token</span></code></a>(tokenfile)</td>
+<td>Checks for stored token information.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.delete" title="QOpenScienceFramework.manager.ConnectionManager.delete"><code class="xref py py-obj docutils literal"><span class="pre">delete</span></code></a>(inst,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Perform a HTTP DELETE request.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.download_file" title="QOpenScienceFramework.manager.ConnectionManager.download_file"><code class="xref py py-obj docutils literal"><span class="pre">download_file</span></code></a>(url,&nbsp;destination,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Downloads a file by a using HTTP GET request.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.error_message" title="QOpenScienceFramework.manager.ConnectionManager.error_message"><code class="xref py py-obj docutils literal"><span class="pre">error_message</span></code></a></td>
+<td>PyQt signal to send an error message.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get" title="QOpenScienceFramework.manager.ConnectionManager.get"><code class="xref py py-obj docutils literal"><span class="pre">get</span></code></a>(inst,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Performs a HTTP GET request.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get_file_info" title="QOpenScienceFramework.manager.ConnectionManager.get_file_info"><code class="xref py py-obj docutils literal"><span class="pre">get_file_info</span></code></a>(file_id,&nbsp;callback,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Gets information about the specified file.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get_logged_in_user" title="QOpenScienceFramework.manager.ConnectionManager.get_logged_in_user"><code class="xref py py-obj docutils literal"><span class="pre">get_logged_in_user</span></code></a>(callback,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Get logged in user information.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get_project_repos" title="QOpenScienceFramework.manager.ConnectionManager.get_project_repos"><code class="xref py py-obj docutils literal"><span class="pre">get_project_repos</span></code></a>(project_id,&nbsp;callback,&nbsp;...)</td>
+<td>Get repos for the specified project.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get_repo_files" title="QOpenScienceFramework.manager.ConnectionManager.get_repo_files"><code class="xref py py-obj docutils literal"><span class="pre">get_repo_files</span></code></a>(project_id,&nbsp;repo_name,&nbsp;...)</td>
+<td>Retrieves files contained in a repository.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.get_user_projects" title="QOpenScienceFramework.manager.ConnectionManager.get_user_projects"><code class="xref py py-obj docutils literal"><span class="pre">get_user_projects</span></code></a>(callback,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Gets current user&#8217;s projects.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.handle_login" title="QOpenScienceFramework.manager.ConnectionManager.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
+<td>Handles the login event received after login.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.handle_logout" title="QOpenScienceFramework.manager.ConnectionManager.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
+<td>Handles the logout event received after a logout.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.info_message" title="QOpenScienceFramework.manager.ConnectionManager.info_message"><code class="xref py py-obj docutils literal"><span class="pre">info_message</span></code></a></td>
+<td>PyQt signal to send an info message.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.login" title="QOpenScienceFramework.manager.ConnectionManager.login"><code class="xref py py-obj docutils literal"><span class="pre">login</span></code></a>()</td>
+<td>Logs in a user.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.logout" title="QOpenScienceFramework.manager.ConnectionManager.logout"><code class="xref py py-obj docutils literal"><span class="pre">logout</span></code></a>()</td>
+<td>Logs the current user out from OSF.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.post" title="QOpenScienceFramework.manager.ConnectionManager.post"><code class="xref py py-obj docutils literal"><span class="pre">post</span></code></a>(inst,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Perform a HTTP POST request.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.put" title="QOpenScienceFramework.manager.ConnectionManager.put"><code class="xref py py-obj docutils literal"><span class="pre">put</span></code></a>(inst,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Perform a HTTP PUT request.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.set_logged_in_user" title="QOpenScienceFramework.manager.ConnectionManager.set_logged_in_user"><code class="xref py py-obj docutils literal"><span class="pre">set_logged_in_user</span></code></a>(user_data)</td>
+<td>Callback function, not to be called directly.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.show_login_window" title="QOpenScienceFramework.manager.ConnectionManager.show_login_window"><code class="xref py py-obj docutils literal"><span class="pre">show_login_window</span></code></a>()</td>
+<td>Shows the login page on OSF.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.success_message" title="QOpenScienceFramework.manager.ConnectionManager.success_message"><code class="xref py py-obj docutils literal"><span class="pre">success_message</span></code></a></td>
+<td>PyQt signal to send a success message.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.upload_file" title="QOpenScienceFramework.manager.ConnectionManager.upload_file"><code class="xref py py-obj docutils literal"><span class="pre">upload_file</span></code></a>(url,&nbsp;source_file,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Uploads a file.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.manager.ConnectionManager.warning_message" title="QOpenScienceFramework.manager.ConnectionManager.warning_message"><code class="xref py py-obj docutils literal"><span class="pre">warning_message</span></code></a></td>
+<td>PyQt signal to send a warning message.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tokenfile</strong> : str (default: &#8216;token.json&#8217;)</p>
+<blockquote>
+<div><p>The path to the file in which the token information should be stored.</p>
+</div></blockquote>
+<p><strong>notifier</strong> : QtCore.QObject (default: None)</p>
+<blockquote class="last">
+<div><p>The object containing pyqt slots / callables to which this object&#8217;s
+message signals can be connected. The object should contain the following
+slots / functions: info, error, success, warning. Each of these
+should expect two strings. This object is then repsonsible for displaying
+the messages, or passing them on to another object responsible for
+the display.</p>
+<p>If <code class="docutils literal"><span class="pre">None</span></code> is passed, then a events.Notifier object is
+created which simply displays all messages in QDialog boxes</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.add_token">
+<code class="descname">add_token</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.add_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.add_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the OAuth2 token to a HTTP request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>request</strong> : QtNetwork.QNetworkRequest</p>
+<blockquote>
+<div><p>The network request item in whose header to add the OAuth2 token</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True if token could successfully be added to the request, False if not</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.buffer_network_request">
+<code class="descname">buffer_network_request</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.buffer_network_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.buffer_network_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator function, not to be called directly.
+Checks if network is accessible and buffers the network request so
+that it can be sent again if it fails the first time, for instance due to 
+an invalidated OAuth2 token. In this case the user will be presented with 
+the login screen again. If the same user successfully logs in again, the 
+request will be resent.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.check_for_stored_token">
+<code class="descname">check_for_stored_token</code><span class="sig-paren">(</span><em>tokenfile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.check_for_stored_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.check_for_stored_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks for stored token information. Checks if a token.json file can be
+found at the supplied location and inspects if it is not expired.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tokenfile</strong> : str</p>
+<blockquote>
+<div><p>Path to the token file</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">bool</p>
+<blockquote class="last">
+<div><p>True if a valid token was found at tokenfile&#8217;s location, False otherwise</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>inst</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a HTTP DELETE request.</p>
+<p>The OAuth2 token is automatically added to the
+header if the request is going to an OSF server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url/endpoint to perform the GET request on</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The function to call once the request is finished successfully.</p>
+</div></blockquote>
+<p><strong>errorCallback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>function to call whenever an error occurs. Should be able to accept
+the reply object as an argument. This function is also called if the
+operation is aborted by the user him/herself.</p>
+</div></blockquote>
+<p><strong>abortSignal</strong> : QtCore.pyqtSignal</p>
+<blockquote>
+<div><p>This signal will be attached to the reply objects abort() slot, so that
+the operation can be aborted from outside if necessary.</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to the callback</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote class="last">
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.download_file">
+<code class="descname">download_file</code><span class="sig-paren">(</span><em>url</em>, <em>destination</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.download_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.download_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads a file by a using HTTP GET request. 
+The OAuth2 token is automatically
+added to the header if the request is going to an OSF server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url that points to the file to download</p>
+</div></blockquote>
+<p><strong>destination</strong> : string</p>
+<blockquote>
+<div><p>The path and filename with which the file should be saved.</p>
+</div></blockquote>
+<p><strong>finished_callback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>The function to call once the download is finished.</p>
+</div></blockquote>
+<p><strong>downloadProgress</strong> : function (default: None)</p>
+<blockquote>
+<div><p>The slot (callback function) for the downloadProgress signal of the
+reply object. This signal is emitted after a certain amount of bytes
+is received, and can be used for instance to update a download progress
+dialog box. The callback function should have two parameters to which
+the transfered and total bytes can be assigned.</p>
+</div></blockquote>
+<p><strong>errorCallback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>function to call whenever an error occurs. Should be able to accept
+the reply object as an argument.</p>
+</div></blockquote>
+<p><strong>progressDialog</strong> : dict (default</p>
+<blockquote>
+<div><p>A dictionary containing data about the file to be transferred. It
+should have two entries:
+filename: The name of the file
+filesize: the size of the file in bytes</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to the callback</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote class="last">
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.error_message">
+<code class="descname">error_message</code><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.error_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt signal to send an error message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>inst</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a HTTP GET request.</p>
+<p>The OAuth2 token is automatically added to the
+header if the request is going to an OSF server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url/endpoint to perform the GET request on</p>
+</div></blockquote>
+<p><strong>callback</strong> : callable</p>
+<blockquote>
+<div><p>The function to call once the request is finished successfully.</p>
+</div></blockquote>
+<p><strong>downloadProgess</strong> : function (defualt: None)</p>
+<blockquote>
+<div><p>The slot (callback function) for the downloadProgress signal of the
+reply object. This signal is emitted after a certain amount of bytes
+is received, and can be used for instance to update a download progress
+dialog box. The callback function should have two parameters to which
+the transfered and total bytes can be assigned.</p>
+</div></blockquote>
+<p><strong>readyRead</strong> : function (default</p>
+<blockquote>
+<div><p>The slot (callback function) for the readyRead signal of the
+reply object.</p>
+</div></blockquote>
+<p><strong>errorCallback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>function to call whenever an error occurs. Should be able to accept
+the reply object as an argument. This function is also called if the
+operation is aborted by the user him/herself.</p>
+</div></blockquote>
+<p><strong>progressDialog</strong> : QtWidgets.QProgressDialog (default: None)</p>
+<blockquote>
+<div><p>The dialog to send the progress indication to. Will be included in the
+reply object so that it is accessible in the downloadProgress slot, by
+calling self.sender().property(&#8216;progressDialog&#8217;)</p>
+</div></blockquote>
+<p><strong>abortSignal</strong> : QtCore.pyqtSignal</p>
+<blockquote>
+<div><p>This signal will be attached to the reply objects abort() slot, so that
+the operation can be aborted from outside if necessary.</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to the callback</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote>
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">QtNetwork.QNetworkReply</p>
+<blockquote class="last">
+<div><p>The reply object for the current request. Note that if a 301 or 302
+redirect has occurred, a new reply object has been made for the redirect
+and the one returned here is no longer valid.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get_file_info">
+<code class="descname">get_file_info</code><span class="sig-paren">(</span><em>file_id</em>, <em>callback</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get_file_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get_file_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets information about the specified file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>file_id</strong> : string</p>
+<blockquote>
+<div><p>The OSF file identifier (e.g. the node id).</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The callback function to which the data should be delivered once the
+request is finished.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">QtNetwork.QNetworkReply or None if something went wrong.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get_logged_in_user">
+<code class="descname">get_logged_in_user</code><span class="sig-paren">(</span><em>callback</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get_logged_in_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get_logged_in_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get logged in user information.
+Contacts the OSF to request data of the currently logged in user</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The callback function to which the data should be delivered once the
+request is finished</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">QtNetwork.QNetworkReply or None if something went wrong</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get_project_repos">
+<code class="descname">get_project_repos</code><span class="sig-paren">(</span><em>project_id</em>, <em>callback</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get_project_repos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get_project_repos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get repos for the specified project.
+Retrieves a list of repositories from the OSF that belong to the passed
+project id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>project_id</strong> : string</p>
+<blockquote>
+<div><p>The project id that OSF uses for this project (e.g. the node id)</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The callback function to which the data should be delivered once the
+request is finished</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">QtNetwork.QNetworkReply or None if something went wrong</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get_repo_files">
+<code class="descname">get_repo_files</code><span class="sig-paren">(</span><em>project_id</em>, <em>repo_name</em>, <em>callback</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get_repo_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get_repo_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves files contained in a repository.
+Retrieves a list of files from the OSF that belong to the indicated
+repository of the passed project id.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>project_id</strong> : string</p>
+<blockquote>
+<div><p>The project id that OSF uses for this project (e.g. the node id)</p>
+</div></blockquote>
+<p><strong>repo_name</strong> : string</p>
+<blockquote>
+<div><p>The repository to get the files from. Should be something along the
+lines of osfstorage, github, dropbox, etc. Check OSF documentation
+for a full list of specifications.</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The callback function to which the data should be delivered once the
+request is finished</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">QtNetwork.QNetworkReply or None if something went wrong</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.get_user_projects">
+<code class="descname">get_user_projects</code><span class="sig-paren">(</span><em>callback</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.get_user_projects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.get_user_projects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets current user&#8217;s projects. Retrieves a list of projects owned by 
+the currently logged in user from OSF</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The callback function to which the data should be delivered once the
+request is finished</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">QtNetwork.QNetworkReply or None if something went wrong</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.handle_login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the login event received after login.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.handle_logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the logout event received after a logout.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.info_message">
+<code class="descname">info_message</code><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.info_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt signal to send an info message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.login">
+<code class="descname">login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs in a user. Checks if a token file is stored which can be used to 
+login a user. If not or the token file is invalid, it opens a browser 
+window through which a user can log in. After a successful login, the 
+browser widget fires the &#8216;logged_in&#8217; event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.logout">
+<code class="descname">logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs the current user out from OSF.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.post">
+<code class="descname">post</code><span class="sig-paren">(</span><em>inst</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a HTTP POST request.</p>
+<p>The OAuth2 token is automatically added to the
+header if the request is going to an OSF server. This request is mainly used to send
+small amounts of data to the OSF framework (use PUT for larger files, as this is also
+required by the WaterButler service used by the OSF)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url/endpoint to perform the POST request on.</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The function to call once the request is finished.</p>
+</div></blockquote>
+<p><strong>data_to_send</strong> : dict</p>
+<blockquote>
+<div><p>The data to send with the POST request. keys will be used as variable names
+and values will be used as the variable values.</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to callable.</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote class="last">
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.put">
+<code class="descname">put</code><span class="sig-paren">(</span><em>inst</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a HTTP PUT request.</p>
+<p>The OAuth2 token is automatically added to the
+header if the request is going to an OSF server. This method should be used
+to upload larger sets of data such as files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url/endpoint to perform the PUT request on.</p>
+</div></blockquote>
+<p><strong>callback</strong> : function</p>
+<blockquote>
+<div><p>The function to call once the request is finished.</p>
+</div></blockquote>
+<p><strong>data_to_send</strong> : QIODevice (default</p>
+<blockquote>
+<div><p>The file to upload (QFile or other QIODevice type)</p>
+</div></blockquote>
+<p><strong>uploadProgess</strong> : callable (defualt: None)</p>
+<blockquote>
+<div><p>The slot (callback function) for the downloadProgress signal of the
+reply object. This signal is emitted after a certain amount of bytes
+is received, and can be used for instance to update a download progress
+dialog box. The callback function should have two parameters to which
+the transfered and total bytes can be assigned.</p>
+</div></blockquote>
+<p><strong>errorCallback</strong> : callable (default: None)</p>
+<blockquote>
+<div><p>function to call whenever an error occurs. Should be able to accept
+the reply object as an argument. This function is also called if the
+operation is aborted by the user him/herself.</p>
+</div></blockquote>
+<p><strong>progressDialog</strong> : QtWidgets.QProgressDialog (default: None)</p>
+<blockquote>
+<div><p>The dialog to send the progress indication to. Will be included in the
+reply object so that it is accessible in the downloadProgress slot, by
+calling self.sender().property(&#8216;progressDialog&#8217;)</p>
+</div></blockquote>
+<p><strong>abortSignal</strong> : QtCore.pyqtSignal</p>
+<blockquote>
+<div><p>This signal will be attached to the reply objects abort() slot, so that
+the operation can be aborted from outside if necessary.</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to the callback</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote class="last">
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.set_logged_in_user">
+<code class="descname">set_logged_in_user</code><span class="sig-paren">(</span><em>user_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.set_logged_in_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.set_logged_in_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function, not to be called directly.</p>
+<p>Locally saves the data of the currently logged_in user</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.show_login_window">
+<code class="descname">show_login_window</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.show_login_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.show_login_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the login page on OSF.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.success_message">
+<code class="descname">success_message</code><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.success_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt signal to send a success message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.upload_file">
+<code class="descname">upload_file</code><span class="sig-paren">(</span><em>url</em>, <em>source_file</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/manager.html#ConnectionManager.upload_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.upload_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uploads a file. 
+The file will be stored at the specified destination on the OSF.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string / QtCore.QUrl</p>
+<blockquote>
+<div><p>The target url that points to endpoint handling the upload</p>
+</div></blockquote>
+<p><strong>source</strong> : string / QtCore.QtFile</p>
+<blockquote>
+<div><p>The path and file which should be uploaded.</p>
+</div></blockquote>
+<p><strong>finishedCallback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>The function to call once the upload is finished.</p>
+</div></blockquote>
+<p><strong>uploadProgress</strong> : function (default: None)</p>
+<blockquote>
+<div><p>The slot (callback function) for the uploadProgress signal of the
+reply object. This signal is emitted after a certain amount of bytes
+is received, and can be used for instance to update a upload progress
+dialog box. The callback function should have two parameters to which
+the transfered and total bytes can be assigned.</p>
+</div></blockquote>
+<p><strong>errorCallback</strong> : function (default: None)</p>
+<blockquote>
+<div><p>function to call whenever an error occurs. Should be able to accept
+the reply object as an argument.</p>
+</div></blockquote>
+<p><strong>progressDialog</strong> : dict (default</p>
+<blockquote>
+<div><p>A dictionary containing data about the file to be transferred. It
+should have two entries:
+filename: The name of the file
+filesize: the size of the file in bytes</p>
+</div></blockquote>
+<p><strong>*args (optional)</strong></p>
+<blockquote>
+<div><p>Any other arguments that you want to have passed to the callback</p>
+</div></blockquote>
+<p><strong>**kwargs (optional)</strong></p>
+<blockquote class="last">
+<div><p>Any other keywoard arguments that you want to have passed to the callback</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.manager.ConnectionManager.warning_message">
+<code class="descname">warning_message</code><a class="headerlink" href="#QOpenScienceFramework.manager.ConnectionManager.warning_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt signal to send a warning message.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-QOpenScienceFramework.events">
+<span id="events"></span><h2>Events<a class="headerlink" href="#module-QOpenScienceFramework.events" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="QOpenScienceFramework.events.EventDispatcher">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.events.</code><code class="descname">EventDispatcher</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class fires events to connected classes, which are henceforth
+referenced to as &#8216;listeners&#8217;.
+Basically EventDispatcher&#8217;s purpose is to propagate login and logout events
+to the QWidget subclasses that require authorization at the OSF to function
+correctly, but of course this can be extended with other events that are relevant
+for all listeners.</p>
+<p>The only requirement for listener classes is that they implement a handling
+function for each event that should be named &#8220;handle_&lt;event_name&gt;&#8221;. For example, to catch
+a login event, a listener should have the function handle_login.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.add_listener" title="QOpenScienceFramework.events.EventDispatcher.add_listener"><code class="xref py py-obj docutils literal"><span class="pre">add_listener</span></code></a>(item)</td>
+<td>Add a new object to listen for the events.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.add_listeners" title="QOpenScienceFramework.events.EventDispatcher.add_listeners"><code class="xref py py-obj docutils literal"><span class="pre">add_listeners</span></code></a>(obj_list)</td>
+<td>Add one or more object(s) to the list of listeners.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.dispatch_login" title="QOpenScienceFramework.events.EventDispatcher.dispatch_login"><code class="xref py py-obj docutils literal"><span class="pre">dispatch_login</span></code></a>()</td>
+<td>Convenience function to dispatch the login event.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.dispatch_logout" title="QOpenScienceFramework.events.EventDispatcher.dispatch_logout"><code class="xref py py-obj docutils literal"><span class="pre">dispatch_logout</span></code></a>()</td>
+<td>Convenience function to dispatch the logout event.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.logged_in" title="QOpenScienceFramework.events.EventDispatcher.logged_in"><code class="xref py py-obj docutils literal"><span class="pre">logged_in</span></code></a></td>
+<td>PyQt Signal emitted when a user just logged in.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.logged_out" title="QOpenScienceFramework.events.EventDispatcher.logged_out"><code class="xref py py-obj docutils literal"><span class="pre">logged_out</span></code></a></td>
+<td>PyQt Signal emitted when a user just logged out.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.EventDispatcher.remove_listener" title="QOpenScienceFramework.events.EventDispatcher.remove_listener"><code class="xref py py-obj docutils literal"><span class="pre">remove_listener</span></code></a>(item)</td>
+<td>Remove a listener.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.events.EventDispatcher.add_listener">
+<code class="descname">add_listener</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher.add_listener"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.add_listener" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new object to listen for the events.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>obj</strong> : object</p>
+<blockquote class="last">
+<div><p>the listener to add. Should implement handling functions which are
+called when certain events occur. The list of functions that the
+listener should implement is currently:</p>
+<blockquote>
+<div><ul class="simple">
+<li>handle_login</li>
+<li>handle_logout</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.EventDispatcher.add_listeners">
+<code class="descname">add_listeners</code><span class="sig-paren">(</span><em>obj_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher.add_listeners"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.add_listeners" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add one or more object(s) to the list of listeners.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>obj</strong> : object</p>
+<blockquote class="last">
+<div><p>the list of listeners to add. Listeners should implement handling                       functions which are called when certain events occur.
+The list of functions that listeners should implement is currently:</p>
+<blockquote>
+<div><ul class="simple">
+<li>handle_login</li>
+<li>handle_logout</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.EventDispatcher.dispatch_login">
+<code class="descname">dispatch_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher.dispatch_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.dispatch_login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to dispatch the login event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.EventDispatcher.dispatch_logout">
+<code class="descname">dispatch_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher.dispatch_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.dispatch_logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to dispatch the logout event.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.events.EventDispatcher.logged_in">
+<code class="descname">logged_in</code><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.logged_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt Signal emitted when a user just logged in.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.events.EventDispatcher.logged_out">
+<code class="descname">logged_out</code><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.logged_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt Signal emitted when a user just logged out.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.EventDispatcher.remove_listener">
+<code class="descname">remove_listener</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#EventDispatcher.remove_listener"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.EventDispatcher.remove_listener" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a listener.</p>
+<dl class="docutils">
+<dt>obj</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">object</span><dd>The object that is to be disconnected</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A reference to the current instance of this object (self).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="QOpenScienceFramework.events.Notifier">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.events.</code><code class="descname">Notifier</code><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#Notifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.Notifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>This object receives error or info messages and displays them in a
+QMessageBox notification box. It works with Qts signal slot architecture,
+as in all functions are slots to which Qt signals should be connected.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.Notifier.error" title="QOpenScienceFramework.events.Notifier.error"><code class="xref py py-obj docutils literal"><span class="pre">error</span></code></a>(title,&nbsp;message)</td>
+<td>Show an error message in a &#8216;critical&#8217; QMessageBox.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.Notifier.info" title="QOpenScienceFramework.events.Notifier.info"><code class="xref py py-obj docutils literal"><span class="pre">info</span></code></a>(title,&nbsp;message)</td>
+<td>Show an info message in an &#8216;information&#8217; QMessageBox.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.Notifier.success" title="QOpenScienceFramework.events.Notifier.success"><code class="xref py py-obj docutils literal"><span class="pre">success</span></code></a>(title,&nbsp;message)</td>
+<td>Show a success message in a &#8216;success&#8217; QMessageBox.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.Notifier.warning" title="QOpenScienceFramework.events.Notifier.warning"><code class="xref py py-obj docutils literal"><span class="pre">warning</span></code></a>(title,&nbsp;message)</td>
+<td>Show a warning message in a &#8216;warning&#8217; QMessageBox.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.events.Notifier.error">
+<code class="descname">error</code><span class="sig-paren">(</span><em>title</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#Notifier.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.Notifier.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show an error message in a &#8216;critical&#8217; QMessageBox.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The title of the box</p>
+</div></blockquote>
+<p><strong>message</strong> : str</p>
+<blockquote class="last">
+<div><p>The message to display</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.Notifier.info">
+<code class="descname">info</code><span class="sig-paren">(</span><em>title</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#Notifier.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.Notifier.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show an info message in an &#8216;information&#8217; QMessageBox.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The title of the box</p>
+</div></blockquote>
+<p><strong>message</strong> : str</p>
+<blockquote class="last">
+<div><p>The message to display</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.Notifier.success">
+<code class="descname">success</code><span class="sig-paren">(</span><em>title</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#Notifier.success"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.Notifier.success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show a success message in a &#8216;success&#8217; QMessageBox.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The title of the box</p>
+</div></blockquote>
+<p><strong>message</strong> : str</p>
+<blockquote class="last">
+<div><p>The message to display</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.Notifier.warning">
+<code class="descname">warning</code><span class="sig-paren">(</span><em>title</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#Notifier.warning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.Notifier.warning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show a warning message in a &#8216;warning&#8217; QMessageBox.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The title of the box</p>
+</div></blockquote>
+<p><strong>message</strong> : str</p>
+<blockquote class="last">
+<div><p>The message to display</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="QOpenScienceFramework.events.TokenFileListener">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.events.</code><code class="descname">TokenFileListener</code><span class="sig-paren">(</span><em>tokenfile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#TokenFileListener"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.TokenFileListener" title="Permalink to this definition">¶</a></dt>
+<dd><p>This listener stores the OAuth2 token after login and destroys it after
+logout.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.events.TokenFileListener.handle_login" title="QOpenScienceFramework.events.TokenFileListener.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
+<td>Handles the login event.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.events.TokenFileListener.handle_logout" title="QOpenScienceFramework.events.TokenFileListener.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
+<td>Handles the logout event.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.events.TokenFileListener.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#TokenFileListener.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.TokenFileListener.handle_login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the login event.</p>
+<p>Stores the OAuth2 token in a file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.events.TokenFileListener.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/events.html#TokenFileListener.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.events.TokenFileListener.handle_logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the logout event.</p>
+<p>Deletes the file containing the OAuth2 token.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="widgets">
+<h2>Widgets<a class="headerlink" href="#widgets" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-QOpenScienceFramework.loginwindow">
+<span id="loginwindow"></span><h3>LoginWindow<a class="headerlink" href="#module-QOpenScienceFramework.loginwindow" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="QOpenScienceFramework.loginwindow.LoginWindow">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.loginwindow.</code><code class="descname">LoginWindow</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWebEngineWidgets.QWebEngineView</span></code></p>
+<p>A Login window for the OSF</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.checkResponse" title="QOpenScienceFramework.loginwindow.LoginWindow.checkResponse"><code class="xref py py-obj docutils literal"><span class="pre">checkResponse</span></code></a>(reply)</td>
+<td>Callback function.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.check_URL" title="QOpenScienceFramework.loginwindow.LoginWindow.check_URL"><code class="xref py py-obj docutils literal"><span class="pre">check_URL</span></code></a>(url)</td>
+<td>Callback function.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.logged_in" title="QOpenScienceFramework.loginwindow.LoginWindow.logged_in"><code class="xref py py-obj docutils literal"><span class="pre">logged_in</span></code></a></td>
+<td>Event fired when user successfully logged in.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.loginwindow.LoginWindow.checkResponse">
+<code class="descname">checkResponse</code><span class="sig-paren">(</span><em>reply</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow.checkResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.checkResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function. Do not use directly.</p>
+<p>Callback for NetworkRequestManager.finished event
+used to check if OAuth2 is redirecting to a link containing the token
+string. This is necessary for the QtWebKit module, because it drops
+fragments after being redirect to a different URL. QWebEngine uses the
+check_URL function to check for the token fragment</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>reply</strong> : QtNetwork.QNetworkReply</p>
+<blockquote class="last">
+<div><p>The response object provided by NetworkRequestManager</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.loginwindow.LoginWindow.check_URL">
+<code class="descname">check_URL</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow.check_URL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.check_URL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function. Do not use directly.</p>
+<p>Calback for urlChanged event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>command</strong> : url</p>
+<blockquote class="last">
+<div><p>New url, provided by the urlChanged event</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.loginwindow.LoginWindow.logged_in">
+<code class="descname">logged_in</code><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.logged_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event fired when user successfully logged in.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-QOpenScienceFramework.widgets">
+<span id="osfexplorer"></span><h3>OSFExplorer<a class="headerlink" href="#module-QOpenScienceFramework.widgets" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">OSFExplorer</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QWidget</span></code></p>
+<p>An explorer of the current user&#8217;s OSF account</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.config" title="QOpenScienceFramework.widgets.OSFExplorer.config"><code class="xref py py-obj docutils literal"><span class="pre">config</span></code></a></td>
+<td>The current configuration of the project explorer.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.abort_preview" title="QOpenScienceFramework.widgets.OSFExplorer.abort_preview"><code class="xref py py-obj docutils literal"><span class="pre">abort_preview</span></code></a></td>
+<td>PyQt signal emitted when an image preview is to be aborted.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.add_buttonset" title="QOpenScienceFramework.widgets.OSFExplorer.add_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">add_buttonset</span></code></a>(title,&nbsp;buttons)</td>
+<td>Adds a set of buttons that can be referenced by &#8216;title&#8217;.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.closeEvent" title="QOpenScienceFramework.widgets.OSFExplorer.closeEvent"><code class="xref py py-obj docutils literal"><span class="pre">closeEvent</span></code></a>(event)</td>
+<td>Reimplementation of closeEvent.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.create_context_menu" title="QOpenScienceFramework.widgets.OSFExplorer.create_context_menu"><code class="xref py py-obj docutils literal"><span class="pre">create_context_menu</span></code></a>(item)</td>
+<td>Creates a context menu for the currently selected TreeWidgetItem.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_login" title="QOpenScienceFramework.widgets.OSFExplorer.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
+<td>Callback function for a login event is detected.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_logout" title="QOpenScienceFramework.widgets.OSFExplorer.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
+<td>Callback function for when a logout event is detected.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_config" title="QOpenScienceFramework.widgets.OSFExplorer.set_config"><code class="xref py py-obj docutils literal"><span class="pre">set_config</span></code></a>(config)</td>
+<td>Function that sets the current config.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_file_properties" title="QOpenScienceFramework.widgets.OSFExplorer.set_file_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_file_properties</span></code></a>(data)</td>
+<td>Fills the contents of the properties panel for files.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties" title="QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_folder_properties</span></code></a>(data)</td>
+<td>Fills the contents of the properties pane for folders.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.show_buttonset" title="QOpenScienceFramework.widgets.OSFExplorer.show_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">show_buttonset</span></code></a>(title)</td>
+<td>Sets the buttonset to show and hides all others.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor</p>
+<p>Can be passed a reference to an already existing ProjectTree if desired,
+otherwise it creates a new instance of this object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>manager</strong> : manger.ConnectionManager</p>
+<blockquote>
+<div><p>The object taking care of all the communication with the OSF</p>
+</div></blockquote>
+<p><strong>tree_widget</strong> : ProjectTree (default: None)</p>
+<blockquote>
+<div><p>The kind of object, which can be project, folder or file</p>
+</div></blockquote>
+<p><strong>locale</strong> : string (default: en-us)</p>
+<blockquote class="last">
+<div><p>The language in which the time information should be presented.                 Should consist of lowercase characters only (e.g. nl_nl)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.abort_preview">
+<code class="descname">abort_preview</code><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.abort_preview" title="Permalink to this definition">¶</a></dt>
+<dd><p>PyQt signal emitted when an image preview is to be aborted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.add_buttonset">
+<code class="descname">add_buttonset</code><span class="sig-paren">(</span><em>title</em>, <em>buttons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.add_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.add_buttonset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a set of buttons that can be referenced by &#8216;title&#8217;. With
+set_buttonset(title) the buttons can be switched to this set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The label of the buttonset</p>
+</div></blockquote>
+<p><strong>buttons</strong> : list</p>
+<blockquote>
+<div><p>A list containing QWidgets.QAbstractButton objects that belong to
+this button set</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>TypeError</strong> : if there is no buttonset known by that label or an item in          the buttons list not an instance of QAbstractButton.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.closeEvent">
+<code class="descname">closeEvent</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.closeEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.closeEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reimplementation of closeEvent. Makes sure the login window also
+closes if the explorer closes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.config">
+<code class="descname">config</code><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current configuration of the project explorer. Contains information
+about the current filter that is set for the project tree and the buttonset
+that is shown.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.create_context_menu">
+<code class="descname">create_context_menu</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.create_context_menu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.create_context_menu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a context menu for the currently selected TreeWidgetItem.
+Menu contents differ depending on if the selected item is a file or a
+folder, and if the folder is the root of a repo or a subfolder thereof</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_login" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function for a login event is detected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function for when a logout event is detected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_config">
+<code class="descname">set_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that sets the current config. Is equal to setting the config variable
+directly by using OSFExplorer.config = &lt;config dict&gt;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>config</strong> : dict</p>
+<blockquote class="last">
+<div><p>The dictionary containing new configuration parameters. It can contain
+directives to set a filter (with the filter key) and/or which buttonset
+to show (with the buttonset key)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_file_properties">
+<code class="descname">set_file_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_file_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_file_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills the contents of the properties panel for files. Makes sure the
+extra fields concerning files are shown.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>attributes</strong> : dict</p>
+<blockquote class="last">
+<div><p>A dictionary containing the information retrieved from the OSF,
+stored at the data/attributes path of the json response</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties">
+<code class="descname">set_folder_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_folder_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills the contents of the properties pane for folders. Make sure the
+fields only concerning files are hidden.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>attributes</strong> : dict</p>
+<blockquote class="last">
+<div><p>A dictionary containing the information retrieved from the OSF,
+stored at the data/attributes path of the json response</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="QOpenScienceFramework.widgets.OSFExplorer.show_buttonset">
+<code class="descname">show_buttonset</code><span class="sig-paren">(</span><em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.show_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.show_buttonset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the buttonset to show and hides all others.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
+<blockquote>
+<div><p>The label of the buttonset that should be shown</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>KeyError</strong> : if there is no buttonset known by that label</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="projecttree">
+<h3>ProjectTree<a class="headerlink" href="#projecttree" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">ProjectTree</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QTreeWidget</span></code></p>
+<p>A tree representation of projects and files on the OSF for the current user
+in a treeview widget.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">filter</span></code></td>
+<td>The currently set filter parameters.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">add_item</span></code>(parent,&nbsp;data)</td>
+<td>Adds a new item to the tree.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">clear_filter</span></code>()</td>
+<td>Clears the filter.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">find_item</span></code>(item,&nbsp;index,&nbsp;value)</td>
+<td>Finds an item in the tree.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_icon</span></code>(datatype,&nbsp;name)</td>
+<td>Returns a QIcon for the passed datatype.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code>()</td>
+<td>Callback function for EventDispatcher when a login event is detected.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code>()</td>
+<td>Callback function for EventDispatcher when a logout event is detected.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">populate_tree</span></code>(reply[,&nbsp;parent])</td>
+<td>Populates the tree with content.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">process_repo_contents</span></code>(logged_in_user)</td>
+<td>Processes contents for the logged in user.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">refreshFinished</span></code></td>
+<td>PyQt signal that emits when the tree is completely refreshed.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">refresh_children_of_node</span></code>(node)</td>
+<td>Refreshes the children of the specified node.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">refresh_contents</span></code>()</td>
+<td>Refreshes all contents in the tree.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">set_filter</span></code>(filetypes)</td>
+<td>Sets the filter parameters.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.__init__"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Constructor.
+Creates a tree showing the contents of the user&#8217;s OSF repositories.
+Can be passed a theme to use for the icons, but if this doesn&#8217;t happen
+it will use the default qtawesome (FontAwesome) icons for the buttons.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>manager</strong> : manger.ConnectionManager</p>
+<blockquote>
+<div><p>The object taking care of all the communication with the OSF.</p>
+</div></blockquote>
+<p><strong>use_theme</strong> : string (default: None)</p>
+<blockquote>
+<div><p>The name of the icon theme to use.</p>
+</div></blockquote>
+<p><strong>theme_path</strong> : The path to the folder at which the icon theme is located</p>
+<blockquote class="last">
+<div><p>Relevant only on Windows and OSX as the location of icon themes on
+Linux is standardized.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">add_item</code><span class="sig-paren">(</span><em>parent</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.add_item"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Adds a new item to the tree. The data that is passed should be
+the dictionary containing the information that is found under the &#8216;data&#8217;
+key in an OSF API responses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parent</strong> : QtWidgets.QTreeWidgetItem</p>
+<blockquote>
+<div><p>The parent node to place the new item under.</p>
+</div></blockquote>
+<p><strong>data</strong> : dict</p>
+<blockquote>
+<div><p>The &#8216;data&#8217; segment from the osf data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>item</strong> : QtWidgets.QTreeWidgetItem</p>
+<blockquote>
+<div><p>The newly created tree widget item</p>
+</div></blockquote>
+<p><strong>kind</strong> : str</p>
+<blockquote class="last">
+<div><p>The type of the new item (folder, file, project, etc.)</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">clear_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.clear_filter"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Clears the filter.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">filter</code></dt>
+<dd><p>The currently set filter parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">find_item</code><span class="sig-paren">(</span><em>item</em>, <em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.find_item"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Finds an item in the tree.
+Checks if there is already a tree item with the same name as value. This
+function does not recurse over the tree items, it only checks the direct
+descendants of the given item.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>item</strong> : QtWidgets.QTreeWidgetItem</p>
+<blockquote>
+<div><p>The tree widget item of which to search the direct descendents.</p>
+</div></blockquote>
+<p><strong>index</strong> : int</p>
+<blockquote>
+<div><p>The column index of the tree widget item.</p>
+</div></blockquote>
+<p><strong>value</strong> : str</p>
+<blockquote>
+<div><p>The value to search for</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">int</p>
+<blockquote class="last">
+<div><p>The index position at which the item is found or None .</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">get_icon</code><span class="sig-paren">(</span><em>datatype</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.get_icon"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Returns a QIcon for the passed datatype.
+Retrieves the curren theme icon for a certain object (project, folder)
+or filetype. Uses the file extension to determine the file type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>datatype</strong> : string</p>
+<blockquote>
+<div><p>The kind of object, which can be project, folder or file</p>
+</div></blockquote>
+<p><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The name of the object, which is the project&#8217;s, folder&#8217;s or
+file&#8217;s name</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">QtGui.QIcon</p>
+<blockquote class="last">
+<div><p>The icon for the current file/object type</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.handle_login"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Callback function for EventDispatcher when a login event is detected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.handle_logout"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Callback function for EventDispatcher when a logout event is detected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">populate_tree</code><span class="sig-paren">(</span><em>reply</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.populate_tree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Populates the tree with content. The entry point should be a project, 
+repository or folder inside a repository. The JSON representation 
+that the api endpoint returns for such a node is used to build the tree 
+contents. This function is called recursively, for each new subfolder that
+is encountered from the entry point on.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>reply</strong> : QtNetwork.QNetworkReply</p>
+<blockquote>
+<div><p>The data of the entrypoint from the OSF to create the node in the 
+tree for.</p>
+</div></blockquote>
+<p><strong>parent</strong> : QtWidgets.QTreeWidgetItem (default: None)</p>
+<blockquote>
+<div><p>The parent item to which the generated tree should be attached.
+Is mainly used for the recursiveness that this function implements.
+If not specified the invisibleRootItem() is used as a parent.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list</p>
+<blockquote class="last">
+<div><p>The list of tree items that have just been generated</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">process_repo_contents</code><span class="sig-paren">(</span><em>logged_in_user</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.process_repo_contents"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Processes contents for the logged in user. Starts by listing
+the projects and then recurses through all their repositories, folders and files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">refreshFinished</code></dt>
+<dd><p>PyQt signal that emits when the tree is completely refreshed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">refresh_children_of_node</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.refresh_children_of_node"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Refreshes the children of the specified node.
+In contrast to refresh_contents, which refreshes the whole tree from
+the root, this function only refreshes the children of the passed node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : QtWidgets.QTreeWidgetItem</p>
+<blockquote class="last">
+<div><p>The tree item of which the children need to be refreshed.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">refresh_contents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.refresh_contents"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Refreshes all contents in the tree. This operation might take a long
+time depending on the number of projects that the user has, so it is 
+recommended to use a partial refresh (refresh_children_of_node), wherever
+you can.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">set_filter</code><span class="sig-paren">(</span><em>filetypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.set_filter"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Sets the filter parameters.
+Can be used instead of using project_tree.filter = &lt;value&gt; directly.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="userbadge">
+<h3>UserBadge<a class="headerlink" href="#userbadge" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">UserBadge</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QWidget</span></code></p>
+<p>A Widget showing the logged in user</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">current_user</span></code>()</td>
+<td>Checks the current status of the user.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code>()</td>
+<td>Callback function for EventDispatcher when a login event is detected.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code>(*args)</td>
+<td>Callback function for EventDispatcher when a logout event is detected.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">login_request</span></code></td>
+<td>PyQt signal to send a login request.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">logout_request</span></code></td>
+<td>PyQt signal to send a logout request.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.__init__"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>manager</strong> : manager.ConnectionManager</p>
+<blockquote>
+<div><p>The object taking care of all the communication with the OSF</p>
+</div></blockquote>
+<p><strong>iconsize</strong> : QtCore.QSize (default: None)</p>
+<blockquote class="last">
+<div><p>The size of the icon to use for the osf logo and user photo, if not
+passed a size of 40x40 is used.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">current_user</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.current_user"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Checks the current status of the user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dict</strong> : contains the information of the logged in user, or is empty if no</p>
+<p class="last">user is currently logged in.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.handle_login"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Callback function for EventDispatcher when a login event is detected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.handle_logout"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Callback function for EventDispatcher when a logout event is detected.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">login_request</code></dt>
+<dd><p>PyQt signal to send a login request.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">logout_request</code></dt>
+<dd><p>PyQt signal to send a logout request.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
