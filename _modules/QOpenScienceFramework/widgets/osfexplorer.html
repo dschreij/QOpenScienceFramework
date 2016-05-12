@@ -1,0 +1,1274 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.widgets.osfexplorer &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="QOpenScienceFramework.widgets" href="../widgets.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../widgets.html">QOpenScienceFramework.widgets</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.widgets.osfexplorer</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.widgets.osfexplorer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># QtAwesome icon fonts for spinners</span>
+<span class="kn">import</span> <span class="nn">qtawesome</span> <span class="kn">as</span> <span class="nn">qta</span>
+<span class="c1"># OSF connection interface</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+<span class="c1"># Fileinspector for determining filetypes</span>
+<span class="kn">import</span> <span class="nn">fileinspector</span>
+<span class="c1"># For presenting numbers in human readible formats</span>
+<span class="kn">import</span> <span class="nn">humanize</span>
+<span class="c1"># For better time functions</span>
+<span class="kn">import</span> <span class="nn">arrow</span>
+<span class="c1"># QT classes</span>
+<span class="c1"># Required QT classes</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="n">pp</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">PrettyPrinter</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">dirname</span>
+<span class="c1"># Python 2 and 3 compatiblity settings</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="c1"># Utility classes and functions</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.util</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="c1"># Project tree widget</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.widgets.projecttree</span> <span class="kn">import</span> <span class="n">ProjectTree</span>
+
+<span class="n">osf_logo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-white2.png&#39;</span><span class="p">)</span>
+<span class="n">osf_blacklogo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-black.png&#39;</span><span class="p">)</span>
+
+<span class="c1"># Dummy function later to be replaced for translation</span>
+<span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="OSFExplorer"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer">[docs]</a><span class="k">class</span> <span class="nc">OSFExplorer</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; An explorer of the current user&#39;s OSF account &quot;&quot;&quot;</span>
+	<span class="c1"># Size of preview icon in properties pane</span>
+	<span class="n">preview_size</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">)</span>
+	<span class="n">button_icon_size</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+	<span class="c1"># Formatting of date displays</span>
+	<span class="n">timeformat</span> <span class="o">=</span> <span class="s1">&#39;YYYY-MM-DD HH:mm&#39;</span>
+	<span class="n">datedisplay</span> <span class="o">=</span> <span class="s1">&#39;{} ({})&#39;</span>
+	<span class="c1"># The maximum size an image may have to be downloaded for preview</span>
+	<span class="n">preview_size_limit</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">2.0</span>
+	<span class="c1"># Signal that is sent if image preview should be aborted</span>
+	<span class="n">abort_preview</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt signal emitted when an image preview is to be aborted. &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OSFExplorer.__init__"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">tree_widget</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">locale</span><span class="o">=</span><span class="s1">&#39;en_us&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor</span>
+
+<span class="sd">		Can be passed a reference to an already existing ProjectTree if desired,</span>
+<span class="sd">		otherwise it creates a new instance of this object.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		manager : manger.ConnectionManager</span>
+<span class="sd">			The object taking care of all the communication with the OSF</span>
+<span class="sd">		tree_widget : ProjectTree (default: None)</span>
+<span class="sd">			The kind of object, which can be project, folder or file</span>
+<span class="sd">		locale : string (default: en-us)</span>
+<span class="sd">			The language in which the time information should be presented.\</span>
+<span class="sd">			Should consist of lowercase characters only (e.g. nl_nl)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Call parent&#39;s constructor</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">OSFExplorer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Project explorer&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span><span class="mi">500</span><span class="p">)</span>
+		<span class="c1"># Set Window icon</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;OSF logo not found at expected path: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+				<span class="n">osf_blacklogo_path</span><span class="p">))</span>
+		<span class="n">osf_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">osf_icon</span><span class="p">)</span>
+
+		<span class="c1"># Set up the title widget (so much code for a simple header with image...)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+		<span class="n">title_logo</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="n">title_logo</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">osf_icon</span><span class="o">.</span><span class="n">pixmap</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span><span class="mi">32</span><span class="p">)))</span>
+		<span class="n">title_label</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;&lt;h1&gt;Open Science Framework&lt;/h1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title_logo</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title_label</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addStretch</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">,</span>
+			<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">)</span>
+
+		<span class="c1">## globally accessible items</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">locale</span> <span class="o">=</span> <span class="n">locale</span>
+		<span class="c1"># ProjectTree widget. Can be passed as a reference to this object.</span>
+		<span class="k">if</span> <span class="n">tree_widget</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="c1"># Create a new ProjectTree instance</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">ProjectTree</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># Check if passed reference is a ProjectTree instance</span>
+			<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tree_widget</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ProjectTree</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Passed tree_widget should be a &#39;ProjectTree&#39;</span><span class="se">\</span>
+<span class="s2">					instance.&quot;</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="c1"># assign passed reference of ProjectTree to this instance</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">tree_widget</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">setSortingEnabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">sortItems</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AscendingOrder</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">contextMenuEvent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__show_tree_context_menu</span>
+
+		<span class="c1"># File properties overview</span>
+		<span class="n">properties_pane</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_properties_pane</span><span class="p">()</span>
+
+		<span class="c1"># The section in which the file icon or the image preview is presented</span>
+		<span class="n">preview_area</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>
+		<span class="c1"># Space for image</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">resizeEvent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__resizeImagePreview</span>
+
+		<span class="c1"># This holds the image preview in binary format. Everytime the img preview</span>
+		<span class="c1"># needs to be rescaled, it is done with this variable as the img source</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span> <span class="o">=</span> <span class="bp">None</span>
+
+		<span class="c1"># The progress bar depicting the download state of the image preview</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QProgressBar</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+
+		<span class="n">preview_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="p">)</span>
+		<span class="n">preview_area</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="p">)</span>
+
+		<span class="c1">## Create layouts</span>
+
+		<span class="c1"># The box layout holding all elements</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+		<span class="c1"># Grid layout for the info consisting of an image space and the</span>
+		<span class="c1"># properties grid</span>
+		<span class="n">info_grid</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>
+		<span class="n">info_grid</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+		<span class="n">info_grid</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">preview_area</span><span class="p">)</span>
+		<span class="n">info_grid</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">properties_pane</span><span class="p">)</span>
+
+		<span class="c1"># The widget to hold the infogrid</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">info_grid</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+
+		<span class="c1"># Combine tree and info frame with a splitter in the middle</span>
+		<span class="n">splitter</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSplitter</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">)</span>
+		<span class="n">splitter</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+		<span class="n">splitter</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="p">)</span>
+
+		<span class="c1"># Create buttons at the bottom</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_buttonbar</span><span class="p">()</span>
+
+		<span class="c1"># Add splitter to extra parent widget to allow overlay</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span>
+			<span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Log in to the OSF to use this module&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span>
+			<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">			font-size: 20px;</span>
+<span class="sd">			background: rgba(250, 250, 250, 0.75);</span>
+<span class="sd">			&quot;&quot;&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span>
+			<span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignVCenter</span><span class="p">)</span>
+
+		<span class="c1"># Content pane with tree and properties view</span>
+		<span class="c1"># Also has overlay showing login required message when use is logged</span>
+		<span class="c1"># out</span>
+		<span class="n">content_pane</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="n">content_layout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+		<span class="n">content_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+		<span class="n">content_pane</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">content_layout</span><span class="p">)</span>
+		<span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">splitter</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+		<span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+		<span class="c1"># Add to layout</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title_widget</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">content_pane</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buttonbar</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">main_layout</span><span class="p">)</span>
+
+		<span class="c1"># Event connections</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItemChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__slot_currentItemChanged</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">itemSelectionChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__slot_itemSelectionChanged</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">refreshFinished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__tree_refresh_finished</span><span class="p">)</span></div>
+
+	<span class="c1">### Private functions</span>
+	<span class="k">def</span> <span class="nf">__resizeImagePreview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Resize the image preview (if there is any) after a resize event &quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="c1"># Calculate new height, but let the minimum be determined by</span>
+			<span class="c1"># the y coordinate of preview_size</span>
+			<span class="n">new_height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">height</span><span class="p">()</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview_size</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+			<span class="n">pm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span><span class="o">.</span><span class="n">scaledToHeight</span><span class="p">(</span><span class="n">new_height</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">pm</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__create_buttonbar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Creates the button bar at the bottom of the explorer &quot;&quot;&quot;</span>
+		<span class="c1"># General buttonbar widget</span>
+		<span class="n">buttonbar</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+		<span class="n">buttonbar_hbox</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">(</span><span class="n">buttonbar</span><span class="p">)</span>
+		<span class="n">buttonbar</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">buttonbar_hbox</span><span class="p">)</span>
+
+		<span class="c1"># Refresh button - always visible</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon</span> <span class="o">=</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.refresh&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Refresh&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon_spinning</span> <span class="o">=</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span>
+			<span class="s1">&#39;fa.refresh&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">animation</span><span class="o">=</span><span class="n">qta</span><span class="o">.</span><span class="n">Spin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">button_icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__clicked_refresh_tree</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Refresh&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="c1"># Other buttons, depend on config settings of OSF explorer</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+			<span class="s1">&#39;folder-new&#39;</span><span class="p">,</span>
+			<span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;ei.folder-sign&#39;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_folder_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;New folder&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">button_icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__clicked_new_folder</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Create a new folder at the currently&quot;</span>
+			<span class="s2">&quot; selected location&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+			<span class="s1">&#39;edit-delete&#39;</span><span class="p">,</span>
+			<span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.trash&#39;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Delete&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">button_icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__clicked_delete</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Delete the currently selected file or &quot;</span>
+			<span class="s2">&quot;folder&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+			<span class="s1">&#39;go-down&#39;</span><span class="p">,</span>
+			<span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.cloud-download&#39;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_icon</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s1">&#39;Download&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">button_icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clicked_download_file</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Download the currently selected file&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+			<span class="s1">&#39;go-up&#39;</span><span class="p">,</span>
+			<span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.cloud-upload&#39;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upload_icon</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s1">&#39;Upload&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__clicked_upload_file</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">button_icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Upload a file to the currently selected&quot;</span>
+			<span class="s2">&quot; folder&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="c1"># Set up the general button bar layouts</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="p">)</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addStretch</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+		<span class="c1"># Add default buttons to default widget</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="p">)</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="p">)</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="p">)</span>
+		<span class="n">buttonbar_hbox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="p">)</span>
+
+		<span class="c1"># Make sure the button bar is vertically as small as possible.</span>
+		<span class="n">buttonbar</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Minimum</span><span class="p">,</span>
+			<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">)</span>
+
+		<span class="c1"># Store the above buttons (except refresh) into a variable which later</span>
+		<span class="c1"># can be used to customize button set configurations</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span> <span class="o">=</span> <span class="p">{</span>
+			<span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">[]</span>
+		<span class="p">}</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="p">)</span>
+
+		<span class="n">buttonbar</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="n">buttonbar</span>
+
+	<span class="k">def</span> <span class="nf">__create_properties_pane</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Creates the panel showing the selected item&#39;s properties on the right &quot;&quot;&quot;</span>
+		<span class="c1"># Box to show the properties of the selected item</span>
+		<span class="n">properties_pane</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFormLayout</span><span class="p">()</span>
+		<span class="n">properties_pane</span><span class="o">.</span><span class="n">setFormAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignLeft</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignLeft</span><span class="p">)</span>
+		<span class="n">properties_pane</span><span class="o">.</span><span class="n">setLabelAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">)</span>
+		<span class="n">properties_pane</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">40</span><span class="p">)</span>
+
+		<span class="n">labelStyle</span> <span class="o">=</span> <span class="s1">&#39;font-weight: bold&#39;</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">common_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">file_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Size&#39;</span><span class="p">,</span><span class="s1">&#39;Created&#39;</span><span class="p">,</span><span class="s1">&#39;Modified&#39;</span><span class="p">,</span><span class="s1">&#39;Link&#39;</span><span class="p">]</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_fields</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_fields</span><span class="p">:</span>
+			<span class="n">label</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
+			<span class="n">label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">labelStyle</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s2">&quot;Link&quot;</span><span class="p">:</span>
+				<span class="c1"># Initialize label with some HTML to trigger the rich text mode</span>
+				<span class="n">value</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s1">&#39;&lt;a&gt;&lt;/a&gt;&#39;</span><span class="p">)</span>
+				<span class="n">value</span><span class="o">.</span><span class="n">setOpenExternalLinks</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">value</span> <span class="o">=</span> <span class="n">QElidedLabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+				<span class="n">value</span><span class="o">.</span><span class="n">setWindowFlags</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">Dialog</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+			<span class="n">properties_pane</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+
+		<span class="c1"># Make sure the fields specific for files are shown</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_fields</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">row</span><span class="p">]:</span>
+				<span class="n">field</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="k">return</span> <span class="n">properties_pane</span>
+
+	<span class="c1">### Public functions</span>
+<div class="viewcode-block" id="OSFExplorer.create_context_menu"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu">[docs]</a>	<span class="k">def</span> <span class="nf">create_context_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Creates a context menu for the currently selected TreeWidgetItem.</span>
+<span class="sd">		Menu contents differ depending on if the selected item is a file or a</span>
+<span class="sd">		folder, and if the folder is the root of a repo or a subfolder thereof&quot;&quot;&quot;</span>
+
+		<span class="n">data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="c1"># Don&#39;t make context menu for a project</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">None</span>
+
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;files&#39;</span><span class="p">:</span>
+			<span class="n">kind</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span>
+
+		<span class="c1"># Check if the current item is a repository (which is represented as a</span>
+		<span class="c1"># normal folder)</span>
+		<span class="n">parent_data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">parent_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+			<span class="n">item_is_repo</span> <span class="o">=</span> <span class="bp">True</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">item_is_repo</span> <span class="o">=</span> <span class="bp">False</span>
+
+		<span class="n">menu</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">)</span>
+
+		<span class="c1"># Actions only allowd on files</span>
+		<span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+			<span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Download file&quot;</span><span class="p">),</span> 
+				<span class="bp">self</span><span class="o">.</span><span class="n">_clicked_download_file</span><span class="p">)</span>
+
+		<span class="c1"># Actions only allowed on folders</span>
+		<span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;folder&quot;</span><span class="p">:</span>
+			<span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upload_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Upload file to folder&quot;</span><span class="p">),</span> 
+				<span class="bp">self</span><span class="o">.</span><span class="n">__clicked_upload_file</span><span class="p">)</span>
+			<span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">new_folder_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Create new folder&quot;</span><span class="p">),</span> 
+				<span class="bp">self</span><span class="o">.</span><span class="n">__clicked_new_folder</span><span class="p">)</span>
+			<span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Refresh contents&quot;</span><span class="p">),</span> 
+				<span class="bp">self</span><span class="o">.</span><span class="n">__clicked_partial_refresh</span><span class="p">)</span>
+
+		<span class="c1"># Only allow deletion of files and subfolders of repos</span>
+		<span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">item_is_repo</span><span class="p">:</span>
+			<span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Delete&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__clicked_delete</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="n">menu</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.add_buttonset"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.add_buttonset">[docs]</a>	<span class="k">def</span> <span class="nf">add_buttonset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">buttons</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Adds a set of buttons that can be referenced by &#39;title&#39;. With</span>
+<span class="sd">		set_buttonset(title) the buttons can be switched to this set.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The label of the buttonset</span>
+<span class="sd">		buttons : list</span>
+<span class="sd">			A list containing QWidgets.QAbstractButton objects that belong to</span>
+<span class="sd">			this button set</span>
+
+<span class="sd">		Raises</span>
+<span class="sd">		------</span>
+<span class="sd">		TypeError : if there is no buttonset known by that label or an item in \</span>
+<span class="sd">		the buttons list not an instance of QAbstractButton.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># Check if the passed parameters are valid. This function only takes a list</span>
+		<span class="c1"># (even if the set consists of a single button)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">buttons</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;&quot;buttons&quot; should be a list with QtWidgets.QAbstractButton&#39;</span>
+				<span class="s1">&#39; that belong to the set&#39;</span><span class="p">)</span>
+		<span class="c1"># Check if all items in the list are a QtWidgets.QPushButton</span>
+		<span class="k">for</span> <span class="n">bttn</span> <span class="ow">in</span> <span class="n">buttons</span><span class="p">:</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bttn</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAbstractButton</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;All items in the buttons list should be of type&#39;</span>
+					<span class="s1">&#39; or inherit from QtWidgets.QAbstractButton&#39;</span><span class="p">)</span>
+			<span class="n">bttn</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">buttonbar</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">bttn</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="n">title</span><span class="p">]</span> <span class="o">=</span> <span class="n">buttons</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.show_buttonset"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.show_buttonset">[docs]</a>	<span class="k">def</span> <span class="nf">show_buttonset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets the buttonset to show and hides all others.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		title : str</span>
+<span class="sd">			The label of the buttonset that should be shown</span>
+
+<span class="sd">		Raises</span>
+<span class="sd">		------</span>
+<span class="sd">		KeyError : if there is no buttonset known by that label</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">title</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Buttonset &quot;{}&quot; could not be found.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">title</span><span class="p">))</span>
+		<span class="c1"># First hide all items</span>
+		<span class="k">for</span> <span class="n">bttnset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+			<span class="k">for</span> <span class="n">bttn</span> <span class="ow">in</span> <span class="n">bttnset</span><span class="p">:</span>
+				<span class="n">bttn</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+		<span class="c1"># Then show only the buttons of the specified buttonset</span>
+		<span class="k">for</span> <span class="n">bttn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">[</span><span class="n">title</span><span class="p">]:</span>
+			<span class="n">bttn</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.set_file_properties"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_file_properties">[docs]</a>	<span class="k">def</span> <span class="nf">set_file_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Fills the contents of the properties panel for files. Makes sure the</span>
+<span class="sd">		extra fields concerning files are shown.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		attributes : dict</span>
+<span class="sd">			A dictionary containing the information retrieved from the OSF,</span>
+<span class="sd">			stored at the data/attributes path of the json response</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Get required properties</span>
+		<span class="n">attributes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]</span>
+
+		<span class="n">name</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">)</span>
+		<span class="n">filesize</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">)</span>
+		<span class="n">created</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;date_created&quot;</span><span class="p">,</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">)</span>
+		<span class="n">modified</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;date_modified&quot;</span><span class="p">,</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">check_if_opensesame_file</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+			<span class="n">filetype</span> <span class="o">=</span> <span class="s2">&quot;OpenSesame experiment&quot;</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># Use fileinspector to determine filetype</span>
+			<span class="n">filetype</span> <span class="o">=</span> <span class="n">fileinspector</span><span class="o">.</span><span class="n">determine_type</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+			<span class="c1"># If filetype could not be determined, the response is False</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="n">filetype</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">filetype</span><span class="p">)</span>
+
+				<span class="k">if</span> <span class="n">fileinspector</span><span class="o">.</span><span class="n">determine_category</span><span class="p">(</span><span class="n">filetype</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
+					<span class="c1"># Download and display image if it is not too big.</span>
+					<span class="k">if</span> <span class="ow">not</span> <span class="n">filesize</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span>  <span class="n">filesize</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preview_size_limit</span><span class="p">:</span>
+						<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+						<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+						<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+							<span class="n">data</span><span class="p">[</span><span class="s2">&quot;links&quot;</span><span class="p">][</span><span class="s2">&quot;download&quot;</span><span class="p">],</span>
+							<span class="bp">self</span><span class="o">.</span><span class="n">__set_image_preview</span><span class="p">,</span>
+							<span class="n">downloadProgress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__prev_dl_progress</span><span class="p">,</span>
+							<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__img_preview_error</span><span class="p">,</span>
+							<span class="n">abortSignal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abort_preview</span>
+						<span class="p">)</span>
+
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">filetype</span> <span class="o">=</span> <span class="s2">&quot;file&quot;</span>
+
+		<span class="c1"># If filesize is None, default to the value &#39;Unspecified&#39;</span>
+		<span class="k">if</span> <span class="n">filesize</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">filesize</span> <span class="o">=</span> <span class="s2">&quot;Unspecified&quot;</span>
+		<span class="c1"># If filesize is a number do some reformatting of the data to make it</span>
+		<span class="c1"># look nicer for us humans</span>
+		<span class="k">if</span> <span class="n">filesize</span> <span class="o">!=</span> <span class="s2">&quot;Unspecified&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filesize</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+			<span class="n">filesize</span> <span class="o">=</span> <span class="n">humanize</span><span class="o">.</span><span class="n">naturalsize</span><span class="p">(</span><span class="n">filesize</span><span class="p">)</span>
+
+		<span class="c1"># Format created time</span>
+		<span class="k">if</span> <span class="n">created</span> <span class="o">!=</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">:</span>
+			<span class="n">cArrow</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">created</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+			<span class="n">created</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datedisplay</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+				<span class="n">cArrow</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeformat</span><span class="p">),</span>
+				<span class="n">cArrow</span><span class="o">.</span><span class="n">humanize</span><span class="p">(</span><span class="n">locale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="p">)</span>
+			<span class="p">)</span>
+
+		<span class="c1"># Format modified time</span>
+		<span class="k">if</span> <span class="n">modified</span> <span class="o">!=</span> <span class="s2">&quot;Unspecified&quot;</span><span class="p">:</span>
+			<span class="n">mArrow</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modified</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+			<span class="n">modified</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">datedisplay</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+				<span class="n">mArrow</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeformat</span><span class="p">),</span>
+				<span class="n">mArrow</span><span class="o">.</span><span class="n">humanize</span><span class="p">(</span><span class="n">locale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="p">)</span>
+			<span class="p">)</span>
+
+		<span class="c1">### Set properties in the panel.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">filetype</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Size&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">filesize</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Created&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">created</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Modified&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">modified</span><span class="p">)</span>
+
+		<span class="c1"># Make sure the fields specific for files are visible</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_fields</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">row</span><span class="p">]:</span>
+				<span class="n">field</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+		<span class="c1"># Get the link to the file on the website of OSF. This is not readily</span>
+		<span class="c1"># available from the returned API data, but can be parsed from the</span>
+		<span class="c1"># comments URL, of which it is the [target] filter parameter</span>
+		<span class="c1"># Sadly, this is URL is not always available for all files, so hide the</span>
+		<span class="c1"># row if parsing fails.</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">comments_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;relationships&quot;</span><span class="p">][</span><span class="s2">&quot;comments&quot;</span><span class="p">][</span><span class="s2">&quot;links&quot;</span><span class="p">][</span><span class="s2">&quot;related&quot;</span><span class="p">]</span>\
+				<span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Could not retrieve comments url, because of missing field {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># Use regular expression to search for the relevant part of the url</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">target</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;filter\[target\]\=\w+&#39;</span><span class="p">,</span> <span class="n">comments_url</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+				<span class="c1"># If this didn&#39;t work, hide the row altogether</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="c1"># Get the ID part of the filter parameter and generate the url</span>
+				<span class="n">web_id</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+				<span class="n">web_url</span> <span class="o">=</span> <span class="s2">u&quot;{}/{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">osf</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;website_url&#39;</span><span class="p">],</span> <span class="n">web_id</span><span class="p">)</span>
+				<span class="n">a</span> <span class="o">=</span> <span class="s2">u&quot;&lt;a href=</span><span class="se">\&quot;</span><span class="s2">{0}</span><span class="se">\&quot;</span><span class="s2">&gt;{0}&lt;/a&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">web_url</span><span class="p">)</span>
+				<span class="c1"># Set the URL in the field</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+				<span class="c1"># Show the row</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Link&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.set_folder_properties"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_folder_properties">[docs]</a>	<span class="k">def</span> <span class="nf">set_folder_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Fills the contents of the properties pane for folders. Make sure the</span>
+<span class="sd">		fields only concerning files are hidden.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		attributes : dict</span>
+<span class="sd">			A dictionary containing the information retrieved from the OSF,</span>
+<span class="sd">			stored at the data/attributes path of the json response</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">attributes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]</span>
+		<span class="c1"># A node (i.e. a project) has title and category fields</span>
+		<span class="k">if</span> <span class="s2">&quot;title&quot;</span> <span class="ow">in</span> <span class="n">attributes</span> <span class="ow">and</span> <span class="s2">&quot;category&quot;</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">])</span>
+			<span class="k">if</span> <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;public&quot;</span><span class="p">]:</span>
+				<span class="n">level</span> <span class="o">=</span> <span class="s2">&quot;Public&quot;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">level</span> <span class="o">=</span> <span class="s2">&quot;Private&quot;</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">level</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">])</span>
+		<span class="k">elif</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">attributes</span> <span class="ow">and</span> <span class="s2">&quot;kind&quot;</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">])</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s2">&quot;Invalid structure for folder property&quot;</span>
+				<span class="s2">&quot; received&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Make sure the fields specific for files are shown</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_fields</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">row</span><span class="p">]:</span>
+				<span class="n">field</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+
+		<span class="c1"># Just to be sure (even though it&#39;s useless as these fields are hidden)</span>
+		<span class="c1"># clear the contents of the fields below</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Size&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Created&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Modified&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.set_config"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config">[docs]</a>	<span class="k">def</span> <span class="nf">set_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Function that sets the current config. Is equal to setting the config variable</span>
+<span class="sd">		directly by using OSFExplorer.config = &lt;config dict&gt;</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		config : dict</span>
+<span class="sd">			The dictionary containing new configuration parameters. It can contain</span>
+<span class="sd">			directives to set a filter (with the filter key) and/or which buttonset</span>
+<span class="sd">			to show (with the buttonset key)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span></div>
+
+	<span class="nd">@property</span>
+	<span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The current configuration of the project explorer. Contains information</span>
+<span class="sd">		about the current filter that is set for the project tree and the buttonset</span>
+<span class="sd">		that is shown. &quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span>
+
+	<span class="nd">@config.setter</span>
+	<span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets the current config for the project explorer. </span>
+
+<span class="sd">		The config dict can contain two entries.</span>
+<span class="sd">		- filter : a list of file extensions which should only be shown in the \</span>
+<span class="sd">			tree</span>
+<span class="sd">		- buttonset : the buttonset to show, if one has added custom buttonsets. \</span>
+<span class="sd">			The default buttonset is designated by &#39;default&#39;</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;config should be a dict with options&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">value</span>
+
+		<span class="c1"># Get filters</span>
+		<span class="n">filt</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;filter&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="n">buttonset</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;buttonset&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">filt</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">show_buttonset</span><span class="p">(</span><span class="n">buttonset</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unknown options: {}&quot;</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+	<span class="c1">### PyQT slots</span>
+
+	<span class="k">def</span> <span class="nf">__show_tree_context_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Shows the context menu when a tree item is right clicked. &quot;&quot;&quot;</span>
+		<span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">itemAt</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+		<span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">return</span>
+
+		<span class="n">context_menu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_context_menu</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">context_menu</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">context_menu</span><span class="o">.</span><span class="n">popup</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">globalPos</span><span class="p">())</span>
+
+	<span class="k">def</span> <span class="nf">__slot_currentItemChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles the QTreeWidget currentItemChanged event. &quot;&quot;&quot;</span>
+		<span class="c1"># If selection changed to no item, do nothing</span>
+		<span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">return</span>
+
+		<span class="c1"># Reset the image preview contents</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span> <span class="o">=</span> <span class="bp">None</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+
+		<span class="c1"># Abort previous preview operation (if any)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">abort_preview</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+
+		<span class="n">data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;title&quot;</span><span class="p">]</span>
+			<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;public&quot;</span><span class="p">]:</span>
+				<span class="n">access</span> <span class="o">=</span> <span class="s2">&quot;public &quot;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">access</span> <span class="o">=</span> <span class="s2">&quot;private &quot;</span>
+			<span class="n">kind</span> <span class="o">=</span> <span class="n">access</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;category&quot;</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;files&#39;</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+			<span class="n">kind</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span>
+
+		<span class="n">pm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">get_icon</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">pixmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preview_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">pm</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">kind</span>  <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">set_file_properties</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;folder&quot;</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">set_folder_properties</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="c1"># Check if the parent node is a project</span>
+			<span class="c1"># If so the current &#39;folder&#39; must be a storage provider (e.g. dropbox)</span>
+			<span class="c1"># which should not be allowed to be deleted.</span>
+			<span class="n">parent_data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">parent_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">set_folder_properties</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">new_folder_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__slot_itemSelectionChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">items_selected</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">())</span>
+		<span class="c1"># If there are selected items, show the properties pane</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span> <span class="ow">and</span> <span class="n">items_selected</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">500</span><span class="p">)</span>
+			<span class="k">return</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">items_selected</span><span class="p">:</span>
+			<span class="c1"># Reset the image preview contents</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span> <span class="o">=</span> <span class="bp">None</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">info_frame</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">download_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">upload_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">delete_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="k">return</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_refresh_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Refresh the tree contents and animate the refresh button while this</span>
+<span class="sd">		process is in progress. &quot;&quot;&quot;</span>
+
+		<span class="c1"># Don&#39;t do anything if the refresh button is disabled. This probably</span>
+		<span class="c1"># means a refresh operation is in progress, and activating another one</span>
+		<span class="c1"># during this is asking for trouble.</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">()</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+			<span class="k">return</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon_spinning</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">refresh_contents</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_partial_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="c1"># Don&#39;t do anything if the refresh button is disabled. This probably</span>
+		<span class="c1"># means a refresh operation is in progress, and activating another one</span>
+		<span class="c1"># during this is asking for trouble.</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">()</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+			<span class="k">return</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon_spinning</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">refresh_children_of_node</span><span class="p">(</span><span class="n">selected_item</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">_clicked_download_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Action to be performed when download button is clicked. Downloads the</span>
+<span class="sd">		selected file to the user specified location. &quot;&quot;&quot;</span>
+		<span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">selected_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="n">download_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;download&#39;</span><span class="p">]</span>
+		<span class="n">filename</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+		<span class="c1"># See if a previous folder was set, and if not, try to set</span>
+		<span class="c1"># the user&#39;s home folder as a starting folder</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;last_dl_destination_folder&#39;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">last_dl_destination_folder</span> <span class="o">=</span> <span class="n">safe_decode</span><span class="p">(</span>
+				<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">safe_str</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">)),</span>
+				<span class="n">enc</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">())</span>
+
+		<span class="n">destination</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getSaveFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Save file as&quot;</span><span class="p">),</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_dl_destination_folder</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span>
+		<span class="p">)</span>
+
+		<span class="c1"># PyQt5 returns a tuple, because it actually performs the function of</span>
+		<span class="c1"># PyQt4&#39;s getSaveFileNameAndFilter() function</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+			<span class="n">destination</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+		<span class="k">if</span> <span class="n">destination</span><span class="p">:</span>
+			<span class="c1"># Remember this folder for later when this dialog has to be presented again</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">last_dl_destination_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">destination</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+			<span class="c1"># Configure progress dialog (only if filesize is known)</span>
+			<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;size&#39;</span><span class="p">]:</span>
+				<span class="n">progress_dialog_data</span><span class="o">=</span><span class="p">{</span>
+					<span class="s2">&quot;filename&quot;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+					<span class="s2">&quot;filesize&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;size&#39;</span><span class="p">]</span>
+				<span class="p">}</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">progress_dialog_data</span> <span class="o">=</span> <span class="bp">None</span>
+			<span class="c1"># Download the file</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span>
+				<span class="n">download_url</span><span class="p">,</span>
+				<span class="n">destination</span><span class="p">,</span>
+				<span class="n">progressDialog</span><span class="o">=</span><span class="n">progress_dialog_data</span><span class="p">,</span>
+				<span class="n">finishedCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__download_finished</span>
+			<span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles a click on the delete button. Deletes the selected file or</span>
+<span class="sd">		folder. &quot;&quot;&quot;</span>
+		<span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">selected_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+
+		<span class="n">reply</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
+			<span class="bp">self</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Please confirm&quot;</span><span class="p">),</span>
+			<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Are you sure you want to delete &#39;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&#39;?&quot;</span><span class="p">,</span>
+			<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span> <span class="o">|</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span>
+		<span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">reply</span> <span class="o">==</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span><span class="p">:</span>
+			<span class="n">delete_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;delete&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">delete_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__item_deleted</span><span class="p">,</span> <span class="n">selected_item</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_upload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles a click on the upload button. Prepares for upload of a file</span>
+<span class="sd">		to the currently selected folder. &quot;&quot;&quot;</span>
+		<span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">selected_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="n">upload_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;upload&#39;</span><span class="p">]</span>
+
+		<span class="c1"># See if a previous folder was set, and if not, try to set</span>
+		<span class="c1"># the user&#39;s home folder as a starting folder</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;last_open_destination_folder&#39;</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">last_open_destination_folder</span> <span class="o">=</span> <span class="n">safe_decode</span><span class="p">(</span>
+				<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">safe_str</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">)),</span>
+				<span class="n">enc</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">getfilesystemencoding</span><span class="p">())</span>
+
+		<span class="n">file_to_upload</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Select file for upload&quot;</span><span class="p">),</span>
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_open_destination_folder</span><span class="p">),</span>
+		<span class="p">)</span>
+
+		<span class="c1"># PyQt5 returns a tuple, because it actually performs the function of</span>
+		<span class="c1"># PyQt4&#39;s getSaveFileNameAndFilter() function</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_to_upload</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+			<span class="n">file_to_upload</span> <span class="o">=</span> <span class="n">file_to_upload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+		<span class="k">if</span> <span class="n">file_to_upload</span><span class="p">:</span>
+			<span class="c1"># Get the filename</span>
+			<span class="n">folder</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">file_to_upload</span><span class="p">)</span>
+			<span class="c1"># Remember the containing folder for later</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">last_open_destination_folder</span> <span class="o">=</span> <span class="n">folder</span>
+			<span class="c1"># ... and the convert to QFile</span>
+			<span class="n">file_to_upload</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QFile</span><span class="p">(</span><span class="n">file_to_upload</span><span class="p">)</span>
+			<span class="c1"># Check if file is already present and get its index if so</span>
+			<span class="n">index_if_present</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">find_item</span><span class="p">(</span><span class="n">selected_item</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+			<span class="c1"># If index_is_present is None, the file is probably new</span>
+			<span class="k">if</span> <span class="n">index_if_present</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+				<span class="c1"># add required query parameters</span>
+				<span class="n">upload_url</span> <span class="o">+=</span> <span class="s1">&#39;?kind=file&amp;name={}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+			<span class="c1"># If index_is_present is a number, it means the file is present</span>
+			<span class="c1"># and that file needs to be updated.</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">reply</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">question</span><span class="p">(</span>
+					<span class="bp">self</span><span class="p">,</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;Please confirm&quot;</span><span class="p">),</span>
+					<span class="n">_</span><span class="p">(</span><span class="s2">&quot;The selected folder already contains this file. Are you &quot;</span>
+						<span class="s2">&quot;sure you want to overwrite it?&quot;</span><span class="p">),</span>
+					<span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span> <span class="o">|</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">Yes</span>
+				<span class="p">)</span>
+				<span class="k">if</span> <span class="n">reply</span> <span class="o">==</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">No</span><span class="p">:</span>
+					<span class="k">return</span>
+
+				<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;File {} exists and will be updated&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+				<span class="n">old_item</span> <span class="o">=</span> <span class="n">selected_item</span><span class="o">.</span><span class="n">child</span><span class="p">(</span><span class="n">index_if_present</span><span class="p">)</span>
+				<span class="c1"># Get data stored in item</span>
+				<span class="n">old_item_data</span> <span class="o">=</span> <span class="n">old_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+				<span class="c1"># Get file specific update utrl</span>
+				<span class="n">upload_url</span> <span class="o">=</span> <span class="n">old_item_data</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;upload&#39;</span><span class="p">]</span>
+				<span class="n">upload_url</span> <span class="o">+=</span> <span class="s1">&#39;?kind=file&#39;</span>
+			<span class="n">progress_dialog_data</span><span class="o">=</span><span class="p">{</span>
+				<span class="s2">&quot;filename&quot;</span><span class="p">:</span> <span class="n">file_to_upload</span><span class="o">.</span><span class="n">fileName</span><span class="p">(),</span>
+				<span class="s2">&quot;filesize&quot;</span><span class="p">:</span> <span class="n">file_to_upload</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+			<span class="p">}</span>
+
+			<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span>
+				<span class="n">upload_url</span><span class="p">,</span>
+				<span class="n">file_to_upload</span><span class="p">,</span>
+				<span class="n">progressDialog</span><span class="o">=</span><span class="n">progress_dialog_data</span><span class="p">,</span>
+				<span class="n">finishedCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_upload_finished</span><span class="p">,</span>
+				<span class="n">selectedTreeItem</span><span class="o">=</span><span class="n">selected_item</span><span class="p">,</span>
+				<span class="n">updateIndex</span><span class="o">=</span><span class="n">index_if_present</span>
+			<span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_new_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Creates a new folder in the selected folder on OSF &quot;&quot;&quot;</span>
+		<span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">selected_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="c1"># Get new folder link from data</span>
+		<span class="n">new_folder_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;new_folder&#39;</span><span class="p">]</span>
+
+		<span class="n">new_folder_name</span><span class="p">,</span> <span class="n">ok</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QInputDialog</span><span class="o">.</span><span class="n">getText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+			<span class="n">_</span><span class="p">(</span><span class="s1">u&#39;Create new folder&#39;</span><span class="p">),</span>
+			<span class="n">_</span><span class="p">(</span><span class="s1">u&#39;Please enter the folder name:&#39;</span><span class="p">)</span>
+		<span class="p">)</span>
+		<span class="n">new_folder_name</span> <span class="o">=</span> <span class="n">safe_decode</span><span class="p">(</span><span class="n">new_folder_name</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_folder_name</span><span class="p">):</span>
+			<span class="k">return</span>
+
+		<span class="c1"># Remove illegal filesystem characters (mainly for Windows)</span>
+		<span class="n">new_folder_name</span> <span class="o">=</span> <span class="s2">u&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_folder_name</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">r&#39;\/:*?&quot;&lt;&gt;|&#39;</span><span class="p">)</span>
+		<span class="c1"># Check again</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_folder_name</span><span class="p">):</span>
+			<span class="k">return</span>
+
+		<span class="n">new_folder_url</span> <span class="o">+=</span> <span class="s2">&quot;&amp;name={}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_folder_name</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+			<span class="n">new_folder_url</span><span class="p">,</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_upload_finished</span><span class="p">,</span>
+			<span class="n">selectedTreeItem</span><span class="o">=</span><span class="n">selected_item</span>
+		<span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__download_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">success_message</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s1">&#39;Download finished&#39;</span><span class="p">,</span><span class="s1">&#39;Your download completed successfully&#39;</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">_upload_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for reply() object after an upload is finished &quot;&quot;&quot;</span>
+		<span class="c1"># See if upload action was triggered by interaction on a tree item</span>
+		<span class="n">selectedTreeItem</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;selectedTreeItem&#39;</span><span class="p">)</span>
+		<span class="c1"># The new item data should be returned in the reply</span>
+		<span class="n">new_item_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+
+		<span class="c1"># new_item_data is only reliable for osfstorage for now, so simply</span>
+		<span class="c1"># refresh the whole tree if data is from another provider.</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">selectedTreeItem</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">__upload_refresh_tree</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># See if object is still alive (could be deleted after user has had</span>
+			<span class="c1"># to reauthenticate)</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">selectedTreeItem</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span>
+			<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+				<span class="c1"># if not, simple refresh the whole tree</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__upload_refresh_tree</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+				<span class="k">return</span>
+
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">provider</span> <span class="o">=</span> <span class="n">new_item_data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;provider&#39;</span><span class="p">]</span>
+			<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span>
+					<span class="s1">u&#39;Could not parse provider from OSF response: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+			<span class="c1"># OSF storage is easy. Just take the newly returned path</span>
+			<span class="k">if</span> <span class="n">provider</span> <span class="o">==</span> <span class="s1">&#39;osfstorage&#39;</span><span class="p">:</span>
+				<span class="n">info_url</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s1">&#39;file_info&#39;</span><span class="p">,</span>
+					<span class="n">new_item_data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+			<span class="c1"># All other repo&#39;s are a bit more difficult...</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="c1"># Don&#39;t even bother for folders and simply refresh the tree.</span>
+				<span class="c1"># OSF does not provide possibility to get folder information (in</span>
+				<span class="c1"># contrast to folder contents) for newly created folders in external</span>
+				<span class="c1"># repositories</span>
+				<span class="k">if</span> <span class="n">new_item_data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;folder&#39;</span><span class="p">:</span>
+					<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;entry_node&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">selectedTreeItem</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">__upload_refresh_tree</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+					<span class="k">return</span>
+
+				<span class="c1"># If kind is a file, try to add it to the tree incrementally</span>
+				<span class="c1"># (thus without refreshing the whole tree). At the moment, this</span>
+				<span class="c1"># only works well for osfstorage...</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="n">project_id</span> <span class="o">=</span> <span class="n">new_item_data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;resource&#39;</span><span class="p">]</span>
+					<span class="n">temp_id</span> <span class="o">=</span> <span class="n">new_item_data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+				<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span>
+						<span class="s1">u&#39;Could not parse provider from OSF response: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+				<span class="c1"># Create an url for this file with which the complete information</span>
+				<span class="c1"># set can be retrieved</span>
+				<span class="n">info_url</span> <span class="o">=</span> <span class="n">osf</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s1">&#39;repo_files&#39;</span><span class="p">,</span> <span class="n">project_id</span><span class="p">,</span> <span class="n">temp_id</span><span class="p">)</span>
+				
+				<span class="c1"># The repo_files api call adds a trailing slash, but this is invalid</span>
+				<span class="c1"># when requesting information about files. Remove it if present.</span>
+				<span class="k">if</span> <span class="n">info_url</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">u&quot;/&quot;</span><span class="p">:</span>
+					<span class="n">info_url</span> <span class="o">=</span> <span class="n">info_url</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+			<span class="c1"># Refresh info for the new file as the returned representation</span>
+			<span class="c1"># is incomplete</span>
+
+			<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+				<span class="n">info_url</span><span class="p">,</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__upload_refresh_item</span><span class="p">,</span>
+				<span class="n">selectedTreeItem</span><span class="p">,</span>
+				<span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+			<span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__upload_refresh_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Called by _upload_finished() if the whole tree needs to be</span>
+<span class="sd">		refreshed &quot;&quot;&quot;</span>
+
+		<span class="c1"># If an entry node is specified, only refresh the children of that node,</span>
+		<span class="c1"># otherwise, refresh entire tree</span>
+		<span class="n">entry_node</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;entry_node&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">entry_node</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">__clicked_refresh_tree</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon_spinning</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">refresh_children_of_node</span><span class="p">(</span><span class="n">entry_node</span><span class="p">)</span>	
+
+		<span class="n">after_upload_cb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;afterUploadCallback&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">after_upload_cb</span><span class="p">):</span>
+			<span class="n">after_upload_cb</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__upload_refresh_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">parent_item</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Called by __upload_finished, if it is possible to add the new item</span>
+<span class="sd">		at the correct position in the tree, without refreshing the whole tree.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">item</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+		<span class="c1"># Remove old item first, before adding new one</span>
+		<span class="n">updateIndex</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;updateIndex&#39;</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">updateIndex</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">parent_item</span><span class="o">.</span><span class="n">takeChild</span><span class="p">(</span><span class="n">updateIndex</span><span class="p">)</span>
+		<span class="c1"># Add the item as a new item to the tree</span>
+		<span class="n">new_item</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="n">parent_item</span><span class="p">,</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+		<span class="c1"># Set new item as currently selected item</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">setCurrentItem</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+		<span class="c1"># Store item in kwargs so callback functions can use it</span>
+		<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;new_item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_item</span>
+		<span class="c1"># Perform the afterUploadCallback if it has been specified</span>
+		<span class="n">after_upload_cb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;afterUploadCallback&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">after_upload_cb</span><span class="p">):</span>
+			<span class="n">after_upload_cb</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__item_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for when an item has been successfully deleted from the OSF.</span>
+<span class="sd">		Removes the item from the tree. &quot;&quot;&quot;</span>
+		<span class="c1"># See if object is still alive (could be deleted after user has had</span>
+		<span class="c1"># to reauthenticate)</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">item</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span><span class="o">.</span><span class="n">removeChild</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Deleting item failed: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+	<span class="k">def</span> <span class="nf">__tree_refresh_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Slot for the event fired when the tree refresh is finished &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_icon</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OSFExplorer.handle_login"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_login">[docs]</a>	<span class="k">def</span> <span class="nf">handle_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for a login event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.handle_logout"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_logout">[docs]</a>	<span class="k">def</span> <span class="nf">handle_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for when a logout event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="p">())</span>
+		<span class="k">for</span> <span class="n">label</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+			<span class="n">value</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_button</span><span class="o">.</span><span class="n">setDisabled</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_required_overlay</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OSFExplorer.closeEvent"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.closeEvent">[docs]</a>	<span class="k">def</span> <span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Reimplementation of closeEvent. Makes sure the login window also</span>
+<span class="sd">		closes if the explorer closes. &quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">OSFExplorer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">closeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+	<span class="c1">#--- Other callback functions</span>
+
+	<span class="k">def</span> <span class="nf">__set_image_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img_content</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for set_file_properties(). Sets the preview of an image in</span>
+<span class="sd">		the properties panel. &quot;&quot;&quot;</span>
+		<span class="c1"># Create a pixmap from the just received data</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span><span class="o">.</span><span class="n">loadFromData</span><span class="p">(</span><span class="n">img_content</span><span class="o">.</span><span class="n">readAll</span><span class="p">())</span>
+		<span class="c1"># Scale to preview area hight</span>
+		<span class="n">pixmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_img_preview</span><span class="o">.</span><span class="n">scaledToHeight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+		<span class="c1"># Hide progress bar</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="c1"># Show image preview</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">image_space</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">pixmap</span><span class="p">)</span>
+		<span class="c1"># Reset variable holding preview reply object</span>
+
+	<span class="k">def</span> <span class="nf">__prev_dl_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for set_file_properties() &quot;&quot;&quot;</span>
+		<span class="c1"># If total is 0, this is probably a redirect to the image location in</span>
+		<span class="c1"># cloud storage. Do nothing in this case</span>
+		<span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="k">return</span>
+
+		<span class="c1"># Convert to percentage</span>
+		<span class="n">progress</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="n">received</span><span class="o">/</span><span class="n">total</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__img_preview_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for set_file_properties() &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">img_preview_progress_bar</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

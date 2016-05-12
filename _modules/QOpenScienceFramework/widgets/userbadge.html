@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.widgets.userbadge &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="QOpenScienceFramework.widgets" href="../widgets.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../widgets.html">QOpenScienceFramework.widgets</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.widgets.userbadge</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.widgets.userbadge</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">webbrowser</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># QtAwesome icon fonts for spinners</span>
+<span class="kn">import</span> <span class="nn">qtawesome</span> <span class="kn">as</span> <span class="nn">qta</span>
+<span class="c1"># OSF connection interface</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+<span class="c1"># QT classes</span>
+<span class="c1"># Required QT classes</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+<span class="c1"># Python 2 and 3 compatiblity settings</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">dirname</span>
+<span class="n">osf_logo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-white2.png&#39;</span><span class="p">)</span>
+<span class="n">osf_blacklogo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-black.png&#39;</span><span class="p">)</span>
+
+<span class="c1"># Dummy function later to be replaced for translation</span>
+<span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="UserBadge"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.userbadge.UserBadge">[docs]</a><span class="k">class</span> <span class="nc">UserBadge</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; A Widget showing the logged in user &quot;&quot;&quot;</span>
+
+	<span class="c1"># Class variables</span>
+	<span class="c1"># Login and logout events</span>
+	<span class="n">logout_request</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt signal to send a logout request. &quot;&quot;&quot;</span>
+	<span class="n">login_request</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt signal to send a login request. &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UserBadge.__init__"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.userbadge.UserBadge.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">icon_size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		manager : manager.ConnectionManager</span>
+<span class="sd">			The object taking care of all the communication with the OSF</span>
+<span class="sd">		iconsize : QtCore.QSize (default: None)</span>
+<span class="sd">			The size of the icon to use for the osf logo and user photo, if not</span>
+<span class="sd">			passed a size of 40x40 is used.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">UserBadge</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+		<span class="c1"># button texts</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Log in&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logout_text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Log out&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logging_in_text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Logging in&quot;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logging_out_text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Logging out&quot;</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">icon_size</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">):</span>
+			<span class="c1"># Size of avatar and osf logo display image</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">icon_size</span> <span class="o">=</span> <span class="n">icon_size</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">icon_size</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">40</span><span class="p">)</span>
+
+		<span class="c1"># Set up general window</span>
+		<span class="c1"># self.resize(200,40)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;User badge&quot;</span><span class="p">))</span>
+		<span class="c1"># Set Window icon</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">):</span>
+			<span class="k">print</span><span class="p">(</span><span class="s2">&quot;ERROR: OSF logo not found at {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">))</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">osf_logo_pixmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">)</span><span class="o">.</span><span class="n">scaled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">osf_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">osf_icon</span><span class="p">)</span>
+
+		<span class="c1"># Login button</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__clicked_login</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setFlat</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon_size</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_menu</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="p">)</span>
+		<span class="n">visit_osf_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span><span class="s1">&#39;web-browser&#39;</span><span class="p">,</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.globe&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span>
+			<span class="n">visit_osf_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Visit osf.io&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__open_osf_website</span><span class="p">)</span>
+		<span class="n">logout_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span><span class="s1">&#39;system-log-out&#39;</span><span class="p">,</span> 
+			<span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.sign-out&#39;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">logout_icon</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Log out&quot;</span><span class="p">),</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">__clicked_logout</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logged_in_menu</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setFlat</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+		<span class="c1"># Spinner icon</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">spinner</span> <span class="o">=</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.refresh&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+					 <span class="n">animation</span><span class="o">=</span><span class="n">qta</span><span class="o">.</span><span class="n">Spin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="p">))</span>
+
+		<span class="c1"># Init user badge as logged out</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">handle_logout</span><span class="p">()</span>
+
+		<span class="c1"># Set up layout</span>
+		<span class="n">layout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+		<span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserBadge.current_user"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.userbadge.UserBadge.current_user">[docs]</a>	<span class="k">def</span> <span class="nf">current_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Checks the current status of the user.</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		dict : contains the information of the logged in user, or is empty if no</span>
+<span class="sd">		user is currently logged in.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">logged_in_user</span></div>
+
+	<span class="c1"># PyQt slots</span>
+	<span class="k">def</span> <span class="nf">__open_osf_website</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Opens the OSF website in the OS default browser &quot;&quot;&quot;</span>
+		<span class="n">webbrowser</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">osf</span><span class="o">.</span><span class="n">website_url</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles a click on the login button. &quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">logged_in_user</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">login_request</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__clicked_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Handles a click on the logout button. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logging_out_text</span><span class="p">)</span>
+		<span class="n">QtCore</span><span class="o">.</span><span class="n">QCoreApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">processEvents</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">logout_request</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+
+	<span class="c1"># Other callback functions</span>
+
+<div class="viewcode-block" id="UserBadge.handle_login"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_login">[docs]</a>	<span class="k">def</span> <span class="nf">handle_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for EventDispatcher when a login event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spinner</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logging_in_text</span><span class="p">)</span>
+		<span class="c1"># Get logged in user from manager, if something goes wrong, reset the login</span>
+		<span class="c1"># button status</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get_logged_in_user</span><span class="p">(</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">__set_badge_contents</span><span class="p">,</span>
+			<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">handle_logout</span>
+		<span class="p">)</span></div>
+
+<div class="viewcode-block" id="UserBadge.handle_logout"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_logout">[docs]</a>	<span class="k">def</span> <span class="nf">handle_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for EventDispatcher when a logout event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">osf_icon</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">login_text</span><span class="p">)</span></div>
+
+	<span class="k">def</span> <span class="nf">__set_badge_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets the user&#39;s information in the badge. &quot;&quot;&quot;</span>
+		<span class="c1"># Convert bytes to string and load the json data</span>
+		<span class="n">user</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+
+		<span class="c1"># Get user&#39;s name</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">full_name</span> <span class="o">=</span> <span class="n">user</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;full_name&quot;</span><span class="p">]</span>
+			<span class="c1"># Download avatar image from the specified url</span>
+			<span class="n">avatar_url</span> <span class="o">=</span> <span class="n">user</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;links&quot;</span><span class="p">][</span><span class="s2">&quot;profile_image&quot;</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s2">&quot;Invalid user data format: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">login_button</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+		<span class="c1"># Load the user image in the photo area</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">avatar_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__set_user_photo</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">__set_user_photo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets the photo of the user in the userbadge. &quot;&quot;&quot;</span>
+		<span class="n">avatar_data</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()</span>
+		<span class="n">avatar_img</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="p">()</span>
+		<span class="n">success</span> <span class="o">=</span> <span class="n">avatar_img</span><span class="o">.</span><span class="n">loadFromData</span><span class="p">(</span><span class="n">avatar_data</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Could not load user&#39;s profile picture&quot;</span><span class="p">)</span>
+		<span class="n">pixmap</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QPixmap</span><span class="o">.</span><span class="n">fromImage</span><span class="p">(</span><span class="n">avatar_img</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">user_button</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">pixmap</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

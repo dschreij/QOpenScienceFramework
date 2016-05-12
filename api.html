@@ -87,10 +87,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.manager">ConnectionManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.events">Events</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#widgets">Widgets</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.loginwindow">LoginWindow</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets">OSFExplorer</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#projecttree">ProjectTree</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#userbadge">UserBadge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets.loginwindow">LoginWindow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets.osfexplorer">OSFExplorer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets.projecttree">ProjectTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-QOpenScienceFramework.widgets.userbadge">UserBadge</a></li>
 </ul>
 </li>
 </ul>
@@ -1085,9 +1085,9 @@ The file will be stored at the specified destination on the OSF.</p>
 <blockquote>
 <div><p>The target url that points to endpoint handling the upload</p>
 </div></blockquote>
-<p><strong>source</strong> : string / QtCore.QtFile</p>
+<p><strong>source_file</strong> : string / QtCore.QtFile</p>
 <blockquote>
-<div><p>The path and file which should be uploaded.</p>
+<div><p>The path to the file which should be uploaded.</p>
 </div></blockquote>
 <p><strong>finishedCallback</strong> : function (default: None)</p>
 <blockquote>
@@ -1431,11 +1431,11 @@ logout.</p>
 </div>
 <div class="section" id="widgets">
 <h2>Widgets<a class="headerlink" href="#widgets" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="module-QOpenScienceFramework.loginwindow">
-<span id="loginwindow"></span><h3>LoginWindow<a class="headerlink" href="#module-QOpenScienceFramework.loginwindow" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-QOpenScienceFramework.widgets.loginwindow">
+<span id="loginwindow"></span><h3>LoginWindow<a class="headerlink" href="#module-QOpenScienceFramework.widgets.loginwindow" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="QOpenScienceFramework.loginwindow.LoginWindow">
-<em class="property">class </em><code class="descclassname">QOpenScienceFramework.loginwindow.</code><code class="descname">LoginWindow</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.loginwindow.LoginWindow">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.loginwindow.</code><code class="descname">LoginWindow</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/loginwindow.html#LoginWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWebEngineWidgets.QWebEngineView</span></code></p>
 <p>A Login window for the OSF</p>
 <p class="rubric">Methods</p>
@@ -1445,20 +1445,20 @@ logout.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.checkResponse" title="QOpenScienceFramework.loginwindow.LoginWindow.checkResponse"><code class="xref py py-obj docutils literal"><span class="pre">checkResponse</span></code></a>(reply)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.checkResponse" title="QOpenScienceFramework.widgets.loginwindow.LoginWindow.checkResponse"><code class="xref py py-obj docutils literal"><span class="pre">checkResponse</span></code></a>(reply)</td>
 <td>Callback function.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.check_URL" title="QOpenScienceFramework.loginwindow.LoginWindow.check_URL"><code class="xref py py-obj docutils literal"><span class="pre">check_URL</span></code></a>(url)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.check_URL" title="QOpenScienceFramework.widgets.loginwindow.LoginWindow.check_URL"><code class="xref py py-obj docutils literal"><span class="pre">check_URL</span></code></a>(url)</td>
 <td>Callback function.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.loginwindow.LoginWindow.logged_in" title="QOpenScienceFramework.loginwindow.LoginWindow.logged_in"><code class="xref py py-obj docutils literal"><span class="pre">logged_in</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.logged_in" title="QOpenScienceFramework.widgets.loginwindow.LoginWindow.logged_in"><code class="xref py py-obj docutils literal"><span class="pre">logged_in</span></code></a></td>
 <td>Event fired when user successfully logged in.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="QOpenScienceFramework.loginwindow.LoginWindow.checkResponse">
-<code class="descname">checkResponse</code><span class="sig-paren">(</span><em>reply</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow.checkResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.checkResponse" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.loginwindow.LoginWindow.checkResponse">
+<code class="descname">checkResponse</code><span class="sig-paren">(</span><em>reply</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/loginwindow.html#LoginWindow.checkResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.checkResponse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function. Do not use directly.</p>
 <p>Callback for NetworkRequestManager.finished event
 used to check if OAuth2 is redirecting to a link containing the token
@@ -1480,8 +1480,8 @@ check_URL function to check for the token fragment</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.loginwindow.LoginWindow.check_URL">
-<code class="descname">check_URL</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/loginwindow.html#LoginWindow.check_URL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.check_URL" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.loginwindow.LoginWindow.check_URL">
+<code class="descname">check_URL</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/loginwindow.html#LoginWindow.check_URL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.check_URL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function. Do not use directly.</p>
 <p>Calback for urlChanged event.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1499,19 +1499,19 @@ check_URL function to check for the token fragment</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="QOpenScienceFramework.loginwindow.LoginWindow.logged_in">
-<code class="descname">logged_in</code><a class="headerlink" href="#QOpenScienceFramework.loginwindow.LoginWindow.logged_in" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.loginwindow.LoginWindow.logged_in">
+<code class="descname">logged_in</code><a class="headerlink" href="#QOpenScienceFramework.widgets.loginwindow.LoginWindow.logged_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event fired when user successfully logged in.</p>
 </dd></dl>
 
 </dd></dl>
 
 </div>
-<div class="section" id="module-QOpenScienceFramework.widgets">
-<span id="osfexplorer"></span><h3>OSFExplorer<a class="headerlink" href="#module-QOpenScienceFramework.widgets" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-QOpenScienceFramework.widgets.osfexplorer">
+<span id="osfexplorer"></span><h3>OSFExplorer<a class="headerlink" href="#module-QOpenScienceFramework.widgets.osfexplorer" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer">
-<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">OSFExplorer</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.osfexplorer.</code><code class="descname">OSFExplorer</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QWidget</span></code></p>
 <p>An explorer of the current user&#8217;s OSF account</p>
 <p class="rubric">Attributes</p>
@@ -1521,7 +1521,7 @@ check_URL function to check for the token fragment</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.config" title="QOpenScienceFramework.widgets.OSFExplorer.config"><code class="xref py py-obj docutils literal"><span class="pre">config</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.config" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.config"><code class="xref py py-obj docutils literal"><span class="pre">config</span></code></a></td>
 <td>The current configuration of the project explorer.</td>
 </tr>
 </tbody>
@@ -1533,41 +1533,41 @@ check_URL function to check for the token fragment</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.abort_preview" title="QOpenScienceFramework.widgets.OSFExplorer.abort_preview"><code class="xref py py-obj docutils literal"><span class="pre">abort_preview</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.abort_preview" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.abort_preview"><code class="xref py py-obj docutils literal"><span class="pre">abort_preview</span></code></a></td>
 <td>PyQt signal emitted when an image preview is to be aborted.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.add_buttonset" title="QOpenScienceFramework.widgets.OSFExplorer.add_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">add_buttonset</span></code></a>(title,&nbsp;buttons)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.add_buttonset" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.add_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">add_buttonset</span></code></a>(title,&nbsp;buttons)</td>
 <td>Adds a set of buttons that can be referenced by &#8216;title&#8217;.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.closeEvent" title="QOpenScienceFramework.widgets.OSFExplorer.closeEvent"><code class="xref py py-obj docutils literal"><span class="pre">closeEvent</span></code></a>(event)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.closeEvent" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.closeEvent"><code class="xref py py-obj docutils literal"><span class="pre">closeEvent</span></code></a>(event)</td>
 <td>Reimplementation of closeEvent.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.create_context_menu" title="QOpenScienceFramework.widgets.OSFExplorer.create_context_menu"><code class="xref py py-obj docutils literal"><span class="pre">create_context_menu</span></code></a>(item)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu"><code class="xref py py-obj docutils literal"><span class="pre">create_context_menu</span></code></a>(item)</td>
 <td>Creates a context menu for the currently selected TreeWidgetItem.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_login" title="QOpenScienceFramework.widgets.OSFExplorer.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_login" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
 <td>Callback function for a login event is detected.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_logout" title="QOpenScienceFramework.widgets.OSFExplorer.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_logout" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
 <td>Callback function for when a logout event is detected.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_config" title="QOpenScienceFramework.widgets.OSFExplorer.set_config"><code class="xref py py-obj docutils literal"><span class="pre">set_config</span></code></a>(config)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config"><code class="xref py py-obj docutils literal"><span class="pre">set_config</span></code></a>(config)</td>
 <td>Function that sets the current config.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_file_properties" title="QOpenScienceFramework.widgets.OSFExplorer.set_file_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_file_properties</span></code></a>(data)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_file_properties" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_file_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_file_properties</span></code></a>(data)</td>
 <td>Fills the contents of the properties panel for files.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties" title="QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_folder_properties</span></code></a>(data)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_folder_properties" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_folder_properties"><code class="xref py py-obj docutils literal"><span class="pre">set_folder_properties</span></code></a>(data)</td>
 <td>Fills the contents of the properties pane for folders.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.OSFExplorer.show_buttonset" title="QOpenScienceFramework.widgets.OSFExplorer.show_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">show_buttonset</span></code></a>(title)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.show_buttonset" title="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.show_buttonset"><code class="xref py py-obj docutils literal"><span class="pre">show_buttonset</span></code></a>(title)</td>
 <td>Sets the buttonset to show and hides all others.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>tree_widget=None</em>, <em>locale=u'en_us'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructor</p>
 <p>Can be passed a reference to an already existing ProjectTree if desired,
 otherwise it creates a new instance of this object.</p>
@@ -1594,14 +1594,14 @@ otherwise it creates a new instance of this object.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.abort_preview">
-<code class="descname">abort_preview</code><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.abort_preview" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.abort_preview">
+<code class="descname">abort_preview</code><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.abort_preview" title="Permalink to this definition">¶</a></dt>
 <dd><p>PyQt signal emitted when an image preview is to be aborted.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.add_buttonset">
-<code class="descname">add_buttonset</code><span class="sig-paren">(</span><em>title</em>, <em>buttons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.add_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.add_buttonset" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.add_buttonset">
+<code class="descname">add_buttonset</code><span class="sig-paren">(</span><em>title</em>, <em>buttons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.add_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.add_buttonset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a set of buttons that can be referenced by &#8216;title&#8217;. With
 set_buttonset(title) the buttons can be switched to this set.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1627,43 +1627,43 @@ this button set</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.closeEvent">
-<code class="descname">closeEvent</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.closeEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.closeEvent" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.closeEvent">
+<code class="descname">closeEvent</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.closeEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.closeEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reimplementation of closeEvent. Makes sure the login window also
 closes if the explorer closes.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.config">
-<code class="descname">config</code><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.config" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.config">
+<code class="descname">config</code><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.config" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current configuration of the project explorer. Contains information
 about the current filter that is set for the project tree and the buttonset
 that is shown.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.create_context_menu">
-<code class="descname">create_context_menu</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.create_context_menu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.create_context_menu" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu">
+<code class="descname">create_context_menu</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.create_context_menu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a context menu for the currently selected TreeWidgetItem.
 Menu contents differ depending on if the selected item is a file or a
 folder, and if the folder is the root of a repo or a subfolder thereof</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.handle_login">
-<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_login" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_login" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for a login event is detected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.handle_logout">
-<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.handle_logout" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.handle_logout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for when a logout event is detected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_config">
-<code class="descname">set_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_config" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config">
+<code class="descname">set_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.set_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function that sets the current config. Is equal to setting the config variable
 directly by using OSFExplorer.config = &lt;config dict&gt;</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1683,8 +1683,8 @@ to show (with the buttonset key)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_file_properties">
-<code class="descname">set_file_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_file_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_file_properties" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_file_properties">
+<code class="descname">set_file_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.set_file_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_file_properties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fills the contents of the properties panel for files. Makes sure the
 extra fields concerning files are shown.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1703,8 +1703,8 @@ stored at the data/attributes path of the json response</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties">
-<code class="descname">set_folder_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.set_folder_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.set_folder_properties" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_folder_properties">
+<code class="descname">set_folder_properties</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.set_folder_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_folder_properties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fills the contents of the properties pane for folders. Make sure the
 fields only concerning files are hidden.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1723,8 +1723,8 @@ stored at the data/attributes path of the json response</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="QOpenScienceFramework.widgets.OSFExplorer.show_buttonset">
-<code class="descname">show_buttonset</code><span class="sig-paren">(</span><em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#OSFExplorer.show_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.OSFExplorer.show_buttonset" title="Permalink to this definition">¶</a></dt>
+<dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.show_buttonset">
+<code class="descname">show_buttonset</code><span class="sig-paren">(</span><em>title</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.show_buttonset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.show_buttonset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the buttonset to show and hides all others.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1746,11 +1746,11 @@ stored at the data/attributes path of the json response</p>
 </dd></dl>
 
 </div>
-<div class="section" id="projecttree">
-<h3>ProjectTree<a class="headerlink" href="#projecttree" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-QOpenScienceFramework.widgets.projecttree">
+<span id="projecttree"></span><h3>ProjectTree<a class="headerlink" href="#module-QOpenScienceFramework.widgets.projecttree" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt>
-<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">ProjectTree</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.projecttree.</code><code class="descname">ProjectTree</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QTreeWidget</span></code></p>
 <p>A tree representation of projects and files on the OSF for the current user
 in a treeview widget.</p>
@@ -1761,7 +1761,7 @@ in a treeview widget.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">filter</span></code></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.filter" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.filter"><code class="xref py py-obj docutils literal"><span class="pre">filter</span></code></a></td>
 <td>The currently set filter parameters.</td>
 </tr>
 </tbody>
@@ -1773,47 +1773,47 @@ in a treeview widget.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">add_item</span></code>(parent,&nbsp;data)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.add_item" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.add_item"><code class="xref py py-obj docutils literal"><span class="pre">add_item</span></code></a>(parent,&nbsp;data)</td>
 <td>Adds a new item to the tree.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">clear_filter</span></code>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.clear_filter" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.clear_filter"><code class="xref py py-obj docutils literal"><span class="pre">clear_filter</span></code></a>()</td>
 <td>Clears the filter.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">find_item</span></code>(item,&nbsp;index,&nbsp;value)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.find_item" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.find_item"><code class="xref py py-obj docutils literal"><span class="pre">find_item</span></code></a>(item,&nbsp;index,&nbsp;value)</td>
 <td>Finds an item in the tree.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">get_icon</span></code>(datatype,&nbsp;name)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.get_icon" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.get_icon"><code class="xref py py-obj docutils literal"><span class="pre">get_icon</span></code></a>(datatype,&nbsp;name)</td>
 <td>Returns a QIcon for the passed datatype.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_login" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
 <td>Callback function for EventDispatcher when a login event is detected.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_logout" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>()</td>
 <td>Callback function for EventDispatcher when a logout event is detected.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">populate_tree</span></code>(reply[,&nbsp;parent])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.populate_tree" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.populate_tree"><code class="xref py py-obj docutils literal"><span class="pre">populate_tree</span></code></a>(reply[,&nbsp;parent])</td>
 <td>Populates the tree with content.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">process_repo_contents</span></code>(logged_in_user)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.process_repo_contents" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.process_repo_contents"><code class="xref py py-obj docutils literal"><span class="pre">process_repo_contents</span></code></a>(logged_in_user)</td>
 <td>Processes contents for the logged in user.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">refreshFinished</span></code></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refreshFinished" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.refreshFinished"><code class="xref py py-obj docutils literal"><span class="pre">refreshFinished</span></code></a></td>
 <td>PyQt signal that emits when the tree is completely refreshed.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">refresh_children_of_node</span></code>(node)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_children_of_node" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_children_of_node"><code class="xref py py-obj docutils literal"><span class="pre">refresh_children_of_node</span></code></a>(node)</td>
 <td>Refreshes the children of the specified node.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">refresh_contents</span></code>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_contents" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_contents"><code class="xref py py-obj docutils literal"><span class="pre">refresh_contents</span></code></a>()</td>
 <td>Refreshes all contents in the tree.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">set_filter</span></code>(filetypes)</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter"><code class="xref py py-obj docutils literal"><span class="pre">set_filter</span></code></a>(filetypes)</td>
 <td>Sets the filter parameters.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt>
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.__init__"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>use_theme=None</em>, <em>theme_path=u'./resources/iconthemes'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructor.
 Creates a tree showing the contents of the user&#8217;s OSF repositories.
 Can be passed a theme to use for the icons, but if this doesn&#8217;t happen
@@ -1842,8 +1842,8 @@ Linux is standardized.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">add_item</code><span class="sig-paren">(</span><em>parent</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.add_item"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.add_item">
+<code class="descname">add_item</code><span class="sig-paren">(</span><em>parent</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.add_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.add_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a new item to the tree. The data that is passed should be
 the dictionary containing the information that is found under the &#8216;data&#8217;
 key in an OSF API responses.</p>
@@ -1876,20 +1876,20 @@ key in an OSF API responses.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">clear_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.clear_filter"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.clear_filter">
+<code class="descname">clear_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.clear_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.clear_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears the filter.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt>
-<code class="descname">filter</code></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.filter">
+<code class="descname">filter</code><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>The currently set filter parameters.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">find_item</code><span class="sig-paren">(</span><em>item</em>, <em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.find_item"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.find_item">
+<code class="descname">find_item</code><span class="sig-paren">(</span><em>item</em>, <em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.find_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.find_item" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds an item in the tree.
 Checks if there is already a tree item with the same name as value. This
 function does not recurse over the tree items, it only checks the direct
@@ -1923,8 +1923,8 @@ descendants of the given item.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">get_icon</code><span class="sig-paren">(</span><em>datatype</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.get_icon"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.get_icon">
+<code class="descname">get_icon</code><span class="sig-paren">(</span><em>datatype</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.get_icon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.get_icon" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a QIcon for the passed datatype.
 Retrieves the curren theme icon for a certain object (project, folder)
 or filetype. Uses the file extension to determine the file type.</p>
@@ -1954,20 +1954,20 @@ file&#8217;s name</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.handle_login"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_login" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for EventDispatcher when a login event is detected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.handle_logout"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_logout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for EventDispatcher when a logout event is detected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">populate_tree</code><span class="sig-paren">(</span><em>reply</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.populate_tree"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.populate_tree">
+<code class="descname">populate_tree</code><span class="sig-paren">(</span><em>reply</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.populate_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.populate_tree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Populates the tree with content. The entry point should be a project, 
 repository or folder inside a repository. The JSON representation 
 that the api endpoint returns for such a node is used to build the tree 
@@ -2001,21 +2001,21 @@ If not specified the invisibleRootItem() is used as a parent.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">process_repo_contents</code><span class="sig-paren">(</span><em>logged_in_user</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.process_repo_contents"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.process_repo_contents">
+<code class="descname">process_repo_contents</code><span class="sig-paren">(</span><em>logged_in_user</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.process_repo_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.process_repo_contents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Processes contents for the logged in user. Starts by listing
 the projects and then recurses through all their repositories, folders and files.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt>
-<code class="descname">refreshFinished</code></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.refreshFinished">
+<code class="descname">refreshFinished</code><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refreshFinished" title="Permalink to this definition">¶</a></dt>
 <dd><p>PyQt signal that emits when the tree is completely refreshed.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">refresh_children_of_node</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.refresh_children_of_node"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_children_of_node">
+<code class="descname">refresh_children_of_node</code><span class="sig-paren">(</span><em>node</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.refresh_children_of_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_children_of_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refreshes the children of the specified node.
 In contrast to refresh_contents, which refreshes the whole tree from
 the root, this function only refreshes the children of the passed node.</p>
@@ -2034,8 +2034,8 @@ the root, this function only refreshes the children of the passed node.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">refresh_contents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.refresh_contents"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_contents">
+<code class="descname">refresh_contents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.refresh_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_contents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refreshes all contents in the tree. This operation might take a long
 time depending on the number of projects that the user has, so it is 
 recommended to use a partial refresh (refresh_children_of_node), wherever
@@ -2043,8 +2043,8 @@ you can.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">set_filter</code><span class="sig-paren">(</span><em>filetypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#ProjectTree.set_filter"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter">
+<code class="descname">set_filter</code><span class="sig-paren">(</span><em>filetypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.set_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the filter parameters.
 Can be used instead of using project_tree.filter = &lt;value&gt; directly.</p>
 </dd></dl>
@@ -2052,11 +2052,11 @@ Can be used instead of using project_tree.filter = &lt;value&gt; directly.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="userbadge">
-<h3>UserBadge<a class="headerlink" href="#userbadge" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-QOpenScienceFramework.widgets.userbadge">
+<span id="userbadge"></span><h3>UserBadge<a class="headerlink" href="#module-QOpenScienceFramework.widgets.userbadge" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt>
-<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.</code><code class="descname">UserBadge</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge">
+<em class="property">class </em><code class="descclassname">QOpenScienceFramework.widgets.userbadge.</code><code class="descname">UserBadge</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/userbadge.html#UserBadge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">PyQt5.QtWidgets.QWidget</span></code></p>
 <p>A Widget showing the logged in user</p>
 <p class="rubric">Methods</p>
@@ -2066,26 +2066,26 @@ Can be used instead of using project_tree.filter = &lt;value&gt; directly.</p>
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">current_user</span></code>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.current_user" title="QOpenScienceFramework.widgets.userbadge.UserBadge.current_user"><code class="xref py py-obj docutils literal"><span class="pre">current_user</span></code></a>()</td>
 <td>Checks the current status of the user.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_login" title="QOpenScienceFramework.widgets.userbadge.UserBadge.handle_login"><code class="xref py py-obj docutils literal"><span class="pre">handle_login</span></code></a>()</td>
 <td>Callback function for EventDispatcher when a login event is detected.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code>(*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_logout" title="QOpenScienceFramework.widgets.userbadge.UserBadge.handle_logout"><code class="xref py py-obj docutils literal"><span class="pre">handle_logout</span></code></a>(*args)</td>
 <td>Callback function for EventDispatcher when a logout event is detected.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">login_request</span></code></td>
+<tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.login_request" title="QOpenScienceFramework.widgets.userbadge.UserBadge.login_request"><code class="xref py py-obj docutils literal"><span class="pre">login_request</span></code></a></td>
 <td>PyQt signal to send a login request.</td>
 </tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">logout_request</span></code></td>
+<tr class="row-odd"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.logout_request" title="QOpenScienceFramework.widgets.userbadge.UserBadge.logout_request"><code class="xref py py-obj docutils literal"><span class="pre">logout_request</span></code></a></td>
 <td>PyQt signal to send a logout request.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt>
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.__init__"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>manager</em>, <em>icon_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/userbadge.html#UserBadge.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructor</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2107,8 +2107,8 @@ passed a size of 40x40 is used.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">current_user</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.current_user"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.current_user">
+<code class="descname">current_user</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/userbadge.html#UserBadge.current_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.current_user" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks the current status of the user.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2123,26 +2123,26 @@ passed a size of 40x40 is used.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.handle_login"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.handle_login">
+<code class="descname">handle_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/userbadge.html#UserBadge.handle_login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_login" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for EventDispatcher when a login event is detected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="descname">handle_logout</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets.html#UserBadge.handle_logout"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.handle_logout">
+<code class="descname">handle_logout</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/userbadge.html#UserBadge.handle_logout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.handle_logout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function for EventDispatcher when a logout event is detected.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt>
-<code class="descname">login_request</code></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.login_request">
+<code class="descname">login_request</code><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.login_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>PyQt signal to send a login request.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt>
-<code class="descname">logout_request</code></dt>
+<dt id="QOpenScienceFramework.widgets.userbadge.UserBadge.logout_request">
+<code class="descname">logout_request</code><a class="headerlink" href="#QOpenScienceFramework.widgets.userbadge.UserBadge.logout_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>PyQt signal to send a logout request.</p>
 </dd></dl>
 

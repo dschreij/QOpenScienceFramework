@@ -1,0 +1,807 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QOpenScienceFramework.widgets.projecttree &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="QOpenScienceFramework.widgets" href="../widgets.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> QOpenScienceFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">QOpenScienceFramework</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../widgets.html">QOpenScienceFramework.widgets</a> &raquo;</li>
+      
+    <li>QOpenScienceFramework.widgets.projecttree</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for QOpenScienceFramework.widgets.projecttree</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Python3 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+<span class="c1"># QtAwesome icon fonts for spinners</span>
+<span class="kn">import</span> <span class="nn">qtawesome</span> <span class="kn">as</span> <span class="nn">qta</span>
+<span class="c1"># OSF connection interface</span>
+<span class="kn">import</span> <span class="nn">QOpenScienceFramework.connection</span> <span class="kn">as</span> <span class="nn">osf</span>
+<span class="c1"># Fileinspector for determining filetypes</span>
+<span class="kn">import</span> <span class="nn">fileinspector</span>
+<span class="c1"># For presenting numbers in human readible formats</span>
+<span class="kn">import</span> <span class="nn">humanize</span>
+<span class="c1"># Unix style filename matching</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="c1"># QT classes</span>
+<span class="c1"># Required QT classes</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="p">,</span> <span class="n">QtNetwork</span>
+
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="n">pp</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">PrettyPrinter</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Python 2 and 3 compatiblity settings</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.compat</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework.util</span> <span class="kn">import</span> <span class="n">check_if_opensesame_file</span>
+<span class="kn">from</span> <span class="nn">QOpenScienceFramework</span> <span class="kn">import</span> <span class="n">dirname</span>
+
+
+<span class="n">osf_logo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-white2.png&#39;</span><span class="p">)</span>
+<span class="n">osf_blacklogo_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;img/cos-black.png&#39;</span><span class="p">)</span>
+
+<span class="c1"># Dummy function later to be replaced for translation</span>
+<span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
+
+<div class="viewcode-block" id="ProjectTree"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree">[docs]</a><span class="k">class</span> <span class="nc">ProjectTree</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidget</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot; A tree representation of projects and files on the OSF for the current user</span>
+<span class="sd">	in a treeview widget.&quot;&quot;&quot;</span>
+
+	<span class="c1"># Event fired when refresh of tree is finished</span>
+	<span class="n">refreshFinished</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+	<span class="sd">&quot;&quot;&quot; PyQt signal that emits when the tree is completely refreshed. &quot;&quot;&quot;</span>
+	<span class="c1"># Maximum of items to return per request (e.g. files in a folder). OSF </span>
+	<span class="c1"># automatically paginates its results</span>
+	<span class="n">ITEMS_PER_PAGE</span> <span class="o">=</span> <span class="mi">50</span>
+
+<div class="viewcode-block" id="ProjectTree.__init__"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">use_theme</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">theme_path</span><span class="o">=</span><span class="s1">&#39;./resources/iconthemes&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Constructor.</span>
+<span class="sd">		Creates a tree showing the contents of the user&#39;s OSF repositories.</span>
+<span class="sd">		Can be passed a theme to use for the icons, but if this doesn&#39;t happen</span>
+<span class="sd">		it will use the default qtawesome (FontAwesome) icons for the buttons.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		manager : manger.ConnectionManager</span>
+<span class="sd">			The object taking care of all the communication with the OSF.</span>
+<span class="sd">		use_theme : string (default: None)</span>
+<span class="sd">			The name of the icon theme to use.</span>
+<span class="sd">		theme_path : The path to the folder at which the icon theme is located</span>
+<span class="sd">			Relevant only on Windows and OSX as the location of icon themes on</span>
+<span class="sd">			Linux is standardized.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">ProjectTree</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
+
+		<span class="c1"># Check for argument specifying that qt_theme should be used to</span>
+		<span class="c1"># determine icons. Defaults to False.</span>
+
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">use_theme</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+			<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">setThemeName</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">use_theme</span><span class="p">))</span>
+			<span class="c1"># Win and OSX don&#39;t support native themes</span>
+			<span class="c1"># so set the theming dir explicitly</span>
+			<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">theme_path</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="ow">and</span> \
+			<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">theme_path</span><span class="p">)):</span>
+				<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">setThemeSearchPaths</span><span class="p">(</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">themeSearchPaths</span><span class="p">()</span> \
+					<span class="o">+</span> <span class="p">[</span><span class="n">theme_path</span><span class="p">])</span>
+
+		<span class="c1"># Set up general window</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span><span class="mi">500</span><span class="p">)</span>
+
+		<span class="c1"># Set Window icon</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">):</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;OSF logo not found at {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">))</span>
+		<span class="n">osf_icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_logo_path</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">osf_icon</span><span class="p">)</span>
+
+		<span class="c1"># Set column labels</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setHeaderLabels</span><span class="p">([</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span><span class="s2">&quot;Kind&quot;</span><span class="p">,</span><span class="s2">&quot;Size&quot;</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setColumnWidth</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">300</span><span class="p">)</span>
+
+		<span class="c1"># Event handling</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">itemExpanded</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__set_expanded_icon</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">itemCollapsed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__set_collapsed_icon</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refreshFinished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__refresh_finished</span><span class="p">)</span>
+
+		<span class="c1"># Items currently expanded</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">expanded_items</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+		<span class="c1"># Set icon size for tree items</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+
+		<span class="c1"># Due to the recursive nature of the tree populating function, it is</span>
+		<span class="c1"># sometimes difficult to keep track of if the populating function is still</span>
+		<span class="c1"># active. This is a somewhat hacky attempt to artificially keep try to keep</span>
+		<span class="c1"># track, by adding current requests in this list.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span> <span class="o">=</span> <span class="p">[]</span>
+
+		<span class="c1"># Init filter variable</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_filter</span> <span class="o">=</span> <span class="bp">None</span>
+
+		<span class="c1"># Save the previously selected item before a refresh, so this item can</span>
+		<span class="c1"># be set as the selected item again after the refresh</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span> <span class="o">=</span> <span class="bp">None</span>
+
+		<span class="c1"># Flag that indicates if contents are currently refreshed</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">False</span></div>
+
+	<span class="c1">### Private functions</span>
+
+	<span class="k">def</span> <span class="nf">__set_expanded_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">item</span><span class="p">):</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;files&#39;</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;folder&#39;</span><span class="p">:</span>
+			<span class="n">item</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">get_icon</span><span class="p">(</span><span class="s1">&#39;folder-open&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">expanded_items</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+	<span class="k">def</span> <span class="nf">__set_collapsed_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">item</span><span class="p">):</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;files&#39;</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;folder&#39;</span><span class="p">:</span>
+			<span class="n">item</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">get_icon</span><span class="p">(</span><span class="s1">&#39;folder&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">expanded_items</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+	<span class="k">def</span> <span class="nf">__cleanup_reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback for when an error occured while populating the tree, or when</span>
+<span class="sd">		populate_tree finished successfully. Removes the QNetworkReply</span>
+<span class="sd">		from the list of active HTTP operations. &quot;&quot;&quot;</span>
+		<span class="c1"># Reset active requests after error</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+			<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reply not found in active requests&quot;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">refreshFinished</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__refresh_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Expands all treewidget items again that were expanded before the</span>
+<span class="sd">		refresh. &quot;&quot;&quot;</span>
+
+		<span class="c1"># Reapply filter if set</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span>
+
+		<span class="n">iterator</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidgetItemIterator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="k">while</span><span class="p">(</span><span class="n">iterator</span><span class="o">.</span><span class="n">value</span><span class="p">()):</span>
+			<span class="n">item</span> <span class="o">=</span> <span class="n">iterator</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+			<span class="n">item_data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">item_data</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">expanded_items</span><span class="p">:</span>
+				<span class="n">item</span><span class="o">.</span><span class="n">setExpanded</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="c1"># Reset selection to item that was selected before refresh</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span><span class="p">:</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">item_data</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">setCurrentItem</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+			<span class="n">iterator</span> <span class="o">+=</span> <span class="mi">1</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">False</span>
+	<span class="c1">### Properties</span>
+
+	<span class="nd">@property</span>
+	<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The currently set filter parameters. &quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span>
+
+	<span class="nd">@filter.setter</span>
+	<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets a filter for items present in the tree. Only shows tree items </span>
+<span class="sd">		that match the specified file extension(s) and hides the others.</span>
+
+<span class="sd">		value : None, str or list</span>
+<span class="sd">			If None is passed, this clears the filter, making all items present</span>
+<span class="sd">			in the tree visible again.</span>
+
+<span class="sd">			If a string is passed, it will be used as a single file extension</span>
+<span class="sd">			to compare the items against.</span>
+
+<span class="sd">			If a list of file extensions is passed, than items will be shown if</span>
+<span class="sd">			they match any of the extensions present in the list.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># Check if supplied a valid value</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> \
+		<span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">)</span> <span class="ow">and</span> \
+		<span class="ow">not</span> <span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Supplied filter invalid, needs to be list, string&#39;</span>
+				<span class="s1">&#39; or None&#39;</span><span class="p">)</span>
+
+		<span class="c1"># Store the filter for later reference</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_filter</span> <span class="o">=</span> <span class="n">value</span>
+
+		<span class="c1"># Iterate over the items</span>
+		<span class="n">iterator</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidgetItemIterator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="k">while</span><span class="p">(</span><span class="n">iterator</span><span class="o">.</span><span class="n">value</span><span class="p">()):</span>
+			<span class="n">item</span> <span class="o">=</span> <span class="n">iterator</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+			<span class="c1"># Check if item is of type &#39;file&#39;</span>
+			<span class="c1"># Filters are only applicable to files</span>
+			<span class="n">item_type</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DisplayRole</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+				<span class="c1"># If filter is None, it means everything should be</span>
+				<span class="c1"># visible, so set this item to visible and continue.</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+					<span class="n">item</span><span class="o">.</span><span class="n">setHidden</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+					<span class="n">iterator</span> <span class="o">+=</span> <span class="mi">1</span>
+					<span class="k">continue</span>
+
+				<span class="c1"># Check if filter extension is contained in filename</span>
+				<span class="n">item_data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+				<span class="n">filename</span> <span class="o">=</span> <span class="n">item_data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+				<span class="c1"># Assume no match by default</span>
+				<span class="n">typematch</span> <span class="o">=</span> <span class="bp">False</span>
+				<span class="c1"># If filter is a single string, just check directly</span>
+				<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+					<span class="n">typematch</span> <span class="o">=</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">)</span>
+				<span class="c1"># If filter is a list, compare to each item in it</span>
+				<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+					<span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter</span><span class="p">:</span>
+						<span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">ext</span><span class="p">):</span>
+							<span class="n">typematch</span> <span class="o">=</span> <span class="bp">True</span>
+							<span class="k">break</span>
+				<span class="c1"># Set item&#39;s visibility according to value of typematch</span>
+				<span class="k">if</span> <span class="n">typematch</span><span class="p">:</span>
+					<span class="n">item</span><span class="o">.</span><span class="n">setHidden</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+				<span class="k">else</span><span class="p">:</span>
+					<span class="n">item</span><span class="o">.</span><span class="n">setHidden</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+			<span class="n">iterator</span> <span class="o">+=</span> <span class="mi">1</span>
+
+	<span class="c1">### Public functions</span>
+
+<div class="viewcode-block" id="ProjectTree.set_filter"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter">[docs]</a>	<span class="k">def</span> <span class="nf">set_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filetypes</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Sets the filter parameters.</span>
+<span class="sd">		Can be used instead of using project_tree.filter = &lt;value&gt; directly.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">filetypes</span></div>
+
+<div class="viewcode-block" id="ProjectTree.clear_filter"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.clear_filter">[docs]</a>	<span class="k">def</span> <span class="nf">clear_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Clears the filter. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="bp">None</span></div>
+
+<div class="viewcode-block" id="ProjectTree.find_item"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.find_item">[docs]</a>	<span class="k">def</span> <span class="nf">find_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Finds an item in the tree.</span>
+<span class="sd">		Checks if there is already a tree item with the same name as value. This</span>
+<span class="sd">		function does not recurse over the tree items, it only checks the direct</span>
+<span class="sd">		descendants of the given item.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		item : QtWidgets.QTreeWidgetItem</span>
+<span class="sd">			The tree widget item of which to search the direct descendents.</span>
+<span class="sd">		index : int</span>
+<span class="sd">			The column index of the tree widget item.</span>
+<span class="sd">		value : str</span>
+<span class="sd">			The value to search for</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		int</span>
+<span class="sd">			The index position at which the item is found or None .</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">child_count</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">childCount</span><span class="p">()</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">child_count</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">None</span>
+
+		<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">child_count</span><span class="p">):</span>
+			<span class="n">child</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">child</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+			<span class="n">displaytext</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DisplayRole</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">displaytext</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">i</span>
+		<span class="k">return</span> <span class="bp">None</span></div>
+
+<div class="viewcode-block" id="ProjectTree.get_icon"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.get_icon">[docs]</a>	<span class="k">def</span> <span class="nf">get_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datatype</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Returns a QIcon for the passed datatype.</span>
+<span class="sd">		Retrieves the curren theme icon for a certain object (project, folder)</span>
+<span class="sd">		or filetype. Uses the file extension to determine the file type.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		datatype : string</span>
+<span class="sd">			The kind of object, which can be project, folder or file</span>
+<span class="sd">		name : string</span>
+<span class="sd">			The name of the object, which is the project&#39;s, folder&#39;s or</span>
+<span class="sd">			file&#39;s name</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		QtGui.QIcon</span>
+<span class="sd">			The icon for the current file/object type &quot;&quot;&quot;</span>
+
+		<span class="n">providers</span> <span class="o">=</span> <span class="p">{</span>
+			<span class="s1">&#39;osfstorage&#39;</span>   <span class="p">:</span> <span class="n">osf_blacklogo_path</span><span class="p">,</span>
+			<span class="s1">&#39;github&#39;</span>       <span class="p">:</span> <span class="s1">&#39;web-github&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;dropbox&#39;</span>      <span class="p">:</span> <span class="s1">&#39;dropbox&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;googledrive&#39;</span>  <span class="p">:</span> <span class="s1">&#39;web-google-drive&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;box&#39;</span>          <span class="p">:</span> <span class="s1">&#39;web-microsoft-onedrive&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;cloudfiles&#39;</span>   <span class="p">:</span> <span class="s1">&#39;web-microsoft-onedrive&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;dataverse&#39;</span>    <span class="p">:</span> <span class="s1">&#39;web-microsoft-onedrive&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;figshare&#39;</span>     <span class="p">:</span> <span class="s1">&#39;web-microsoft-onedrive&#39;</span><span class="p">,</span>
+			<span class="s1">&#39;s3&#39;</span>           <span class="p">:</span> <span class="s1">&#39;web-microsoft-onedrive&#39;</span><span class="p">,</span>
+		<span class="p">}</span>
+
+		<span class="k">if</span> <span class="n">datatype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;public project&#39;</span><span class="p">,</span><span class="s1">&#39;private project&#39;</span><span class="p">]:</span>
+			<span class="c1"># return QtGui.QIcon.fromTheme(</span>
+			<span class="c1"># 	&#39;gbrainy&#39;,</span>
+			<span class="c1"># 	QtGui.QIcon(osf_logo_path)</span>
+			<span class="c1"># )</span>
+			<span class="k">if</span> <span class="n">datatype</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;public project&#39;</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.cube&#39;</span><span class="p">,</span> <span class="s1">&#39;fa.globe&#39;</span><span class="p">,</span>
+					<span class="n">options</span><span class="o">=</span><span class="p">[</span>
+						<span class="p">{},</span>
+						<span class="p">{</span><span class="s1">&#39;scale_factor&#39;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span>
+						<span class="s1">&#39;offset&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">),</span>
+						<span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">}])</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s1">&#39;fa.cube&#39;</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;folder&#39;</span><span class="p">,</span><span class="s1">&#39;folder-open&#39;</span><span class="p">]:</span>
+			<span class="c1"># Providers are also seen as folders, so if the current folder</span>
+			<span class="c1"># matches a provider&#39;s name, simply show its icon.</span>
+			<span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">providers</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+					<span class="n">providers</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+					<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">)</span>
+				<span class="p">)</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+					<span class="n">datatype</span><span class="p">,</span>
+					<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">)</span>
+				<span class="p">)</span>
+		<span class="k">elif</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span><span class="p">:</span>
+			<span class="c1"># check for OpenSesame extensions first. If this is not an OS file</span>
+			<span class="c1"># use fileinspector to determine the filetype</span>
+			<span class="k">if</span> <span class="n">check_if_opensesame_file</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+				<span class="n">filetype</span> <span class="o">=</span> <span class="s1">&#39;opera-widget-manager&#39;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">filetype</span> <span class="o">=</span> <span class="n">fileinspector</span><span class="o">.</span><span class="n">determine_type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="s1">&#39;xdg&#39;</span><span class="p">)</span>
+
+			<span class="k">return</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+				<span class="n">filetype</span><span class="p">,</span>
+				<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="o">.</span><span class="n">fromTheme</span><span class="p">(</span>
+					<span class="s1">&#39;text-x-generic&#39;</span><span class="p">,</span>
+					<span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">)</span>
+				<span class="p">)</span>
+			<span class="p">)</span>
+		<span class="k">return</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProjectTree.refresh_children_of_node"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_children_of_node">[docs]</a>	<span class="k">def</span> <span class="nf">refresh_children_of_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Refreshes the children of the specified node.</span>
+<span class="sd">		In contrast to refresh_contents, which refreshes the whole tree from</span>
+<span class="sd">		the root, this function only refreshes the children of the passed node.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		node : QtWidgets.QTreeWidgetItem</span>
+<span class="sd">			The tree item of which the children need to be refreshed.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidgetItem</span><span class="p">):</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;node is not a tree widget item&#39;</span><span class="p">)</span>
+
+		<span class="c1"># If tree currently is refreshing, do nothing</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+			<span class="k">return</span>
+		<span class="c1"># Set flag that tree is currently refreshing</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">True</span>
+
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">node_data</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Partial refresh attempted while tree item was already&#39;</span>
+				<span class="s1">&#39; deleted&#39;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">False</span>
+			<span class="k">return</span>
+
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">content_url</span> <span class="o">=</span> <span class="n">node_data</span><span class="p">[</span><span class="s1">&#39;relationships&#39;</span><span class="p">][</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="s1">&#39;links&#39;</span><span class="p">]</span> \
+				<span class="p">[</span><span class="s1">&#39;related&#39;</span><span class="p">][</span><span class="s1">&#39;href&#39;</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">False</span>
+			<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s1">&#39;Invalid structure of tree item data &#39;</span>
+				<span class="s1">&#39;: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+		<span class="c1"># Delete the current children of the node to make place for the new ones</span>
+		<span class="n">node</span><span class="o">.</span><span class="n">takeChildren</span><span class="p">()</span>
+
+		<span class="c1"># Retrieve the new listing of children from the OSF</span>
+		<span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+			<span class="n">content_url</span><span class="p">,</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">populate_tree</span><span class="p">,</span>
+			<span class="n">node</span><span class="p">,</span>
+			<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span>
+		<span class="p">)</span>
+
+		<span class="c1"># If something went wrong, req should be None</span>
+		<span class="k">if</span> <span class="n">req</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProjectTree.refresh_contents"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.refresh_contents">[docs]</a>	<span class="k">def</span> <span class="nf">refresh_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Refreshes all contents in the tree. This operation might take a long</span>
+<span class="sd">		time depending on the number of projects that the user has, so it is </span>
+<span class="sd">		recommended to use a partial refresh (refresh_children_of_node), wherever</span>
+<span class="sd">		you can. &quot;&quot;&quot;</span>
+		<span class="c1"># If tree is already refreshing, don&#39;t start again, as this will result</span>
+		<span class="c1"># in a crash</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+			<span class="k">return</span>
+		<span class="c1"># Set flag that tree is currently refreshing</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">isRefreshing</span> <span class="o">=</span> <span class="bp">True</span>
+		<span class="c1"># Save current item selection to restore it after refresh</span>
+		<span class="n">current_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentItem</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">current_item</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span> <span class="o">=</span> <span class="n">current_item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span> <span class="o">=</span> <span class="bp">None</span>
+
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">logged_in_user</span> <span class="o">!=</span> <span class="p">{}:</span>
+			<span class="c1"># If manager has the data of the logged in user saved locally, pass it</span>
+			<span class="c1"># to get_repo_contents directly.</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">process_repo_contents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">logged_in_user</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># If not, query the osf for the user data, and pass get_repo_contents</span>
+			<span class="c1"># ass the callback to which the received data should be sent.</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get_logged_in_user</span><span class="p">(</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">process_repo_contents</span><span class="p">,</span> <span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProjectTree.add_item"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.add_item">[docs]</a>	<span class="k">def</span> <span class="nf">add_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Adds a new item to the tree. The data that is passed should be</span>
+<span class="sd">		the dictionary containing the information that is found under the &#39;data&#39;</span>
+<span class="sd">		key in an OSF API responses.</span>
+<span class="sd">	</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		parent : QtWidgets.QTreeWidgetItem</span>
+<span class="sd">			The parent node to place the new item under.</span>
+<span class="sd">		data : dict</span>
+<span class="sd">			The &#39;data&#39; segment from the osf data.</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		item : QtWidgets.QTreeWidgetItem</span>
+<span class="sd">			The newly created tree widget item</span>
+<span class="sd">		kind : str</span>
+<span class="sd">			The type of the new item (folder, file, project, etc.)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;title&quot;</span><span class="p">]</span>
+			<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;public&quot;</span><span class="p">]:</span>
+				<span class="n">access</span> <span class="o">=</span> <span class="s2">&quot;public &quot;</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">access</span> <span class="o">=</span> <span class="s2">&quot;private &quot;</span>
+			<span class="n">kind</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;category&quot;</span><span class="p">]</span>
+			<span class="n">icon_type</span> <span class="o">=</span> <span class="n">access</span> <span class="o">+</span> <span class="n">kind</span>
+		<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;files&#39;</span><span class="p">:</span>
+			<span class="n">name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+			<span class="n">kind</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span>
+			<span class="n">icon_type</span> <span class="o">=</span> <span class="n">kind</span>
+
+		<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="p">]</span>
+		<span class="k">if</span> <span class="s2">&quot;size&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]:</span>
+			<span class="n">values</span> <span class="o">+=</span> <span class="p">[</span><span class="n">humanize</span><span class="o">.</span><span class="n">naturalsize</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">])]</span>
+
+		<span class="c1"># Create item</span>
+		<span class="n">item</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidgetItem</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+		<span class="c1"># Set icon</span>
+		<span class="n">icon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_icon</span><span class="p">(</span><span class="n">icon_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+		<span class="n">item</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">icon</span><span class="p">)</span>
+
+		<span class="c1"># Add data</span>
+		<span class="n">item</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="n">item</span><span class="p">,</span> <span class="n">kind</span></div>
+
+<div class="viewcode-block" id="ProjectTree.populate_tree"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.populate_tree">[docs]</a>	<span class="k">def</span> <span class="nf">populate_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reply</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Populates the tree with content. The entry point should be a project, </span>
+<span class="sd">		repository or folder inside a repository. The JSON representation </span>
+<span class="sd">		that the api endpoint returns for such a node is used to build the tree </span>
+<span class="sd">		contents. This function is called recursively, for each new subfolder that</span>
+<span class="sd">		is encountered from the entry point on.</span>
+
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		reply : QtNetwork.QNetworkReply</span>
+<span class="sd">			The data of the entrypoint from the OSF to create the node in the </span>
+<span class="sd">			tree for. </span>
+<span class="sd">		parent : QtWidgets.QTreeWidgetItem (default: None)</span>
+<span class="sd">			The parent item to which the generated tree should be attached.</span>
+<span class="sd">			Is mainly used for the recursiveness that this function implements.</span>
+<span class="sd">			If not specified the invisibleRootItem() is used as a parent.</span>
+
+<span class="sd">		Returns</span>
+<span class="sd">		-------</span>
+<span class="sd">		list</span>
+<span class="sd">			The list of tree items that have just been generated &quot;&quot;&quot;</span>
+
+		<span class="n">osf_response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">reply</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+
+		<span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invisibleRootItem</span><span class="p">()</span>
+
+		<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">osf_response</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]:</span>
+			<span class="c1"># Add item to the tree. Check if object hasn&#39;t been deleted in the</span>
+			<span class="c1"># meantime</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="n">item</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+			<span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+				<span class="c1"># If a runtime error occured the tree was probably reset or </span>
+				<span class="c1"># another event  deleted treeWidgetItems. Not much that can be</span>
+				<span class="c1"># done here, so do some cleanup and quit</span>
+				<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+				<span class="k">return</span>
+
+			<span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">,</span><span class="s2">&quot;folder&quot;</span><span class="p">]:</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="n">next_entrypoint</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;relationships&#39;</span><span class="p">][</span><span class="s1">&#39;files&#39;</span><span class="p">]</span>\
+						<span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;related&#39;</span><span class="p">][</span><span class="s1">&#39;href&#39;</span><span class="p">]</span>
+				<span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s2">&quot;Invalid api call for getting next&quot;</span>
+						<span class="s2">&quot;entry point: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+				<span class="c1"># Add page size parameter to url to let more than 10 results per page be</span>
+				<span class="c1"># returned</span>
+				<span class="n">next_entrypoint</span> <span class="o">+=</span> <span class="s2">&quot;?page[size]={}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ITEMS_PER_PAGE</span><span class="p">)</span>
+				<span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+					<span class="n">next_entrypoint</span><span class="p">,</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">populate_tree</span><span class="p">,</span>
+					<span class="n">item</span><span class="p">,</span>
+					<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span>
+				<span class="p">)</span>
+				<span class="c1"># If something went wrong, req should be None</span>
+				<span class="k">if</span> <span class="n">req</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+
+		<span class="c1"># If the results are paginated, see if there is another page that needs</span>
+		<span class="c1"># to be processed</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">next_page_url</span> <span class="o">=</span> <span class="n">osf_response</span><span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;next&#39;</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span><span class="s2">&quot;Invalid OSF data format for next page of &quot;</span>
+				<span class="s2">&quot;results. Missing attribute: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">next_page_url</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+				<span class="n">next_page_url</span><span class="p">,</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">populate_tree</span><span class="p">,</span>
+				<span class="n">parent</span><span class="p">,</span>
+				<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span>
+			<span class="p">)</span>
+			<span class="c1"># If something went wrong, req should be None</span>
+			<span class="k">if</span> <span class="n">req</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+
+		<span class="c1"># Remove current reply from list of active requests (assuming it finished)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProjectTree.process_repo_contents"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.process_repo_contents">[docs]</a>	<span class="k">def</span> <span class="nf">process_repo_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logged_in_user</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Processes contents for the logged in user. Starts by listing</span>
+<span class="sd">		the projects and then recurses through all their repositories, folders and files. &quot;&quot;&quot;</span>
+		<span class="c1"># If this function is called as a callback, the supplied data will be a</span>
+		<span class="c1"># QByteArray. Convert to a dictionary for easier usage</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logged_in_user</span><span class="p">,</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkReply</span><span class="p">):</span>
+			<span class="n">logged_in_user</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">safe_decode</span><span class="p">(</span><span class="n">logged_in_user</span><span class="o">.</span><span class="n">readAll</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()))</span>
+
+		<span class="c1"># Get url to user projects. Use that as entry point to populate the project tree</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">user_nodes_api_call</span> <span class="o">=</span> <span class="n">logged_in_user</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;relationships&#39;</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>\
+			<span class="p">[</span><span class="s1">&#39;links&#39;</span><span class="p">][</span><span class="s1">&#39;related&#39;</span><span class="p">][</span><span class="s1">&#39;href&#39;</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="n">osf</span><span class="o">.</span><span class="n">OSFInvalidResponse</span><span class="p">(</span>
+				<span class="s2">&quot;The structure of the retrieved data seems invalid: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+			<span class="p">)</span>
+		<span class="c1"># Clear the tree to be sure</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+		<span class="c1"># Add the max items to return per request to the api url</span>
+		<span class="n">user_nodes_api_call</span> <span class="o">+=</span> <span class="s2">&quot;?page[size]={}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ITEMS_PER_PAGE</span><span class="p">)</span>
+
+		<span class="c1"># Start populating the tree</span>
+		<span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+			<span class="n">user_nodes_api_call</span><span class="p">,</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">populate_tree</span><span class="p">,</span>
+			<span class="n">errorCallback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span><span class="p">,</span>
+		<span class="p">)</span>
+		<span class="c1"># If something went wrong, req should be None</span>
+		<span class="k">if</span> <span class="n">req</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="p">)</span></div>
+
+	<span class="c1"># Event handling functions required by EventDispatcher</span>
+
+<div class="viewcode-block" id="ProjectTree.handle_login"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_login">[docs]</a>	<span class="k">def</span> <span class="nf">handle_login</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for EventDispatcher when a login event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">refresh_contents</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ProjectTree.handle_logout"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.handle_logout">[docs]</a>	<span class="k">def</span> <span class="nf">handle_logout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; Callback function for EventDispatcher when a logout event is detected. &quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">active_requests</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">previously_selected_item</span> <span class="o">=</span> <span class="bp">None</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Daniel Schreij.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'1.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
