@@ -20,7 +20,8 @@ import warnings
 import uuid
 
 # OSF modules
-from QOpenScienceFramework import events, loginwindow
+from QOpenScienceFramework import events
+from QOpenScienceFramework.widgets import LoginWindow
 # Python 2 and 3 compatiblity settings
 from QOpenScienceFramework.compat import *
 
@@ -107,7 +108,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.warning_message.connect(self.notifier.warning)
 
 		# Init browser in which login page is displayed
-		self.browser = loginwindow.LoginWindow()
+		self.browser = LoginWindow()
 		self.browser.setWindowTitle(_(u"Log in to OSF"))
 		# Make sure browser closes if parent QWidget closes
 		if isinstance(self.parent(), QtWidgets.QWidget):
@@ -719,8 +720,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		----------
 		url : string / QtCore.QUrl
 			The target url that points to endpoint handling the upload
-		source : string / QtCore.QtFile
-			The path and file which should be uploaded.
+		source_file : string / QtCore.QtFile
+			The path to the file which should be uploaded.
 		finishedCallback : function (default: None)
 			The function to call once the upload is finished.
 		uploadProgress : function (default: None)

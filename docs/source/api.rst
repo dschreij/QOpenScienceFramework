@@ -26,7 +26,7 @@ Widgets
 
 LoginWindow
 ~~~~~~~~~~~
-.. automodule:: QOpenScienceFramework.loginwindow
+.. automodule:: QOpenScienceFramework.widgets.loginwindow
    :show-inheritance:
    :special-members:
    :members:
@@ -34,26 +34,24 @@ LoginWindow
 OSFExplorer
 ~~~~~~~~~~~
 
-.. automodule:: QOpenScienceFramework.widgets
+.. automodule:: QOpenScienceFramework.widgets.osfexplorer
    :show-inheritance:
    :special-members:
-   :members: OSFExplorer
+   :members:
 
 ProjectTree
 ~~~~~~~~~~~
 
-.. automodule:: QOpenScienceFramework.widgets
+.. automodule:: QOpenScienceFramework.widgets.projecttree
    :show-inheritance:
    :special-members:
-   :members: ProjectTree
-   :noindex:
+   :members:
 
 UserBadge
 ~~~~~~~~~
 
-.. automodule:: QOpenScienceFramework.widgets
+.. automodule:: QOpenScienceFramework.widgets.userbadge
    :show-inheritance:
    :special-members:
-   :members: UserBadge
-   :noindex:
+   :members:
 

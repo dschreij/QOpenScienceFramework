@@ -29,8 +29,8 @@ from QOpenScienceFramework.manager import ConnectionManager
 from QOpenScienceFramework.compat import *
 
 ####### CONFIGURE THE CLIENT ID AND REDIRECT URI HERE. REGISTER AT OSF.IO ######
-client_id = "878e88b88bf74471a6a3ff05e007b0dd" # "<YOUR_CLIENT_ID_HERE>"
-redirect_uri = "https://www.getpostman.com/oauth2/callback" # "<YOUR_REDIRECT_URI_HERE>"
+client_id = "<YOUR_CLIENT_ID_HERE>"
+redirect_uri = "<YOUR_REDIRECT_URI_HERE>"
 ################################################################################
 
 class InvalidateButton(QtWidgets.QWidget):
