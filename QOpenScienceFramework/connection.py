@@ -108,11 +108,11 @@ def api_call(command, *args):
 
 			``projects: "users/me/nodes/"``
 			
-			``project_repos: "nodes/\{\}/files/"``
+			``project_repos: "nodes/{}/files/"``
 
-			``repo_files: "nodes/\{\}/files/\{\}/"``
+			``repo_files: "nodes/{}/files/{}/"``
 
-			``file_info: "files/\{\}/"``
+			``file_info: "files/{}/"``
 
 	*args : various (optional)
 		Optional extra data which is needed to construct the correct api endpoint uri. \

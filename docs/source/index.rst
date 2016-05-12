@@ -6,7 +6,7 @@
 QOpenScienceFramework's documentation
 =====================================
 
-The QOpenScienceFramework (https://github.com/dschreij/QOpenScienceFramework) should be all you need to start connecting your python application to the Open Science Framework (https://osf.io). It offers functions that communicate with the Open Science Framework API endpoints, and also a set of PyQt widgets (should work with both pyqt4 and pyqt5 thanks to qtpy) that are designed to display and interact with information obtained through the OSF API.
+The QOpenScienceFramework module (https://github.com/dschreij/QOpenScienceFramework) should be all you need to get started with connecting your PyQt application to the Open Science Framework (https://osf.io). It offers functions to easily communicate with the Open Science Framework API endpoints, and also a set of PyQt widgets (which should work with both pyqt4 and pyqt5) that are designed to display and interact with this information.
 
 .. toctree::
    :maxdepth: 2
