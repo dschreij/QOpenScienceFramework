@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 11 13:11:14 2016
 
-"""
 import sys
 from qtpy import QtCore
 

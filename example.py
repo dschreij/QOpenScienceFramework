@@ -29,8 +29,8 @@ from QOpenScienceFramework.manager import ConnectionManager
 from QOpenScienceFramework.compat import *
 
 ####### CONFIGURE THE CLIENT ID AND REDIRECT URI HERE. REGISTER AT OSF.IO ######
-client_id = "<YOUR_CLIENT_ID_HERE>"
-redirect_uri = "<YOUR_REDIRECT_URI_HERE>"
+client_id = "878e88b88bf74471a6a3ff05e007b0dd" # "<YOUR_CLIENT_ID_HERE>"
+redirect_uri = "https://www.getpostman.com/oauth2/callback" # "<YOUR_REDIRECT_URI_HERE>"
 ################################################################################
 
 class InvalidateButton(QtWidgets.QWidget):
@@ -89,10 +89,6 @@ class StandAlone(object):
 		)
 		self.project_explorer.move(50, 100)
 
-		# Testlistener (to be removed later). Simply prints out which event
-		# it received.
-		self.tl = events.TestListener()
-
 		# Token file listener writes the token to a json file if it receives
 		# a logged_in event and removes this file after logout
 		# Filename of the file to store token information in.
@@ -108,9 +104,9 @@ class StandAlone(object):
 		self.user_badge.logout_request.connect(self.manager.logout)
 		self.user_badge.login_request.connect(self.manager.login)
 
-		self.ib = InvalidateButton()
-		self.ib.setGeometry(850,200,200,50)
-		self.ib.show()
+		# self.ib = InvalidateButton()
+		# self.ib.setGeometry(850,200,200,50)
+		# self.ib.show()
 
 		# If a valid token is stored in token.json, use that.
 		# Otherwise show the login window.

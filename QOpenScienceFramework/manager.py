@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Daniel Schreij
 
-This module is distributed under the Apache v2.0 License.
-You should have received a copy of the Apache v2.0 License
-along with this module. If not, see <http://www.apache.org/licenses/>.
-"""
 # Python3 compatibility
 from __future__ import absolute_import
 from __future__ import division
@@ -42,21 +36,25 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	"""
 	The connection manager does most of the heavy lifting in communicating with the
 	OSF. It is responsible for all the HTTP requests and the correct treatment of
-	its responses and status codes. """
+	responses from the OSF. """
 
 	# The maximum number of allowed redirects
 	MAX_REDIRECTS = 5
 	error_message = QtCore.pyqtSignal('QString','QString')
+	"""PyQt signal to send an error message."""
 	warning_message = QtCore.pyqtSignal('QString','QString')
+	"""PyQt signal to send a warning message."""
 	info_message = QtCore.pyqtSignal('QString','QString')
+	"""PyQt signal to send an info message."""
 	success_message = QtCore.pyqtSignal('QString','QString')
+	"""PyQt signal to send a success message."""
 
 	# Dictionary holding requests in progress, so that they can be repeated if
 	# mid-request it is discovered that the OAuth2 token is no longer valid.
 	pending_requests = {}
 
 	def __init__(self, *args, **kwargs):
-		""" Constructor.
+		""" Constructor
 
 		Parameters
 		----------
@@ -65,10 +63,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		notifier : QtCore.QObject (default: None)
 			The object containing pyqt slots / callables to which this object's
 			message signals can be connected. The object should contain the following
-			slots / callable names: info, error, success, warning. Each of these
-			should expect two strings. This object is repsonsible for displaying
-			the messages, or passing them on to a different object responsible for
-			the display.
+			slots / functions: info, error, success, warning. Each of these
+			should expect two strings. This object is then repsonsible for displaying
+			the messages, or passing them on to another object responsible for
+			the display. 
+
+			If ``None`` is passed, then a events.Notifier object is
+			created which simply displays all messages in QDialog boxes
 		"""
 		# See if tokenfile and notifier are specified as keyword args
 		tokenfile = kwargs.pop("tokenfile", "token.json")
@@ -118,12 +119,26 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		self.config_mgr = QtNetwork.QNetworkConfigurationManager(self)
 
-	#--- Login and Logout functions
+	### Private functions
+	
+	def __logout_succeeded(self, data, *args):
+		""" Callback for logout(). 
+		Called when logout has succeeded. This function
+		dispatches the logout signal to all other connected elements. """
+		self.dispatcher.dispatch_logout()
+
+	def __logout_failed(self, data, *args):
+		""" Callback for logout(). 
+		Called when logout has failed. """
+		self.dispatcher.dispatch_login()
+
+	### Login and Logout functions
 
 	def login(self):
-		""" Opens a browser window through which the user can log in. Upon successful
-		login, the browser widgets fires the 'logged_in' event. which is caught by this object
-		again in the handle_login() function. """
+		""" Logs in a user. Checks if a token file is stored which can be used to 
+		login a user. If not or the token file is invalid, it opens a browser 
+		window through which a user can log in. After a successful login, the 
+		browser widget fires the 'logged_in' event. """
 
 		# If a valid stored token is found, read that in an dispatch login event
 		if self.check_for_stored_token(self.tokenfile):
@@ -132,41 +147,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		# Otherwise, do the whole authentication dance
 		self.show_login_window()
 
-	def show_login_window(self):
-		""" Shows the QWebView window with the login page of OSF """
-		auth_url, state = osf.get_authorization_url()
-
-		# Set up browser
-		browser_url = get_QUrl(auth_url)
-
-		self.browser.load(browser_url)
-		self.browser.show()
-		self.browser.raise_()
-		self.browser.activateWindow()
-
-	def logout(self):
-		""" Logs out from OSF """
-		if osf.is_authorized() and osf.session.access_token:
-			self.post(
-				osf.logout_url,
-				self.__logout_succeeded,
-				{'token':osf.session.access_token},
-				errorCallback=self.__logout_failed
-			)
-
-	def __logout_succeeded(self, data, *args):
-		""" Callback for logout(). Called when logout has failed. This function
-		will then dispatch the logout signal to all other connected elements. """
-		self.dispatcher.dispatch_logout()
-
-	def __logout_failed(self, data, *args):
-		""" Callback for logout(). Called when logout has failed. """
-		self.dispatcher.dispatch_login()
-
 	def check_for_stored_token(self, tokenfile):
-		""" Checks if valid token information is stored in a token.json file at
-		the supplied location. If not, or if the oken is invalid/expired, it returns
-		False
+		""" Checks for stored token information. Checks if a token.json file can be
+		found at the supplied location and inspects if it is not expired.
 
 		Parameters
 		----------
@@ -175,7 +158,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		Returns
 		-------
-		True if a volid token was found at tokenfile, False otherwise
+		bool
+			True if a valid token was found at tokenfile's location, False otherwise
 		"""
 
 		logging.info("Looking for token at {}".format(tokenfile))
@@ -200,27 +184,40 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			logging.info("Token expired; need log-in")
 			return False
 
-	#--- Communication with OSF API
+	def show_login_window(self):
+		""" Shows the login page on OSF. """
+		auth_url, state = osf.get_authorization_url()
+
+		# Set up browser
+		browser_url = get_QUrl(auth_url)
+
+		self.browser.load(browser_url)
+		self.browser.show()
+		self.browser.raise_()
+		self.browser.activateWindow()
+
+	def logout(self):
+		""" Logs the current user out from OSF. """
+		if osf.is_authorized() and osf.session.access_token:
+			self.post(
+				osf.logout_url,
+				self.__logout_succeeded,
+				{'token':osf.session.access_token},
+				errorCallback=self.__logout_failed
+			)
+
+	### Communication with OSF API
 
 	def buffer_network_request(func):
 		""" Decorator function, not to be called directly.
 		Checks if network is accessible and buffers the network request so
-		that it can be sent again if it fails the first time, due to an invalidated
-		OAuth2 token. In this case the user will be presented with the login
-		screen again. If the same user successfully logs in again, the request
-		will be resent. """
+		that it can be sent again if it fails the first time, for instance due to 
+		an invalidated OAuth2 token. In this case the user will be presented with 
+		the login screen again. If the same user successfully logs in again, the 
+		request will be resent. """
 
 		@wraps(func)
 		def func_wrapper(inst, *args, **kwargs):
-			# # Not working correctly when packaged, so disable for now
-			# if not inst.config_mgr.isOnline():
-			# 	inst.error_message.emit(
-			# 		"No network access",
-			# 		_(u"Your network connection is down or you currently have"
-			# 		" no Internet access.")
-			# 	)
-			# 	return
-			# else:
 			if inst.logged_in_user:
 				# Create an internal ID for this request
 				request_id=uuid.uuid4()
@@ -236,7 +233,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return func_wrapper
 
 	def add_token(self, request):
-		""" Adds the OAuth2 token to the pending HTTP request (if available).
+		"""Adds the OAuth2 token to a HTTP request.
 
 		Parameters
 		----------
@@ -245,8 +242,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		Returns
 		-------
-		bool : True if token could successfully be added to the request, False
-		if not
+		bool
+			True if token could successfully be added to the request, False if not
 		"""
 		if osf.is_authorized():
 			name = safe_encode("Authorization")
@@ -263,18 +260,21 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		Parameters
 		----------
-		url : string / QtCore.QUrl
+		url : string or QtCore.QUrl
 			The target url/endpoint to perform the request on
+		callback : callable
+			The callback function
 
 		Returns
 		-------
-		QtCore.QUrl : The url to send the request to in QUrl format (does nothing
-		if url was already supplied as a QUrl)
+		QtCore.QUrl
+			The url to send the request to in QUrl format (does nothing if url \
+			was already supplied as a QUrl)
 
 		Raises
 		------
-		TypeError : if url is not a QUrl or string, or if callback is not a
-		callable
+		TypeError
+			if url is not a QUrl or string, or if callback is not a callable
 		"""
 		if not isinstance(url, QtCore.QUrl) and not isinstance(url, basestring):
 			raise TypeError("url should be a string or QUrl object")
@@ -286,7 +286,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	@buffer_network_request
 	def get(self, url, callback, *args, **kwargs):
-		""" Perform a HTTP GET request. The OAuth2 token is automatically added to the
+		""" Performs a HTTP GET request. 
+
+		The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
 
 		Parameters
@@ -319,7 +321,15 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			Any other arguments that you want to have passed to the callback
 		**kwargs (optional)
 			Any other keywoard arguments that you want to have passed to the callback
+
+		Returns
+		-------
+		QtNetwork.QNetworkReply
+			The reply object for the current request. Note that if a 301 or 302
+			redirect has occurred, a new reply object has been made for the redirect
+			and the one returned here is no longer valid.
 		"""
+
 		# First check the correctness of the url and callback parameters
 		url = self.__check_request_parameters(url, callback)
 
@@ -373,7 +383,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	@buffer_network_request
 	def post(self, url, callback, data_to_send, *args, **kwargs):
-		""" Perform a HTTP POST request. The OAuth2 token is automatically added to the
+		""" Perform a HTTP POST request. 
+
+		The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This request is mainly used to send
 		small amounts of data to the OSF framework (use PUT for larger files, as this is also
 		required by the WaterButler service used by the OSF)
@@ -425,7 +437,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	@buffer_network_request
 	def put(self, url, callback, *args, **kwargs):
-		""" Perform a HTTP PUT request. The OAuth2 token is automatically added to the
+		""" Perform a HTTP PUT request. 
+
+		The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server. This method should be used
 		to upload larger sets of data such as files.
 
@@ -499,7 +513,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	@buffer_network_request
 	def delete(self, url, callback, *args, **kwargs):
-		""" Perform a HTTP DELETE request. The OAuth2 token is automatically added to the
+		""" Perform a HTTP DELETE request. 
+
+		The OAuth2 token is automatically added to the
 		header if the request is going to an OSF server.
 
 		Parameters
@@ -549,7 +565,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	### Convenience HTTP Functions
 
 	def get_logged_in_user(self, callback, *args, **kwargs):
-		""" Contact the OSF to request data of the currently logged in user
+		"""Get logged in user information.
+		Contacts the OSF to request data of the currently logged in user
 
 		Parameters
 		----------
@@ -565,7 +582,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def get_user_projects(self, callback, *args, **kwargs):
-		""" Get a list of projects owned by the currently logged in user from OSF
+		""" Gets current user's projects. Retrieves a list of projects owned by 
+		the currently logged in user from OSF
 
 		Parameters
 		----------
@@ -581,8 +599,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def get_project_repos(self, project_id, callback, *args, **kwargs):
-		""" Get a list of repositories from the OSF that belong to the passed
-		project id
+		""" Get repos for the specified project.
+		Retrieves a list of repositories from the OSF that belong to the passed
+		project id.
 
 		Parameters
 		----------
@@ -600,8 +619,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def get_repo_files(self, project_id, repo_name, callback, *args, **kwargs):
-		""" Get a list of files from the OSF that belong to the indicated
-		repository of the passed project id
+		"""Retrieves files contained in a repository.
+		Retrieves a list of files from the OSF that belong to the indicated
+		repository of the passed project id.
 
 		Parameters
 		----------
@@ -623,26 +643,27 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def get_file_info(self, file_id, callback, *args, **kwargs):
-		""" Get a list of files from the OSF that belong to the indicated
-		repository of the passed project id
-
+		""" Gets information about the specified file.
+		
 		Parameters
 		----------
 		file_id : string
 			The OSF file identifier (e.g. the node id).
 		callback : function
 			The callback function to which the data should be delivered once the
-			request is finished
+			request is finished.
 
 		Returns
 		-------
-		QtNetwork.QNetworkReply or None if something went wrong
+		QtNetwork.QNetworkReply or None if something went wrong.
 		"""
+		
 		api_call = osf.api_call("file_info", file_id)
 		return self.get(api_call, callback, *args, **kwargs)
 
 	def download_file(self, url, destination, *args, **kwargs):
-		""" Download a file by a using HTTP GET request. The OAuth2 token is automatically
+		""" Downloads a file by a using HTTP GET request. 
+		The OAuth2 token is automatically
 		added to the header if the request is going to an OSF server.
 
 		Parameters
@@ -691,7 +712,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get_logged_in_user(self.__download, *args, **kwargs)
 
 	def upload_file(self, url, source_file, *args, **kwargs):
-		""" Upload a file to the specified destination on the OSF
+		""" Uploads a file. 
+		The file will be stored at the specified destination on the OSF.
 
 		Parameters
 		----------
@@ -727,9 +749,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		kwargs['source_file'] = source_file
 		self.get_logged_in_user(self.__upload, *args, **kwargs)
 
-	#--- PyQt Slots
+	### PyQt Slots
 
 	def __reply_finished(self, callback, *args, **kwargs):
+		""" Callback for any HTTP request """
 		reply = self.sender()
 		request = reply.request()
 		# Get the error callback function, if set
@@ -818,7 +841,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		reply.deleteLater()
 
 	def __create_progress_dialog(self, text, filesize):
-		""" Creates a progress dialog
+		""" Creates a progress dialog.
 
 		Parameters
 		----------
@@ -839,7 +862,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		return progress_dialog
 
 	def __transfer_progress(self, transfered, total):
-		""" callback for a reply object """
+		""" callback for a reply object. """
 		self.sender().property('progressDialog').setValue(transfered)
 
 	def __download(self, reply, download_url, *args, **kwargs):
@@ -985,11 +1008,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.get_logged_in_user(self.set_logged_in_user)
 
 	def handle_logout(self):
-		""" Handles the logout event received after a logout """
+		""" Handles the logout event received after a logout. """
 		self.logged_in_user = {}
 
 	def set_logged_in_user(self, user_data):
-		""" Callback function - Locally saves the data of the currently logged_in user """
+		""" Callback function, not to be called directly.
+
+		Locally saves the data of the currently logged_in user """
 		self.logged_in_user = json.loads(safe_decode(user_data.readAll().data()))
 
 		# If user had any pending requests from previous login, execute them now

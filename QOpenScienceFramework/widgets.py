@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Daniel Schreij
 
-This module is distributed under the Apache v2.0 License.
-You should have received a copy of the Apache v2.0 License
-along with this module. If not, see <http://www.apache.org/licenses/>.
-"""
 # Python3 compatibility
 from __future__ import absolute_import
 from __future__ import division
@@ -89,14 +83,16 @@ class UserBadge(QtWidgets.QWidget):
 	# Class variables
 	# Login and logout events
 	logout_request = QtCore.pyqtSignal()
+	""" PyQt signal to send a logout request. """
 	login_request = QtCore.pyqtSignal()
+	""" PyQt signal to send a login request. """
 
 	def __init__(self, manager, icon_size=None):
 		""" Constructor
 
 		Parameters
 		----------
-		manager : manger.ConnectionManager
+		manager : manager.ConnectionManager
 			The object taking care of all the communication with the OSF
 		iconsize : QtCore.QSize (default: None)
 			The size of the icon to use for the osf logo and user photo, if not
@@ -182,12 +178,12 @@ class UserBadge(QtWidgets.QWidget):
 		webbrowser.open(osf.website_url)
 
 	def __clicked_login(self):
-		""" Handles a click on the login button """
+		""" Handles a click on the login button. """
 		if not self.manager.logged_in_user:
 			self.login_request.emit()
 
 	def __clicked_logout(self):
-		""" Handles a click on the logout button """
+		""" Handles a click on the logout button. """
 		self.user_button.hide()
 		self.login_button.show()
 		self.login_button.setText(self.logging_out_text)
@@ -197,7 +193,7 @@ class UserBadge(QtWidgets.QWidget):
 	# Other callback functions
 
 	def handle_login(self):
-		""" Callback function for EventDispatcher when a login event is detected """
+		""" Callback function for EventDispatcher when a login event is detected. """
 		self.login_button.setIcon(self.spinner)
 		self.login_button.setText(self.logging_in_text)
 		# Get logged in user from manager, if something goes wrong, reset the login
@@ -208,12 +204,12 @@ class UserBadge(QtWidgets.QWidget):
 		)
 
 	def handle_logout(self, *args):
-		""" Callback function for EventDispatcher when a logout event is detected """
+		""" Callback function for EventDispatcher when a logout event is detected. """
 		self.login_button.setIcon(self.osf_icon)
 		self.login_button.setText(self.login_text)
 
 	def __set_badge_contents(self, reply):
-		""" Sets the user's information in the badge """
+		""" Sets the user's information in the badge. """
 		# Convert bytes to string and load the json data
 		user = json.loads(safe_decode(reply.readAll().data()))
 
@@ -231,7 +227,7 @@ class UserBadge(QtWidgets.QWidget):
 		self.manager.get(avatar_url, self.__set_user_photo)
 
 	def __set_user_photo(self, reply):
-		""" Sets the photo of the user in the userbadge """
+		""" Sets the photo of the user in the userbadge. """
 		avatar_data = reply.readAll().data()
 		avatar_img = QtGui.QImage()
 		success = avatar_img.loadFromData(avatar_data)
@@ -252,6 +248,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	preview_size_limit = 1024**2/2.0
 	# Signal that is sent if image preview should be aborted
 	abort_preview = QtCore.pyqtSignal()
+	""" PyQt signal emitted when an image preview is to be aborted. """
 
 	def __init__(self, manager, tree_widget=None, locale='en_us'):
 		""" Constructor
@@ -592,7 +589,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		Raises
 		------
-		TypeError : if there is no buttonset known by that label or an item in
+		TypeError : if there is no buttonset known by that label or an item in \
 		the buttons list not an instance of QAbstractButton.
 		"""
 
@@ -612,7 +609,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.buttonsets[title] = buttons
 
 	def show_buttonset(self, title):
-		""" Sets the buttonset to show and hides all others
+		""" Sets the buttonset to show and hides all others.
 
 		Parameters
 		----------
@@ -784,23 +781,36 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Modified"][1].setText('')
 
 	def set_config(self, config):
-		""" Function that sets the config. Is equal to setting the config variable
+		""" Function that sets the current config. Is equal to setting the config variable
 		directly by using OSFExplorer.config = <config dict>
 
 		Parameters
 		----------
 		config : dict
-			The dictionary containing new configuration parameters.
+			The dictionary containing new configuration parameters. It can contain
+			directives to set a filter (with the filter key) and/or which buttonset
+			to show (with the buttonset key)
 		"""
 
 		self.config = config
 
 	@property
 	def config(self):
-	    return self._config
+		""" The current configuration of the project explorer. Contains information
+		about the current filter that is set for the project tree and the buttonset
+		that is shown. """
+		return self._config
 
 	@config.setter
 	def config(self, value):
+		""" Sets the current config for the project explorer. 
+
+		The config dict can contain two entries.
+		- filter : a list of file extensions which should only be shown in the \
+			tree
+		- buttonset : the buttonset to show, if one has added custom buttonsets. \
+			The default buttonset is designated by 'default'
+		"""
 		if not isinstance(value, dict):
 			raise TypeError('config should be a dict with options')
 		self._config = value
@@ -818,7 +828,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	### PyQT slots
 
 	def __show_tree_context_menu(self, e):
-		""" Shows the context menu when a tree item is right clicked """
+		""" Shows the context menu when a tree item is right clicked. """
 		item = self.tree.itemAt(e.pos())
 		if item is None:
 			return
@@ -828,7 +838,7 @@ class OSFExplorer(QtWidgets.QWidget):
 			context_menu.popup(e.globalPos())
 
 	def __slot_currentItemChanged(self, item, col):
-		""" Handles the QTreeWidget currentItemChanged event """
+		""" Handles the QTreeWidget currentItemChanged event. """
 		# If selection changed to no item, do nothing
 		if item is None:
 			return
@@ -1212,12 +1222,12 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.refresh_button.setDisabled(False)
 
 	def handle_login(self):
-		""" Callback function for EventDispatcher when a login event is detected """
+		""" Callback function for a login event is detected. """
 		self.login_required_overlay.setVisible(False)
 		self.refresh_button.setDisabled(True)
 
 	def handle_logout(self):
-		""" Callback function for EventDispatcher when a logout event is detected """
+		""" Callback function for when a logout event is detected. """
 		self.image_space.setPixmap(QtGui.QPixmap())
 		for label,value in self.properties.values():
 			value.setText("")
@@ -1263,24 +1273,25 @@ class OSFExplorer(QtWidgets.QWidget):
 
 class ProjectTree(QtWidgets.QTreeWidget):
 	""" A tree representation of projects and files on the OSF for the current user
-	in a treeview widget"""
+	in a treeview widget."""
 
 	# Event fired when refresh of tree is finished
 	refreshFinished = QtCore.pyqtSignal()
+	""" PyQt signal that emits when the tree is completely refreshed. """
 	# Maximum of items to return per request (e.g. files in a folder). OSF 
 	# automatically paginates its results
 	ITEMS_PER_PAGE = 50
 
 	def __init__(self, manager, use_theme=None, theme_path='./resources/iconthemes'):
-		""" Constructor
+		""" Constructor.
 		Creates a tree showing the contents of the user's OSF repositories.
 		Can be passed a theme to use for the icons, but if this doesn't happen
-		it will use the default qtawesome (FontAwesome) icons.
+		it will use the default qtawesome (FontAwesome) icons for the buttons.
 
 		Parameters
 		----------
 		manager : manger.ConnectionManager
-			The object taking care of all the communication with the OSF
+			The object taking care of all the communication with the OSF.
 		use_theme : string (default: None)
 			The name of the icon theme to use.
 		theme_path : The path to the folder at which the icon theme is located
@@ -1395,12 +1406,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 	@property
 	def filter(self):
-	    return self._filter
+		""" The currently set filter parameters. """
+		return self._filter
 
 	@filter.setter
 	def filter(self, value):
-		""" Only shows tree items that match the specified file extension(s)
-		and hides the others
+		""" Sets a filter for items present in the tree. Only shows tree items 
+		that match the specified file extension(s) and hides the others.
 
 		value : None, str or list
 			If None is passed, this clears the filter, making all items present
@@ -1462,13 +1474,17 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	### Public functions
 
 	def set_filter(self, filetypes):
+		""" Sets the filter parameters.
+		Can be used instead of using project_tree.filter = <value> directly.
+		"""
 		self.filter = filetypes
 
 	def clear_filter(self):
+		""" Clears the filter. """
 		self.filter = None
 
 	def find_item(self, item, index, value):
-		"""
+		""" Finds an item in the tree.
 		Checks if there is already a tree item with the same name as value. This
 		function does not recurse over the tree items, it only checks the direct
 		descendants of the given item.
@@ -1484,7 +1500,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		Returns
 		-------
-		int : The index position at which the item is found or None .
+		int
+			The index position at which the item is found or None .
 		"""
 		child_count = item.childCount()
 		if not child_count:
@@ -1498,7 +1515,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		return None
 
 	def get_icon(self, datatype, name):
-		"""
+		""" Returns a QIcon for the passed datatype.
 		Retrieves the curren theme icon for a certain object (project, folder)
 		or filetype. Uses the file extension to determine the file type.
 
@@ -1512,7 +1529,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		Returns
 		-------
-		QtGui.QIcon : The icon for the current file/object type """
+		QtGui.QIcon
+			The icon for the current file/object type """
 
 		providers = {
 			'osfstorage'   : osf_blacklogo_path,
@@ -1572,7 +1590,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		return QtGui.QIcon(osf_blacklogo_path)
 
 	def refresh_children_of_node(self, node):
-		""" In contrast to refresh_contents, which refreshes the whole tree from
+		""" Refreshes the children of the specified node.
+		In contrast to refresh_contents, which refreshes the whole tree from
 		the root, this function only refreshes the children of the passed node.
 
 		Parameters
@@ -1621,7 +1640,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			self.active_requests.append(req)
 
 	def refresh_contents(self):
-		""" Refreshes all content of the tree """
+		""" Refreshes all contents in the tree. This operation might take a long
+		time depending on the number of projects that the user has, so it is 
+		recommended to use a partial refresh (refresh_children_of_node), wherever
+		you can. """
 		# If tree is already refreshing, don't start again, as this will result
 		# in a crash
 		if self.isRefreshing == True:
@@ -1646,6 +1668,24 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				self.process_repo_contents, errorCallback=self.__cleanup_reply)
 
 	def add_item(self, parent, data):
+		""" Adds a new item to the tree. The data that is passed should be
+		the dictionary containing the information that is found under the 'data'
+		key in an OSF API responses.
+	
+		Parameters
+		----------
+		parent : QtWidgets.QTreeWidgetItem
+			The parent node to place the new item under.
+		data : dict
+			The 'data' segment from the osf data.
+
+		Returns
+		-------
+		item : QtWidgets.QTreeWidgetItem
+			The newly created tree widget item
+		kind : str
+			The type of the new item (folder, file, project, etc.)
+		"""
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
 			if data["attributes"]["public"]:
@@ -1677,16 +1717,17 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 	def populate_tree(self, reply, parent=None):
 		"""
-		Populates the tree with content retrieved from a certain entrypoint,
-		specified as an api endpoint of the OSF, such a a project or certain
-		folder inside a project. The JSON representation that the api endpoint
-		returns is used to build the tree contents. This function is called
-		recursively to construct the whole tree of contents on the OSF.
+		Populates the tree with content. The entry point should be a project, 
+		repository or folder inside a repository. The JSON representation 
+		that the api endpoint returns for such a node is used to build the tree 
+		contents. This function is called recursively, for each new subfolder that
+		is encountered from the entry point on.
 
 		Parameters
 		----------
 		reply : QtNetwork.QNetworkReply
-			The data from the OSF to create the node in the tree for.
+			The data of the entrypoint from the OSF to create the node in the 
+			tree for. 
 		parent : QtWidgets.QTreeWidgetItem (default: None)
 			The parent item to which the generated tree should be attached.
 			Is mainly used for the recursiveness that this function implements.
@@ -1694,7 +1735,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		Returns
 		-------
-		list : The list of tree items that have just been generated """
+		list
+			The list of tree items that have just been generated """
 
 		osf_response = json.loads(safe_decode(reply.readAll().data()))
 
@@ -1790,12 +1832,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	# Event handling functions required by EventDispatcher
 
 	def handle_login(self):
-		""" Callback function for EventDispatcher when a login event is detected """
+		""" Callback function for EventDispatcher when a login event is detected. """
 		self.active_requests = []
 		self.refresh_contents()
 
 	def handle_logout(self):
-		""" Callback function for EventDispatcher when a logout event is detected """
+		""" Callback function for EventDispatcher when a logout event is detected. """
 		self.active_requests = []
 		self.previously_selected_item = None
 		self.clear()

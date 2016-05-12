@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-@author: Daniel Schreij
+This module handles the OAuth2 authentication process and maintains the
+session (/token) information that is required to communicate with the OSF API
 
-This module is distributed under the Apache v2.0 License.
-You should have received a copy of the Apache v2.0 License
-along with this module. If not, see <http://www.apache.org/licenses/>.
+It is also responsible for constructing the correct API calls/uris as specified by the
+OSF for the various types of information that can be requested.
+
+.. Note:: A lot of the functions that are available here have equivalents in the
+	ConnectionManager class. It is recommended to use those functions instead as they are
+	executed asynchronously and are used throughout the rest of the application.
 """
+
 # Python3 compatibility
 from __future__ import absolute_import
 from __future__ import division
@@ -88,24 +93,41 @@ api_calls = {
 }
 
 def api_call(command, *args):
-	""" generates and api endpoint. If arguments are required to build the endpoint, the can be
-	specified as extra arguments.
+	""" generates and api endpoint. If arguments are required to build the endpoint
+	, they can be specified as extra arguments.
 
 	Parameters
 	----------
-	command : string
+	command : {'logged_in_user', 'projects', 'project_repos', 'repo_files', 'file_info'}
 		The key of the endpoint to look up in the api_calls dictionary
+	
+		Extra arguments passed to this function will be integrated into the API call \
+		at specified positions (marked by \{\}). The formats of the calls are as follows:
+
+			``logged_in_user: "users/me/"``
+
+			``projects: "users/me/nodes/"``
+			
+			``project_repos: "nodes/\{\}/files/"``
+
+			``repo_files: "nodes/\{\}/files/\{\}/"``
+
+			``file_info: "files/\{\}/"``
+
 	*args : various (optional)
-		Optional extra data which is needed to construct the correct api endpoint uri
+		Optional extra data which is needed to construct the correct api endpoint uri. \
+		Check the OSF API documentation for a list of variables that each type of \
+		call expects.
 
 	Returns
 	-------
-	string : The complete uri for the api endpoint
+	string : The complete uri for the api endpoint.
 	"""
+
 	return api_base_url + api_calls[command].format(*args)
 
 def check_for_active_session():
-	""" Checks if a session object has been created and returns an Error otherwise."""
+	""" Checks if a session object has been created and raises a RuntimeError otherwise."""
 	if session is None:
 		raise RuntimeError("Session is not yet initialized, use connection."
 			"session = connection.create_session()")
@@ -120,13 +142,36 @@ def get_authorization_url():
 
 	Returns
 	-------
-	string : The complete uri for the api endpoint
+	str
+		The complete uri for the api endpoint.
+
+	Raises
+	------
+	RuntimeError
+		When there is no active OAuth2 session.
 	"""
 	check_for_active_session()
 	return session.authorization_url(auth_url)
 
 def parse_token_from_url(url):
-	""" Parse token from url fragment """
+	""" Parses token from url fragment 
+
+	Parameters
+	----------
+	url : str
+		The url to parse. Should have a hass fragment (#) after which the token
+		information is found.
+
+	Returns
+	-------
+	str
+		The currently used OAuth2 access token.
+
+	Raises
+	------
+	RuntimeError
+		When there is no active OAuth2 session.
+	"""
 	check_for_active_session()
 	token = session.token_from_fragment(url)
 	# Call logged_in function to notify event listeners that user is logged in
@@ -137,12 +182,25 @@ def parse_token_from_url(url):
 
 
 def is_authorized():
-	""" Convenience function simply returning OAuth2Session.authorized. """
+	""" Convenience function simply returning OAuth2Session.authorized. 
+
+	Returns
+	-------
+	bool
+		True is the user is authorized, False if not
+	"""
 	check_for_active_session()
 	return session.authorized
 
 def token_valid():
-	""" Checks if OAuth token is present, and if so, if it has not expired yet. """
+	""" Checks if OAuth token is present, and if so, if it has not expired yet. 
+
+	Returns
+	-------
+	bool
+		True if the token is present and is valid, False otherwise
+
+	"""
 	check_for_active_session()
 	if not hasattr(session,"token") or not session.token:
 		return False
@@ -218,7 +276,14 @@ def requires_authentication(func):
 	return func_wrapper
 
 def logout():
-	""" Logs out the user, and resets the global session object. """
+	""" Logs out the user, and resets the global session object. 
+
+	Returns
+	-------
+	bool
+		True if logout was succesful, False if not.
+
+	"""
 	global session
 	check_for_active_session()
 	resp = session.post(logout_url,{
@@ -238,22 +303,75 @@ def logout():
 
 @requires_authentication
 def get_logged_in_user():
+	""" Gets the currently logged in user's data 
+
+	Returns
+	-------
+	dict
+		The dict containing the returned JSON data
+	"""
 	return session.get(api_call("logged_in_user"))
 
 @requires_authentication
 def get_user_projects():
+	""" Gets the currently logged in user's projects
+
+	Returns
+	-------
+	dict
+		The dict containing the returned JSON data
+	"""
 	return session.get(api_call("projects"))
 
 @requires_authentication
 def get_project_repos(project_id):
+	""" Gets the data of the specified project
+
+	Parameters
+	----------
+	project_id : str
+		Reference to the project node on the OSF
+
+	Returns
+	-------
+	dict
+		The dict containing the returned JSON data
+	"""
 	return session.get(api_call("project_repos",project_id))
 
 @requires_authentication
 def get_repo_files(project_id, repo_name):
+	""" Gets the data of the specified repository of the specified project.
+
+	Parameters
+	----------
+	project_id : str
+		Reference to the project node on the OSF
+	repo_name : {'osfstorage','dropbox','github','figshare','s3','googledrive'}
+		The repository to return the data of.
+
+	Returns
+	-------
+	dict
+		The dict containing the returned JSON data
+	"""
 	return session.get(api_call("repo_files",project_id, repo_name))
 
 @requires_authentication
 def direct_api_call(api_call):
+	""" Performs a direct api call. Can be used as the api call is already 
+	constructed.
+
+	Parameters
+	----------
+	api_call: str
+		The api call to perform
+
+	Returns
+	-------
+	dict
+		The dict containing the returned JSON data
+	"""
 	return session.get(api_call)
 
 if __name__ == "__main__":

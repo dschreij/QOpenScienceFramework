@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Daniel Schreij
 
-This module is distributed under the Apache v2.0 License.
-You should have received a copy of the Apache v2.0 License
-along with this module. If not, see <http://www.apache.org/licenses/>.
-"""
 # Python3 compatibility
 from __future__ import absolute_import
 from __future__ import division
@@ -39,13 +33,12 @@ _ = lambda s: s
 
 class LoginWindow(WebView):
 	""" A Login window for the OSF """
+	
 	# Login event is emitted after successfull login
-
-	# Event fired when user successfully logged in
 	logged_in = QtCore.pyqtSignal()
+	""" Event fired when user successfully logged in. """
 
 	def __init__(self, *args, **kwargs):
-		""" Constructor """
 		super(LoginWindow, self).__init__(*args, **kwargs)
 
 		try:
@@ -67,7 +60,9 @@ class LoginWindow(WebView):
 		self.urlChanged.connect(self.check_URL)
 
 	def checkResponse(self, reply):
-		"""Callback function for NetworkRequestManager.finished event
+		"""Callback function. Do not use directly. 
+
+		Callback for NetworkRequestManager.finished event
 		used to check if OAuth2 is redirecting to a link containing the token
 		string. This is necessary for the QtWebKit module, because it drops
 		fragments after being redirect to a different URL. QWebEngine uses the
@@ -102,7 +97,9 @@ class LoginWindow(WebView):
 				self.hide()
 
 	def check_URL(self, url):
-		""" Callback function for urlChanged event.
+		""" Callback function. Do not use directly.
+		
+		Calback for urlChanged event.
 
 		Parameters
 		----------

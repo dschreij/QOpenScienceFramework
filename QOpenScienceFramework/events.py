@@ -22,7 +22,7 @@ class EventDispatcher(QtCore.QObject):
 	referenced to as 'listeners'.
 	Basically EventDispatcher's purpose is to propagate login and logout events
 	to the QWidget subclasses that require authorization at the OSF to function
-	correctly, but of course this can be extended with events that are relevant
+	correctly, but of course this can be extended with other events that are relevant
 	for all listeners.
 
 	The only requirement for listener classes is that they implement a handling
@@ -31,13 +31,16 @@ class EventDispatcher(QtCore.QObject):
 
 	# List of possible events this dispatcher can emit
 	logged_in = QtCore.pyqtSignal()
+	""" PyQt Signal emitted when a user just logged in. """
 	logged_out = QtCore.pyqtSignal()
+	""" PyQt Signal emitted when a user just logged out. """
 
-	def init(self, *args, **kwargs):
+	def __init__(self, *args, **kwargs):
+		""" Constructor """
 		super(EventDispatcher, self).__init__(*args, **kwargs)
 
 	def add_listeners(self, obj_list):
-		""" Add (a) new object(s) to the list of objects listening for the events
+		""" Add one or more object(s) to the list of listeners.
 
 		Parameters
 		----------
@@ -58,7 +61,7 @@ class EventDispatcher(QtCore.QObject):
 		return self
 
 	def add_listener(self, item):
-		""" Add a new object to listen for the events
+		""" Add a new object to listen for the events.
 
 		Parameters
 		----------
@@ -91,34 +94,26 @@ class EventDispatcher(QtCore.QObject):
 		return self
 
 	def dispatch_login(self):
-		""" Convenience function to dispatch the login event """
+		""" Convenience function to dispatch the login event. """
 		self.logged_in.emit()
 
 	def dispatch_logout(self):
-		""" Convenience function to dispatch the logout event """
+		""" Convenience function to dispatch the logout event. """
 		self.logged_out.emit()
-
-
-class TestListener(QtWidgets.QWidget):
-	def __init__(self):
-		super(TestListener,self).__init__()
-
-	def handle_login(self):
-		print("Handling login!")
-		logging.info("Login event received")
-
-	def handle_logout(self):
-		logging.info("Logout event received")
-
 
 class TokenFileListener(object):
 	""" This listener stores the OAuth2 token after login and destroys it after
 	logout."""
 	def __init__(self,tokenfile):
+		""" Constructor """
 		super(TokenFileListener,self).__init__()
 		self.tokenfile = tokenfile
 
 	def handle_login(self):
+		""" Handles the login event. 
+
+		Stores the OAuth2 token in a file.
+		"""
 		if osf.session.token:
 			tokenstr = json.dumps(osf.session.token)
 			with open(self.tokenfile,'w') as f:
@@ -127,6 +122,10 @@ class TokenFileListener(object):
 			logging.error("Error, could not find authentication token")
 
 	def handle_logout(self):
+		""" Handles the logout event. 
+
+		Deletes the file containing the OAuth2 token.
+		"""
 		if os.path.isfile(self.tokenfile):
 			try:
 				os.remove(self.tokenfile)
@@ -139,6 +138,7 @@ class Notifier(QtCore.QObject):
 	as in all functions are slots to which Qt signals should be connected."""
 
 	def __init__(self):
+		""" Constructor """
 		super(Notifier,self).__init__()
 
 	@QtCore.pyqtSlot('QString', 'QString')
@@ -159,7 +159,7 @@ class Notifier(QtCore.QObject):
 
 	@QtCore.pyqtSlot('QString', 'QString')
 	def warning(self, title, message):
-		""" Show an error message in a 'critical' QMessageBox.
+		""" Show a warning message in a 'warning' QMessageBox.
 
 		Parameters
 		----------
@@ -175,7 +175,7 @@ class Notifier(QtCore.QObject):
 
 	@QtCore.pyqtSlot('QString', 'QString')
 	def info(self, title, message):
-		""" Show a  message in a 'information' QMessageBox.
+		""" Show an info message in an 'information' QMessageBox.
 
 		Parameters
 		----------
@@ -191,7 +191,7 @@ class Notifier(QtCore.QObject):
 
 	@QtCore.pyqtSlot('QString', 'QString')
 	def success(self, title, message):
-		""" Show a  message in a 'information' QMessageBox.
+		""" Show a success message in a 'success' QMessageBox.
 
 		Parameters
 		----------
