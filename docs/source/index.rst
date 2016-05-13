@@ -13,4 +13,6 @@ The QOpenScienceFramework module (https://github.com/dschreij/QOpenScienceFramew
    :glob:
 
    installation
+   components
    api
+   license

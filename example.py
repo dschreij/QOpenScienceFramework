@@ -56,10 +56,10 @@ class StandAlone(object):
 	def __init__(self):
 		# Check if client_id and redirect_uri have been changed
 		if client_id == "<YOUR_CLIENT_ID_HERE>":
-			raise RuntimeError("Please enter the client_id you have registered"
+			raise RuntimeError("Please insert the client_id you have registered"
 				" for your app at the OSF")
 		if redirect_uri == "<YOUR_REDIRECT_URI_HERE>":
-			raise RuntimeError("Please enter the redirect uri you have registered"
+			raise RuntimeError("Please insert the redirect uri you have registered"
 				" for your app at the OSF")
 
 		# Set OSF server settings

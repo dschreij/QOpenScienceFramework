@@ -245,8 +245,16 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	### Public functions
 
 	def set_filter(self, filetypes):
-		""" Sets the filter parameters.
-		Can be used instead of using project_tree.filter = <value> directly.
+		""" Sets an extension based filter for items in the tree.
+
+		.. note :: Can be used instead of using ProjectTree.filter = <value> directly.
+		
+		Parameters
+		----------
+		filetypes : str or list
+			A filetype or list of filetypes that should be shown while other file
+			types are hidden. For example, passing '.txt' to this function will
+			only show files which have the .txt extension
 		"""
 		self.filter = filetypes
 

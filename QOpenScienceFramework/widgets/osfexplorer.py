@@ -80,7 +80,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		self.manager = manager
 
-		self.setWindowTitle(_("Project explorer"))
+		self.setWindowTitle(_("OSF Explorer"))
 		self.resize(800,500)
 		# Set Window icon
 		if not os.path.isfile(osf_blacklogo_path):
@@ -112,8 +112,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		else:
 			# Check if passed reference is a ProjectTree instance
 			if type(tree_widget) != ProjectTree:
-				raise TypeError("Passed tree_widget should be a 'ProjectTree'\
-					instance.")
+				raise TypeError("Passed tree_widget should be a 'ProjectTree' "
+					"instance.")
 			else:
 				# assign passed reference of ProjectTree to this instance
 				self.tree = tree_widget
@@ -308,7 +308,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		return buttonbar
 
 	def __create_properties_pane(self):
-		""" Creates the panel showing the selected item's properties on the right """
+		""" Creates the panel showing the selected item's properties on the right. """
 		# Box to show the properties of the selected item
 		properties_pane = QtWidgets.QFormLayout()
 		properties_pane.setFormAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignLeft)
@@ -344,7 +344,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	def create_context_menu(self, item):
 		""" Creates a context menu for the currently selected TreeWidgetItem.
 		Menu contents differ depending on if the selected item is a file or a
-		folder, and if the folder is the root of a repo or a subfolder thereof"""
+		folder, and if the folder is the root of a repo or a subfolder thereof. """
 
 		data = item.data(0,QtCore.Qt.UserRole)
 		# Don't make context menu for a project
@@ -393,13 +393,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		title : str
 			The label of the buttonset
 		buttons : list
-			A list containing QWidgets.QAbstractButton objects that belong to
-			this button set
+			A list of objects that inherit from QWidgets.QAbstractButton and which 
+			should be included in the buttonset designated by *title*
 
 		Raises
 		------
-		TypeError : if there is no buttonset known by that label or an item in \
-		the buttons list not an instance of QAbstractButton.
+		TypeError
+			If an item in the buttons list is not an instance of QAbstractButton.
 		"""
 
 		# Check if the passed parameters are valid. This function only takes a list
@@ -410,8 +410,8 @@ class OSFExplorer(QtWidgets.QWidget):
 		# Check if all items in the list are a QtWidgets.QPushButton
 		for bttn in buttons:
 			if not isinstance(bttn, QtWidgets.QAbstractButton):
-				raise TypeError('All items in the buttons list should be of type'
-					' or inherit from QtWidgets.QAbstractButton')
+				raise TypeError('All items in the buttons list should '
+					' inherit from QtWidgets.QAbstractButton')
 			bttn.setVisible(False)
 			self.buttonbar.layout().addWidget(bttn)
 
@@ -423,11 +423,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		Parameters
 		----------
 		title : str
-			The label of the buttonset that should be shown
+			The label of the buttonset that should be shown. To show the default
+			buttonset, pass 'default'.
 
 		Raises
 		------
-		KeyError : if there is no buttonset known by that label
+		KeyError
+			If there is no buttonset known by that label.
 		"""
 
 		if not title in self.buttonsets:
@@ -449,7 +451,7 @@ class OSFExplorer(QtWidgets.QWidget):
 		----------
 		attributes : dict
 			A dictionary containing the information retrieved from the OSF,
-			stored at the data/attributes path of the json response
+			stored at the data/attributes path of the json response.
 		"""
 		# Get required properties
 		attributes = data['attributes']
@@ -590,8 +592,46 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.properties["Modified"][1].setText('')
 
 	def set_config(self, config):
-		""" Function that sets the current config. Is equal to setting the config variable
-		directly by using OSFExplorer.config = <config dict>
+		""" Function that sets the current config. 
+
+		The OSF explorer can be configured to show specific button sets at the
+		bottom (e.g. show other buttons than the default download, upload, etc.)
+		and to hide items in the tree by setting a filter. To only show items with
+		a .txt extension, one can set the filter by passing the dict:
+
+		::
+
+			config = {'filter':'.txt'}
+
+		Multiple filetypes can be filtered by passing a list of extensions:
+
+		::
+
+			config = {'filter':['.txt','.py']}
+
+		To clear a previously set filter, set its value to None
+
+		::
+
+			config = {'filter': None}	
+			
+		If you have created extra button sets by using the `add_buttonset` 
+		function, you can specify which buttonset should be shown by adding a 
+		'buttonset' entry to the config dict, which contains the name of the
+		buttonset to show
+
+		::
+
+			config = {'buttonset': 'my_buttonset'}
+
+		to switch back to the default buttonset, pass 'default' as the value
+
+		::
+
+			config = {'buttonset': 'default'}
+
+		.. note	:: Calling this function is equal to setting the config variable
+					directly by using OSFExplorer.config = <config dict>
 
 		Parameters
 		----------
