@@ -31,7 +31,8 @@
 
   
     <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="index.html"/>
-        <link rel="prev" title="Installation" href="installation.html"/> 
+        <link rel="next" title="License" href="license.html"/>
+        <link rel="prev" title="Components" href="components.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -82,6 +83,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components.html">Components</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.connection">Connection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-QOpenScienceFramework.manager">ConnectionManager</a></li>
@@ -95,6 +97,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
             
@@ -1614,12 +1617,15 @@ set_buttonset(title) the buttons can be switched to this set.</p>
 </div></blockquote>
 <p><strong>buttons</strong> : list</p>
 <blockquote>
-<div><p>A list containing QWidgets.QAbstractButton objects that belong to
-this button set</p>
+<div><p>A list of objects that inherit from QWidgets.QAbstractButton and which 
+should be included in the buttonset designated by <em>title</em></p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>TypeError</strong> : if there is no buttonset known by that label or an item in          the buttons list not an instance of QAbstractButton.</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>TypeError</strong></p>
+<blockquote class="last">
+<div><p>If an item in the buttons list is not an instance of QAbstractButton.</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -1646,7 +1652,7 @@ that is shown.</p>
 <code class="descname">create_context_menu</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.create_context_menu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a context menu for the currently selected TreeWidgetItem.
 Menu contents differ depending on if the selected item is a file or a
-folder, and if the folder is the root of a repo or a subfolder thereof</p>
+folder, and if the folder is the root of a repo or a subfolder thereof.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1664,8 +1670,38 @@ folder, and if the folder is the root of a repo or a subfolder thereof</p>
 <dl class="method">
 <dt id="QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config">
 <code class="descname">set_config</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/osfexplorer.html#OSFExplorer.set_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function that sets the current config. Is equal to setting the config variable
+<dd><p>Function that sets the current config.</p>
+<p>The OSF explorer can be configured to show specific button sets at the
+bottom (e.g. show other buttons than the default download, upload, etc.)
+and to hide items in the tree by setting a filter. To only show items with
+a .txt extension, one can set the filter by passing the dict:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filter&#39;</span><span class="p">:</span><span class="s1">&#39;.txt&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Multiple filetypes can be filtered by passing a list of extensions:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filter&#39;</span><span class="p">:[</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span><span class="s1">&#39;.py&#39;</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p>To clear a previously set filter, set its value to None</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filter&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>       
+</pre></div>
+</div>
+<p>If you have created extra button sets by using the <cite>add_buttonset</cite> 
+function, you can specify which buttonset should be shown by adding a 
+&#8216;buttonset&#8217; entry to the config dict, which contains the name of the
+buttonset to show</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;buttonset&#39;</span><span class="p">:</span> <span class="s1">&#39;my_buttonset&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>to switch back to the default buttonset, pass &#8216;default&#8217; as the value</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;buttonset&#39;</span><span class="p">:</span> <span class="s1">&#39;default&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Calling this function is equal to setting the config variable
 directly by using OSFExplorer.config = &lt;config dict&gt;</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1694,7 +1730,7 @@ extra fields concerning files are shown.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>attributes</strong> : dict</p>
 <blockquote class="last">
 <div><p>A dictionary containing the information retrieved from the OSF,
-stored at the data/attributes path of the json response</p>
+stored at the data/attributes path of the json response.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -1732,11 +1768,15 @@ stored at the data/attributes path of the json response</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>title</strong> : str</p>
 <blockquote>
-<div><p>The label of the buttonset that should be shown</p>
+<div><p>The label of the buttonset that should be shown. To show the default
+buttonset, pass &#8216;default&#8217;.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>KeyError</strong> : if there is no buttonset known by that label</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>KeyError</strong></p>
+<blockquote class="last">
+<div><p>If there is no buttonset known by that label.</p>
+</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -1807,7 +1847,7 @@ in a treeview widget.</p>
 <td>Refreshes all contents in the tree.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter" title="QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter"><code class="xref py py-obj docutils literal"><span class="pre">set_filter</span></code></a>(filetypes)</td>
-<td>Sets the filter parameters.</td>
+<td>Sets an extension based filter for items in the tree.</td>
 </tr>
 </tbody>
 </table>
@@ -2045,8 +2085,25 @@ you can.</p>
 <dl class="method">
 <dt id="QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter">
 <code class="descname">set_filter</code><span class="sig-paren">(</span><em>filetypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/QOpenScienceFramework/widgets/projecttree.html#ProjectTree.set_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the filter parameters.
-Can be used instead of using project_tree.filter = &lt;value&gt; directly.</p>
+<dd><p>Sets an extension based filter for items in the tree.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Can be used instead of using ProjectTree.filter = &lt;value&gt; directly.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>filetypes</strong> : str or list</p>
+<blockquote class="last">
+<div><p>A filetype or list of filetypes that should be shown while other file
+types are hidden. For example, passing &#8216;.txt&#8217; to this function will
+only show files which have the .txt extension</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -2159,8 +2216,10 @@ passed a size of 40x40 is used.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="license.html" class="btn btn-neutral float-right" title="License" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="components.html" class="btn btn-neutral" title="Components" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

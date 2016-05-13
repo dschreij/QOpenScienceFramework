@@ -82,7 +82,9 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components.html">Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
 </ul>
 
             
@@ -377,8 +379,16 @@
 	<span class="c1">### Public functions</span>
 
 <div class="viewcode-block" id="ProjectTree.set_filter"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.projecttree.ProjectTree.set_filter">[docs]</a>	<span class="k">def</span> <span class="nf">set_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filetypes</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot; Sets the filter parameters.</span>
-<span class="sd">		Can be used instead of using project_tree.filter = &lt;value&gt; directly.</span>
+		<span class="sd">&quot;&quot;&quot; Sets an extension based filter for items in the tree.</span>
+
+<span class="sd">		.. note :: Can be used instead of using ProjectTree.filter = &lt;value&gt; directly.</span>
+<span class="sd">		</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		filetypes : str or list</span>
+<span class="sd">			A filetype or list of filetypes that should be shown while other file</span>
+<span class="sd">			types are hidden. For example, passing &#39;.txt&#39; to this function will</span>
+<span class="sd">			only show files which have the .txt extension</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">filetypes</span></div>
 

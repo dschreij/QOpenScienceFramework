@@ -82,7 +82,9 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../components.html">Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
 </ul>
 
             
@@ -212,7 +214,7 @@
 
 		<span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
 
-		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Project explorer&quot;</span><span class="p">))</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;OSF Explorer&quot;</span><span class="p">))</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span><span class="mi">500</span><span class="p">)</span>
 		<span class="c1"># Set Window icon</span>
 		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">osf_blacklogo_path</span><span class="p">):</span>
@@ -244,8 +246,8 @@
 		<span class="k">else</span><span class="p">:</span>
 			<span class="c1"># Check if passed reference is a ProjectTree instance</span>
 			<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tree_widget</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ProjectTree</span><span class="p">:</span>
-				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Passed tree_widget should be a &#39;ProjectTree&#39;</span><span class="se">\</span>
-<span class="s2">					instance.&quot;</span><span class="p">)</span>
+				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Passed tree_widget should be a &#39;ProjectTree&#39; &quot;</span>
+					<span class="s2">&quot;instance.&quot;</span><span class="p">)</span>
 			<span class="k">else</span><span class="p">:</span>
 				<span class="c1"># assign passed reference of ProjectTree to this instance</span>
 				<span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">tree_widget</span>
@@ -440,7 +442,7 @@
 		<span class="k">return</span> <span class="n">buttonbar</span>
 
 	<span class="k">def</span> <span class="nf">__create_properties_pane</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot; Creates the panel showing the selected item&#39;s properties on the right &quot;&quot;&quot;</span>
+		<span class="sd">&quot;&quot;&quot; Creates the panel showing the selected item&#39;s properties on the right. &quot;&quot;&quot;</span>
 		<span class="c1"># Box to show the properties of the selected item</span>
 		<span class="n">properties_pane</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFormLayout</span><span class="p">()</span>
 		<span class="n">properties_pane</span><span class="o">.</span><span class="n">setFormAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignLeft</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignLeft</span><span class="p">)</span>
@@ -476,7 +478,7 @@
 <div class="viewcode-block" id="OSFExplorer.create_context_menu"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.create_context_menu">[docs]</a>	<span class="k">def</span> <span class="nf">create_context_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot; Creates a context menu for the currently selected TreeWidgetItem.</span>
 <span class="sd">		Menu contents differ depending on if the selected item is a file or a</span>
-<span class="sd">		folder, and if the folder is the root of a repo or a subfolder thereof&quot;&quot;&quot;</span>
+<span class="sd">		folder, and if the folder is the root of a repo or a subfolder thereof. &quot;&quot;&quot;</span>
 
 		<span class="n">data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">UserRole</span><span class="p">)</span>
 		<span class="c1"># Don&#39;t make context menu for a project</span>
@@ -525,13 +527,13 @@
 <span class="sd">		title : str</span>
 <span class="sd">			The label of the buttonset</span>
 <span class="sd">		buttons : list</span>
-<span class="sd">			A list containing QWidgets.QAbstractButton objects that belong to</span>
-<span class="sd">			this button set</span>
+<span class="sd">			A list of objects that inherit from QWidgets.QAbstractButton and which </span>
+<span class="sd">			should be included in the buttonset designated by *title*</span>
 
 <span class="sd">		Raises</span>
 <span class="sd">		------</span>
-<span class="sd">		TypeError : if there is no buttonset known by that label or an item in \</span>
-<span class="sd">		the buttons list not an instance of QAbstractButton.</span>
+<span class="sd">		TypeError</span>
+<span class="sd">			If an item in the buttons list is not an instance of QAbstractButton.</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 
 		<span class="c1"># Check if the passed parameters are valid. This function only takes a list</span>
@@ -542,8 +544,8 @@
 		<span class="c1"># Check if all items in the list are a QtWidgets.QPushButton</span>
 		<span class="k">for</span> <span class="n">bttn</span> <span class="ow">in</span> <span class="n">buttons</span><span class="p">:</span>
 			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bttn</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAbstractButton</span><span class="p">):</span>
-				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;All items in the buttons list should be of type&#39;</span>
-					<span class="s1">&#39; or inherit from QtWidgets.QAbstractButton&#39;</span><span class="p">)</span>
+				<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;All items in the buttons list should &#39;</span>
+					<span class="s1">&#39; inherit from QtWidgets.QAbstractButton&#39;</span><span class="p">)</span>
 			<span class="n">bttn</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
 			<span class="bp">self</span><span class="o">.</span><span class="n">buttonbar</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">bttn</span><span class="p">)</span>
 
@@ -555,11 +557,13 @@
 <span class="sd">		Parameters</span>
 <span class="sd">		----------</span>
 <span class="sd">		title : str</span>
-<span class="sd">			The label of the buttonset that should be shown</span>
+<span class="sd">			The label of the buttonset that should be shown. To show the default</span>
+<span class="sd">			buttonset, pass &#39;default&#39;.</span>
 
 <span class="sd">		Raises</span>
 <span class="sd">		------</span>
-<span class="sd">		KeyError : if there is no buttonset known by that label</span>
+<span class="sd">		KeyError</span>
+<span class="sd">			If there is no buttonset known by that label.</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 
 		<span class="k">if</span> <span class="ow">not</span> <span class="n">title</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttonsets</span><span class="p">:</span>
@@ -581,7 +585,7 @@
 <span class="sd">		----------</span>
 <span class="sd">		attributes : dict</span>
 <span class="sd">			A dictionary containing the information retrieved from the OSF,</span>
-<span class="sd">			stored at the data/attributes path of the json response</span>
+<span class="sd">			stored at the data/attributes path of the json response.</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="c1"># Get required properties</span>
 		<span class="n">attributes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]</span>
@@ -722,8 +726,46 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s2">&quot;Modified&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="OSFExplorer.set_config"><a class="viewcode-back" href="../../../api.html#QOpenScienceFramework.widgets.osfexplorer.OSFExplorer.set_config">[docs]</a>	<span class="k">def</span> <span class="nf">set_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot; Function that sets the current config. Is equal to setting the config variable</span>
-<span class="sd">		directly by using OSFExplorer.config = &lt;config dict&gt;</span>
+		<span class="sd">&quot;&quot;&quot; Function that sets the current config. </span>
+
+<span class="sd">		The OSF explorer can be configured to show specific button sets at the</span>
+<span class="sd">		bottom (e.g. show other buttons than the default download, upload, etc.)</span>
+<span class="sd">		and to hide items in the tree by setting a filter. To only show items with</span>
+<span class="sd">		a .txt extension, one can set the filter by passing the dict:</span>
+
+<span class="sd">		::</span>
+
+<span class="sd">			config = {&#39;filter&#39;:&#39;.txt&#39;}</span>
+
+<span class="sd">		Multiple filetypes can be filtered by passing a list of extensions:</span>
+
+<span class="sd">		::</span>
+
+<span class="sd">			config = {&#39;filter&#39;:[&#39;.txt&#39;,&#39;.py&#39;]}</span>
+
+<span class="sd">		To clear a previously set filter, set its value to None</span>
+
+<span class="sd">		::</span>
+
+<span class="sd">			config = {&#39;filter&#39;: None}	</span>
+<span class="sd">			</span>
+<span class="sd">		If you have created extra button sets by using the `add_buttonset` </span>
+<span class="sd">		function, you can specify which buttonset should be shown by adding a </span>
+<span class="sd">		&#39;buttonset&#39; entry to the config dict, which contains the name of the</span>
+<span class="sd">		buttonset to show</span>
+
+<span class="sd">		::</span>
+
+<span class="sd">			config = {&#39;buttonset&#39;: &#39;my_buttonset&#39;}</span>
+
+<span class="sd">		to switch back to the default buttonset, pass &#39;default&#39; as the value</span>
+
+<span class="sd">		::</span>
+
+<span class="sd">			config = {&#39;buttonset&#39;: &#39;default&#39;}</span>
+
+<span class="sd">		.. note	:: Calling this function is equal to setting the config variable</span>
+<span class="sd">					directly by using OSFExplorer.config = &lt;config dict&gt;</span>
 
 <span class="sd">		Parameters</span>
 <span class="sd">		----------</span>
