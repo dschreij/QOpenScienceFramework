@@ -529,9 +529,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				item, kind = self.add_item(parent, entry)
 			except RuntimeError as e:
 				# If a runtime error occured the tree was probably reset or 
-				# another event  deleted treeWidgetItems. Not much that can be
+				# another event deleted treeWidgetItems. Not much that can be
 				# done here, so do some cleanup and quit
-				warnings.warn(e)
+				warnings.warn(str(e))
 				self.__cleanup_reply(reply)
 				return
 
