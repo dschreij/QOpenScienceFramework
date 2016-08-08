@@ -28,7 +28,7 @@ from QOpenScienceFramework.compat import *
 # Easier function decorating
 from functools import wraps
 # PyQt modules
-from qtpy import QtCore, QtNetwork, QtWidgets
+from qtpy import QtCore, QtNetwork, QtWidgets, QtGui
 
 # Dummy function later to be replaced for translation
 _ = lambda s: s
@@ -119,6 +119,21 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		self.logged_in_user = {}
 
 		self.config_mgr = QtNetwork.QNetworkConfigurationManager(self)
+
+		# The icon to show on the progress dialog
+		self._progress_icon = None
+
+	### properties
+	@property
+	def progress_icon(self):
+		return self._progress_icon
+
+	@progress_icon.setter
+	def progress_icon(self, val):
+		""" The icon to show on the progress dialog. Should be a QIcon. """
+		if not isinstance(val, QtGui.QIcon):
+			raise TypeError('progress_icon should be a QIcon')
+		self._progress_icon = val
 
 	### Private functions
 	
@@ -850,6 +865,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			The label to display on the dialog
 		filesize : int
 			The size of the file being transfered in bytes
+		windowIcon : QIcon
+			The icon which the progress dialog should show
+		windowTitle : str
+			The text next to the icon (relevant for Windows only)
 
 		Returns
 		-------
@@ -860,6 +879,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		progress_dialog.setLabelText(text)
 		progress_dialog.setMinimum(0)
 		progress_dialog.setMaximum(filesize)
+		if self._progress_icon:
+			progress_dialog.setWindowIcon(windowIcon)
+			progress_dialog.setWindowIconText(u"OSF: " + _(u"Transfer in progress"))
 		return progress_dialog
 
 	def __transfer_progress(self, transfered, total):
@@ -881,7 +903,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				size = progressDialog['filesize']
 			except KeyError as e:
 				raise KeyError("progressDialog missing field {}".format(e))
-			progress_indicator = self.__create_progress_dialog(text, size)
+			icon = QtGui.QIcon()
+			title = _("Transfer in progress")
+			progress_indicator = self.__create_progress_dialog(text, size, icon, 
+				title)
 			kwargs['progressDialog'] = progress_indicator
 			kwargs['downloadProgress'] = self.__transfer_progress
 
