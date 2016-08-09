@@ -130,9 +130,9 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	@progress_icon.setter
 	def progress_icon(self, val):
-		""" The icon to show on the progress dialog. Should be a QIcon. """
-		if not isinstance(val, QtGui.QIcon):
-			raise TypeError('progress_icon should be a QIcon')
+		""" The icon to show on the progress dialog."""
+		if not isinstance(val, QtGui.QIcon) and not val is None:
+			raise TypeError('progress_icon should be a QtGui.QIcon or None')
 		self._progress_icon = val
 
 	### Private functions
@@ -857,7 +857,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		reply.deleteLater()
 
 	def __create_progress_dialog(self, text, filesize):
-		""" Creates a progress dialog.
+		""" Creates a progress dialog. Uses manager.progress_icon (if set) to 
+		determine which icon to display on the dialog.
 
 		Parameters
 		----------
@@ -865,10 +866,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			The label to display on the dialog
 		filesize : int
 			The size of the file being transfered in bytes
-		windowIcon : QIcon
-			The icon which the progress dialog should show
-		windowTitle : str
-			The text next to the icon (relevant for Windows only)
 
 		Returns
 		-------
