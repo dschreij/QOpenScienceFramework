@@ -881,7 +881,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		progress_dialog.setMaximum(filesize)
 		if self._progress_icon:
 			progress_dialog.setWindowIcon(self._progress_icon)
-			progress_dialog.setWindowIconText(u"OSF: " + _(u"Transfer in progress"))
+			progress_dialog.setWindowTitle(_(u"Transferring"))
 		return progress_dialog
 
 	def __transfer_progress(self, transfered, total):
