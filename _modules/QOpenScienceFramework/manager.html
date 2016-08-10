@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>QOpenScienceFramework.manager &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  <title>QOpenScienceFramework.manager &mdash; QOpenScienceFramework 1.1.7 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../index.html"/>
+    <link rel="top" title="QOpenScienceFramework 1.1.7 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                1.1.1
+                1.1.7
               </div>
             
           
@@ -160,7 +160,7 @@
 <span class="c1"># Easier function decorating</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
 <span class="c1"># PyQt modules</span>
-<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtNetwork</span><span class="p">,</span> <span class="n">QtWidgets</span>
+<span class="kn">from</span> <span class="nn">qtpy</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtNetwork</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="p">,</span> <span class="n">QtGui</span>
 
 <span class="c1"># Dummy function later to be replaced for translation</span>
 <span class="n">_</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span>
@@ -250,7 +250,22 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">logged_in</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch_login</span><span class="p">)</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">logged_in_user</span> <span class="o">=</span> <span class="p">{}</span>
 
-		<span class="bp">self</span><span class="o">.</span><span class="n">config_mgr</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkConfigurationManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+		<span class="bp">self</span><span class="o">.</span><span class="n">config_mgr</span> <span class="o">=</span> <span class="n">QtNetwork</span><span class="o">.</span><span class="n">QNetworkConfigurationManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+		<span class="c1"># The icon to show on the progress dialog</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_progress_icon</span> <span class="o">=</span> <span class="bp">None</span></div>
+
+	<span class="c1">### properties</span>
+	<span class="nd">@property</span>
+	<span class="k">def</span> <span class="nf">progress_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_progress_icon</span>
+
+	<span class="nd">@progress_icon.setter</span>
+	<span class="k">def</span> <span class="nf">progress_icon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot; The icon to show on the progress dialog.&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;progress_icon should be a QtGui.QIcon or None&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_progress_icon</span> <span class="o">=</span> <span class="n">val</span>
 
 	<span class="c1">### Private functions</span>
 	
@@ -974,7 +989,8 @@
 		<span class="n">reply</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
 
 	<span class="k">def</span> <span class="nf">__create_progress_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">filesize</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot; Creates a progress dialog.</span>
+		<span class="sd">&quot;&quot;&quot; Creates a progress dialog. Uses manager.progress_icon (if set) to </span>
+<span class="sd">		determine which icon to display on the dialog.</span>
 
 <span class="sd">		Parameters</span>
 <span class="sd">		----------</span>
@@ -992,6 +1008,9 @@
 		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setLabelText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
 		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 		<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="n">filesize</span><span class="p">)</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_progress_icon</span><span class="p">:</span>
+			<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_progress_icon</span><span class="p">)</span>
+			<span class="n">progress_dialog</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">u&quot;Transferring&quot;</span><span class="p">))</span>
 		<span class="k">return</span> <span class="n">progress_dialog</span>
 
 	<span class="k">def</span> <span class="nf">__transfer_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transfered</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
@@ -1013,6 +1032,8 @@
 				<span class="n">size</span> <span class="o">=</span> <span class="n">progressDialog</span><span class="p">[</span><span class="s1">&#39;filesize&#39;</span><span class="p">]</span>
 			<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
 				<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;progressDialog missing field {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+			<span class="n">icon</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QIcon</span><span class="p">()</span>
+			<span class="n">title</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Transfer in progress&quot;</span><span class="p">)</span>
 			<span class="n">progress_indicator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__create_progress_dialog</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;progressDialog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">progress_indicator</span>
 			<span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;downloadProgress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transfer_progress</span>
@@ -1188,7 +1209,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'1.1.1',
+            VERSION:'1.1.7',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>QOpenScienceFramework.widgets.projecttree &mdash; QOpenScienceFramework 1.1.1 documentation</title>
+  <title>QOpenScienceFramework.widgets.projecttree &mdash; QOpenScienceFramework 1.1.7 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="QOpenScienceFramework 1.1.1 documentation" href="../../../index.html"/>
+    <link rel="top" title="QOpenScienceFramework 1.1.7 documentation" href="../../../index.html"/>
         <link rel="up" title="QOpenScienceFramework.widgets" href="../widgets.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                1.1.1
+                1.1.7
               </div>
             
           
@@ -663,9 +663,9 @@
 				<span class="n">item</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_item</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
 			<span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
 				<span class="c1"># If a runtime error occured the tree was probably reset or </span>
-				<span class="c1"># another event  deleted treeWidgetItems. Not much that can be</span>
+				<span class="c1"># another event deleted treeWidgetItems. Not much that can be</span>
 				<span class="c1"># done here, so do some cleanup and quit</span>
-				<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+				<span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 				<span class="bp">self</span><span class="o">.</span><span class="n">__cleanup_reply</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
 				<span class="k">return</span>
 
@@ -787,7 +787,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'1.1.1',
+            VERSION:'1.1.7',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
