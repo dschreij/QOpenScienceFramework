@@ -902,8 +902,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				raise KeyError("progressDialog missing field {}".format(e))
 			icon = QtGui.QIcon()
 			title = _("Transfer in progress")
-			progress_indicator = self.__create_progress_dialog(text, size, icon, 
-				title)
+			progress_indicator = self.__create_progress_dialog(text, size)
 			kwargs['progressDialog'] = progress_indicator
 			kwargs['downloadProgress'] = self.__transfer_progress
 
