@@ -126,11 +126,11 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	### properties
 	@property
 	def progress_icon(self):
+		""" The icon to show on the progress dialog."""
 		return self._progress_icon
 
 	@progress_icon.setter
 	def progress_icon(self, val):
-		""" The icon to show on the progress dialog."""
 		if not isinstance(val, QtGui.QIcon) and not val is None:
 			raise TypeError('progress_icon should be a QtGui.QIcon or None')
 		self._progress_icon = val
