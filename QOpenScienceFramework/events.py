@@ -30,9 +30,9 @@ class EventDispatcher(QtCore.QObject):
 	a login event, a listener should have the function handle_login."""
 
 	# List of possible events this dispatcher can emit
-	logged_in = QtCore.pyqtSignal()
+	logged_in = QtCore.Signal()
 	""" PyQt Signal emitted when a user just logged in. """
-	logged_out = QtCore.pyqtSignal()
+	logged_out = QtCore.Signal()
 	""" PyQt Signal emitted when a user just logged out. """
 
 	def __init__(self, *args, **kwargs):
@@ -141,7 +141,7 @@ class Notifier(QtCore.QObject):
 		""" Constructor """
 		super(Notifier,self).__init__()
 
-	@QtCore.pyqtSlot('QString', 'QString')
+	@QtCore.Slot('QString', 'QString')
 	def error(self, title, message):
 		""" Show an error message in a 'critical' QMessageBox.
 
@@ -157,7 +157,7 @@ class Notifier(QtCore.QObject):
 			message
 		)
 
-	@QtCore.pyqtSlot('QString', 'QString')
+	@QtCore.Slot('QString', 'QString')
 	def warning(self, title, message):
 		""" Show a warning message in a 'warning' QMessageBox.
 
@@ -173,7 +173,7 @@ class Notifier(QtCore.QObject):
 			message
 		)
 
-	@QtCore.pyqtSlot('QString', 'QString')
+	@QtCore.Slot('QString', 'QString')
 	def info(self, title, message):
 		""" Show an info message in an 'information' QMessageBox.
 
@@ -189,7 +189,7 @@ class Notifier(QtCore.QObject):
 			message
 		)
 
-	@QtCore.pyqtSlot('QString', 'QString')
+	@QtCore.Slot('QString', 'QString')
 	def success(self, title, message):
 		""" Show a success message in a 'success' QMessageBox.
 

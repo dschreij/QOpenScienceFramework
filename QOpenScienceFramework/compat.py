@@ -43,7 +43,7 @@ def safe_encode(s, enc='utf-8', errors='strict'):
 def get_QUrl(url):
 	""" Qt4 doesn url handling a bit different than Qt5, so check for that
 	here."""
-	if QtCore.QT_VERSION_STR < '5':
+	if QtCore.PYQT_VERSION_STR < '5':
 		return QtCore.QUrl.fromEncoded(url)
 	else:
 		return QtCore.QUrl(url)
