@@ -35,7 +35,7 @@ class LoginWindow(WebView):
 	""" A Login window for the OSF """
 	
 	# Login event is emitted after successfull login
-	logged_in = QtCore.pyqtSignal()
+	logged_in = QtCore.Signal()
 	""" Event fired when user successfully logged in. """
 
 	def __init__(self, *args, **kwargs):

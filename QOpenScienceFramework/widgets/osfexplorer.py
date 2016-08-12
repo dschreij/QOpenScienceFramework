@@ -56,7 +56,7 @@ class OSFExplorer(QtWidgets.QWidget):
 	# The maximum size an image may have to be downloaded for preview
 	preview_size_limit = 1024**2/2.0
 	# Signal that is sent if image preview should be aborted
-	abort_preview = QtCore.pyqtSignal()
+	abort_preview = QtCore.Signal()
 	""" PyQt signal emitted when an image preview is to be aborted. """
 
 	def __init__(self, manager, tree_widget=None, locale='en_us'):
