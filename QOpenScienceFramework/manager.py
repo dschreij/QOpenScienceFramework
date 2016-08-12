@@ -41,13 +41,13 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 	# The maximum number of allowed redirects
 	MAX_REDIRECTS = 5
-	error_message = QtCore.pyqtSignal('QString','QString')
+	error_message = QtCore.Signal('QString','QString')
 	"""PyQt signal to send an error message."""
-	warning_message = QtCore.pyqtSignal('QString','QString')
+	warning_message = QtCore.Signal('QString','QString')
 	"""PyQt signal to send a warning message."""
-	info_message = QtCore.pyqtSignal('QString','QString')
+	info_message = QtCore.Signal('QString','QString')
 	"""PyQt signal to send an info message."""
-	success_message = QtCore.pyqtSignal('QString','QString')
+	success_message = QtCore.Signal('QString','QString')
 	"""PyQt signal to send a success message."""
 
 	# Dictionary holding requests in progress, so that they can be repeated if
@@ -330,7 +330,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			The dialog to send the progress indication to. Will be included in the
 			reply object so that it is accessible in the downloadProgress slot, by
 			calling self.sender().property('progressDialog')
-		abortSignal : QtCore.pyqtSignal
+		abortSignal : QtCore.Signal
 			This signal will be attached to the reply objects abort() slot, so that
 			the operation can be aborted from outside if necessary.
 		*args (optional)
@@ -435,7 +435,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# Sadly, Qt4 and Qt5 show some incompatibility in that QUrl no longer has the
 		# addQueryItem function in Qt5. This has moved to a differen QUrlQuery object
-		if QtCore.QT_VERSION_STR < '5':
+		if QtCore.PYQT_VERSION_STR < '5':
 			postdata = QtCore.QUrl()
 		else:
 			postdata = QtCore.QUrlQuery()
@@ -443,7 +443,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		for varname in data_to_send:
 			postdata.addQueryItem(varname, data_to_send.get(varname))
 		# Convert to QByteArray for transport
-		if QtCore.QT_VERSION_STR < '5':
+		if QtCore.PYQT_VERSION_STR < '5':
 			final_postdata = postdata.encodedQuery()
 		else:
 			final_postdata = safe_encode(postdata.toString(QtCore.QUrl.FullyEncoded))
@@ -481,7 +481,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			The dialog to send the progress indication to. Will be included in the
 			reply object so that it is accessible in the downloadProgress slot, by
 			calling self.sender().property('progressDialog')
-		abortSignal : QtCore.pyqtSignal
+		abortSignal : QtCore.Signal
 			This signal will be attached to the reply objects abort() slot, so that
 			the operation can be aborted from outside if necessary.
 		*args (optional)
@@ -544,7 +544,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 			function to call whenever an error occurs. Should be able to accept
 			the reply object as an argument. This function is also called if the
 			operation is aborted by the user him/herself.
-		abortSignal : QtCore.pyqtSignal
+		abortSignal : QtCore.Signal
 			This signal will be attached to the reply objects abort() slot, so that
 			the operation can be aborted from outside if necessary.
 		*args (optional)

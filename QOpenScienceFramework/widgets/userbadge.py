@@ -35,9 +35,9 @@ class UserBadge(QtWidgets.QWidget):
 
 	# Class variables
 	# Login and logout events
-	logout_request = QtCore.pyqtSignal()
+	logout_request = QtCore.Signal()
 	""" PyQt signal to send a logout request. """
-	login_request = QtCore.pyqtSignal()
+	login_request = QtCore.Signal()
 	""" PyQt signal to send a login request. """
 
 	def __init__(self, manager, icon_size=None):

@@ -118,7 +118,7 @@ class StandAlone(object):
 if __name__ == "__main__":
 	app = QtWidgets.QApplication(sys.argv)
 
-	print("Using Qt {}".format(QtCore.QT_VERSION_STR))
+	print("Using Qt {}".format(QtCore.PYQT_VERSION_STR))
 
 	# Enable High DPI display with PyQt5
 	if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):

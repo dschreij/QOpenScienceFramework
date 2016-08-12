@@ -47,7 +47,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	in a treeview widget."""
 
 	# Event fired when refresh of tree is finished
-	refreshFinished = QtCore.pyqtSignal()
+	refreshFinished = QtCore.Signal()
 	""" PyQt signal that emits when the tree is completely refreshed. """
 	# Maximum of items to return per request (e.g. files in a folder). OSF 
 	# automatically paginates its results
