@@ -27,7 +27,7 @@ setup(
 		'arrow',
 		'humanize',
 		'python-fileinspector',
-		'requests-oauthlib',
+		'requests-oauthlib>=0.6',
 		'qtawesome',
 	],
 	include_package_data=True,
