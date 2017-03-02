@@ -1,4 +1,4 @@
-__version__ = "1.1.8"
+__version__ = "1.2.0"
 __author__ = "Daniel Schreij"
 
 import os

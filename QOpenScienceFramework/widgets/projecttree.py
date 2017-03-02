@@ -323,11 +323,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 			's3'           : 'web-microsoft-onedrive',
 		}
 
-		if datatype.lower() in ['public project','private project']:
-			# return QtGui.QIcon.fromTheme(
-			# 	'gbrainy',
-			# 	QtGui.QIcon(osf_logo_path)
-			# )
+		if datatype.lower() in ['public project','private project', \
+			'readonly project']:
 			if datatype.lower() == 'public project':
 				return qta.icon('fa.cube', 'fa.globe',
 					options=[
@@ -335,6 +332,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
 						{'scale_factor': 0.75,
 						'offset': (0.2, 0.20),
 						'color': 'green'}])
+			elif datatype.lower() == "readonly project":
+				return qta.icon('fa.cube', 'fa.lock',
+					options=[
+						{},
+						{'scale_factor': 0.75,
+						'offset': (0.2, 0.20),
+						'color': 'red'}])
 			else:
 				return qta.icon('fa.cube')
 
@@ -485,12 +489,26 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		# Create item
 		item = QtWidgets.QTreeWidgetItem(parent, values)
 
-		# Set icon
-		icon = self.get_icon(icon_type, name)
-		item.setIcon(0, icon)
+		# Copy permission data of project to child elements
+		if kind != "project" and parent:
+			try:
+				parent_data = parent.data(0, QtCore.Qt.UserRole)
+				if parent_data and "current_user_permissions" in parent_data["attributes"]:
+					data["attributes"]["current_user_permissions"] = \
+						parent_data["attributes"]["current_user_permissions"]
+			except AttributeError as e:
+				raise osf.OSFInvalidResponse("Could not obtain permission data: {}".format(e))
+		elif kind == "project":
+			# Show a lock icon if project has read-only permissions
+			if not "write" in data["attributes"]["current_user_permissions"]:
+				icon_type = "readonly project"
 
 		# Add data
 		item.setData(0, QtCore.Qt.UserRole, data)
+
+		# Set icon
+		icon = self.get_icon(icon_type, name)
+		item.setIcon(0, icon)
 
 		return item, kind
 
@@ -547,6 +565,26 @@ class ProjectTree(QtWidgets.QTreeWidget):
 				next_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
 				req = self.manager.get(
 					next_entrypoint,
+					self.populate_tree,
+					item,
+					errorCallback=self.__cleanup_reply
+				)
+				# If something went wrong, req should be None
+				if req:
+					self.active_requests.append(req)
+
+			# Check if there are linked projects.
+			if kind == "project":
+				try:
+					linked_projects_entrypoint = entry['relationships']['linked_nodes']\
+						['links']['related']['href']
+				except AttributeError as e:
+					raise osf.OSFInvalidResponse("Invalid api call for getting "
+						"linked projects: {}".format(e))
+
+				linked_projects_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
+				req = self.manager.get(
+					linked_projects_entrypoint,
 					self.populate_tree,
 					item,
 					errorCallback=self.__cleanup_reply

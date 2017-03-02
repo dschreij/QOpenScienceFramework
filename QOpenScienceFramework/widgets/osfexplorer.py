@@ -351,6 +351,14 @@ class OSFExplorer(QtWidgets.QWidget):
 		if data['type'] == 'nodes':
 			return None
 
+		user_has_write_permissions = False
+		try:
+			user_has_write_permissions = "write" in \
+				data["attributes"]["current_user_permissions"]
+		except AttributeError as e:
+			raise osf.OSFInvalidResponse('Could not retrieve permission info: '
+				'{}'.format(e))
+
 		if data['type'] == 'files':
 			kind = data["attributes"]["kind"]
 
@@ -364,23 +372,31 @@ class OSFExplorer(QtWidgets.QWidget):
 
 		menu = QtWidgets.QMenu(self.tree)
 
-		# Actions only allowd on files
+		# Actions only allowed on files
 		if kind == "file":
 			menu.addAction(self.download_icon, _(u"Download file"), 
 				self._clicked_download_file)
 
 		# Actions only allowed on folders
 		if kind == "folder":
-			menu.addAction(self.upload_icon, _(u"Upload file to folder"), 
+			upload_action = menu.addAction(self.upload_icon, _(u"Upload file to folder"), 
 				self.__clicked_upload_file)
-			menu.addAction(self.new_folder_icon, _(u"Create new folder"), 
+			newfolder_action = menu.addAction(self.new_folder_icon, _(u"Create new folder"), 
 				self.__clicked_new_folder)
 			menu.addAction(self.refresh_icon, _(u"Refresh contents"), 
 				self.__clicked_partial_refresh)
 
+			if not user_has_write_permissions:
+				upload_action.setDisabled(True)
+				newfolder_action.setDisabled(True)
+
 		# Only allow deletion of files and subfolders of repos
 		if kind == "file" or not item_is_repo:
-			menu.addAction(self.delete_icon, _(u"Delete"), self.__clicked_delete)
+			delete_action = menu.addAction(self.delete_icon, _(u"Delete"), 
+				self.__clicked_delete)
+
+			if not user_has_write_permissions:
+				delete_action.setDisabled(True)
 
 		return menu
 
@@ -572,7 +588,11 @@ class OSFExplorer(QtWidgets.QWidget):
 				level = "Public"
 			else:
 				level = "Private"
-			self.properties["Type"][1].setText(level + " " + attributes["category"])
+			access_level = ""
+			if not "write" in attributes["current_user_permissions"]:
+				access_level = " (read only)"
+			self.properties["Type"][1].setText(level + " " + \
+				attributes["category"] + access_level)
 		elif "name" in attributes and "kind" in attributes:
 			self.properties["Name"][1].setText(attributes["name"])
 			self.properties["Type"][1].setText(attributes["kind"])
@@ -700,13 +720,20 @@ class OSFExplorer(QtWidgets.QWidget):
 		self.abort_preview.emit()
 
 		data = item.data(0, QtCore.Qt.UserRole)
+
+		user_has_write_permissions = "write" in \
+			data["attributes"]["current_user_permissions"]
+
 		if data['type'] == 'nodes':
 			name = data["attributes"]["title"]
-			if data["attributes"]["public"]:
-				access = "public "
+			if not user_has_write_permissions:
+				kind = "readonly " + data["attributes"]["category"]
 			else:
-				access = "private "
-			kind = access + data["attributes"]["category"]
+				if data["attributes"]["public"]:
+					access = "public "
+				else:
+					access = "private "
+				kind = access + data["attributes"]["category"]
 		if data['type'] == 'files':
 			name = data["attributes"]["name"]
 			kind = data["attributes"]["kind"]
@@ -714,22 +741,31 @@ class OSFExplorer(QtWidgets.QWidget):
 		pm = self.tree.get_icon(kind, name).pixmap(self.preview_size)
 		self.image_space.setPixmap(pm)
 
-		if kind  == "file":
+		if kind == "file":
 			self.set_file_properties(data)
 			self.download_button.setDisabled(False)
 			self.upload_button.setDisabled(True)
-			self.delete_button.setDisabled(False)
 			self.new_folder_button.setDisabled(True)
+			if user_has_write_permissions: 
+				self.delete_button.setDisabled(False)
+			else:
+				self.delete_button.setDisabled(True)
+
 		elif kind == "folder":
 			self.set_folder_properties(data)
-			self.new_folder_button.setDisabled(False)
+			if user_has_write_permissions: 
+				self.new_folder_button.setDisabled(False)
+				self.upload_button.setDisabled(False)
+			else:
+				self.new_folder_button.setDisabled(True)
+				self.upload_button.setDisabled(True)
+			
 			self.download_button.setDisabled(True)
-			self.upload_button.setDisabled(False)
 			# Check if the parent node is a project
 			# If so the current 'folder' must be a storage provider (e.g. dropbox)
 			# which should not be allowed to be deleted.
 			parent_data = item.parent().data(0, QtCore.Qt.UserRole)
-			if parent_data['type'] == 'nodes':
+			if parent_data['type'] == 'nodes' or not user_has_write_permissions:
 				self.delete_button.setDisabled(True)
 			else:
 				self.delete_button.setDisabled(False)
