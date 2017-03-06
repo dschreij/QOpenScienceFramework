@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import glob
 import QOpenScienceFramework
 from setuptools import setup
 
@@ -32,4 +30,4 @@ setup(
 	],
 	include_package_data=True,
 	packages = ['QOpenScienceFramework'],
-	)
+)

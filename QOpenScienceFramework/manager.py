@@ -50,10 +50,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 	success_message = QtCore.Signal('QString','QString')
 	"""PyQt signal to send a success message."""
 
-	# Dictionary holding requests in progress, so that they can be repeated if
-	# mid-request it is discovered that the OAuth2 token is no longer valid.
-	pending_requests = {}
-
 	def __init__(self, *args, **kwargs):
 		""" Constructor
 
@@ -122,6 +118,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
 		# The icon to show on the progress dialog
 		self._progress_icon = None
+
+		# Dictionary holding requests in progress, so that they can be repeated if
+		# mid-request it is discovered that the OAuth2 token is no longer valid.
+		self.pending_requests = {}
 
 	### properties
 	@property
@@ -247,6 +247,12 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				kwargs['_request_id'] = request_id
 			return func(inst, *args, **kwargs)
 		return func_wrapper
+
+	def clear_pending_requests(self):
+		""" Resets the pending network requests that still need to be executed. 
+		Network requests
+		"""
+		self.pending_requests = {}
 
 	def add_token(self, request):
 		"""Adds the OAuth2 token to a HTTP request.
@@ -1043,4 +1049,5 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		for (user_id, request) in self.pending_requests.values():
 			if user_id == self.logged_in_user['data']['id']:
 				request()
-		self.pending_requests = {}
+		# Clear the pending actions queue, just to be sure.
+		self.clear_pending_requests()

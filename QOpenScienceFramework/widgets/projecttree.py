@@ -427,12 +427,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		time depending on the number of projects that the user has, so it is 
 		recommended to use a partial refresh (refresh_children_of_node), wherever
 		you can. """
+		
 		# If tree is already refreshing, don't start again, as this will result
 		# in a crash
-		if self.isRefreshing == True:
+		if self.isRefreshing:
 			return
 		# Set flag that tree is currently refreshing
 		self.isRefreshing = True
+		
 		# Save current item selection to restore it after refresh
 		current_item = self.currentItem()
 		if current_item:
@@ -651,7 +653,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 	def handle_login(self):
 		""" Callback function for EventDispatcher when a login event is detected. """
 		self.active_requests = []
-		self.refresh_contents()
+		if not self.isRefreshing:
+			self.refresh_contents()
 
 	def handle_logout(self):
 		""" Callback function for EventDispatcher when a logout event is detected. """

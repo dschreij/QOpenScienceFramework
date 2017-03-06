@@ -318,13 +318,13 @@ class OSFExplorer(QtWidgets.QWidget):
 		labelStyle = 'font-weight: bold'
 
 		self.common_fields = ['Name','Type']
-		self.file_fields = ['Size','Created','Modified','Link']
+		self.file_fields = ['Size','Created','Modified','Online']
 
 		self.properties = {}
 		for field in self.common_fields + self.file_fields:
 			label = QtWidgets.QLabel(_(field))
 			label.setStyleSheet(labelStyle)
-			if field == "Link":
+			if field == "Online":
 				# Initialize label with some HTML to trigger the rich text mode
 				value = QtWidgets.QLabel('<a></a>')
 				value.setOpenExternalLinks(True)
@@ -538,36 +538,22 @@ class OSFExplorer(QtWidgets.QWidget):
 			for field in self.properties[row]:
 				field.show()
 
-		# Get the link to the file on the website of OSF. This is not readily
-		# available from the returned API data, but can be parsed from the
-		# comments URL, of which it is the [target] filter parameter
+		# Get the link to the file on the website of OSF.
 		# Sadly, this is URL is not always available for all files, so hide the
-		# row if parsing fails.
-		try:
-			comments_url = data["relationships"]["comments"]["links"]["related"]\
-				["href"]
-		except KeyError as e:
-			warnings.warn('Could not retrieve comments url, because of missing field {}'.format(e))
-			self.properties["Link"][0].hide()
-			self.properties["Link"][1].hide()
+		# row if the GUID is not provided.
+
+		guid = data["attributes"]["guid"]
+		if guid is None:
+			self.properties["Online"][0].hide()
+			self.properties["Online"][1].hide()
 		else:
-			# Use regular expression to search for the relevant part of the url
-			try:
-				target = re.search('filter\[target\]\=\w+', comments_url).group(0)
-			except AttributeError:
-				# If this didn't work, hide the row altogether
-				self.properties["Link"][0].hide()
-				self.properties["Link"][1].hide()
-			else:
-				# Get the ID part of the filter parameter and generate the url
-				web_id = target.split("=")[1]
-				web_url = u"{}/{}".format(osf.settings['website_url'], web_id)
-				a = u"<a href=\"{0}\">{0}</a>".format(web_url)
-				# Set the URL in the field
-				self.properties["Link"][1].setText(a)
-				# Show the row
-				self.properties["Link"][0].show()
-				self.properties["Link"][1].show()
+			web_url = u"{}/{}".format(osf.settings['website_url'], guid)
+			a = u"<a href=\"{0}\">{0}</a>".format(web_url)
+			# Set the URL in the field
+			self.properties["Online"][1].setText(a)
+			# Show the row
+			self.properties["Online"][0].show()
+			self.properties["Online"][1].show()			
 
 	def set_folder_properties(self, data):
 		"""
