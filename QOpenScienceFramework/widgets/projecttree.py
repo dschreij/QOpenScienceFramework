@@ -18,6 +18,8 @@ import qtawesome as qta
 import QOpenScienceFramework.connection as osf
 # Fileinspector for determining filetypes
 import fileinspector
+# For better time functions
+import arrow
 # For presenting numbers in human readible formats
 import humanize
 # Unix style filename matching
@@ -95,7 +97,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
 		self.setWindowIcon(osf_icon)
 
 		# Set column labels
-		self.setHeaderLabels(["Name","Kind","Size"])
+		self.setHeaderLabels([_("Name"), _("Kind"), _("Size"), _("Created"), 
+			_("Modified")])
 		self.setColumnWidth(0,300)
 
 		# Event handling
@@ -486,7 +489,21 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
 		values = [name, kind]
 		if "size" in data["attributes"] and data["attributes"]["size"]:
-			values += [humanize.naturalsize(data["attributes"]["size"])]
+			values += [ humanize.naturalsize(data["attributes"]["size"]) ]
+		else:
+			values += ['']
+
+		if "date_created" in data["attributes"]:
+			cArrow = arrow.get(data["attributes"]["date_created"]).to('local')
+			values += [ cArrow.format('YYYY-MM-DD') ]
+		else:
+			values += ['']
+
+		if "date_modified" in data["attributes"]:
+			mArrow = arrow.get(data["attributes"]["date_modified"]).to('local')
+			values += [ mArrow.format('YYYY-MM-DD') ]
+		else:
+			values += ['']
 
 		# Create item
 		item = QtWidgets.QTreeWidgetItem(parent, values)
