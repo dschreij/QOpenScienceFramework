@@ -79,3 +79,5 @@ resources/iconthemes/
 
 # Universal build script
 build_all
+
+.vscode

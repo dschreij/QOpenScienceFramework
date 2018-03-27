@@ -18,6 +18,8 @@ import os
 import logging
 import tempfile
 logging.basicConfig(level=logging.INFO)
+from dotenv import load_dotenv
+load_dotenv()
 
 # Required QT classes
 from qtpy import QtWidgets, QtCore
@@ -29,8 +31,8 @@ from QOpenScienceFramework.manager import ConnectionManager
 from QOpenScienceFramework.compat import *
 
 ####### CONFIGURE THE CLIENT ID AND REDIRECT URI HERE. REGISTER AT OSF.IO ######
-client_id = "<YOUR_CLIENT_ID_HERE>"
-redirect_uri = "<YOUR_REDIRECT_URI_HERE>"
+client_id = os.getenv("CLIENT_ID", "<YOUR_CLIENT_ID_HERE>")
+redirect_uri = os.getenv("REDIRECT_URI", "<YOUR_REDIRECT_URI_HERE>")
 ################################################################################
 
 class InvalidateButton(QtWidgets.QWidget):

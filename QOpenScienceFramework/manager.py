@@ -236,7 +236,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 		def func_wrapper(inst, *args, **kwargs):
 			if inst.logged_in_user:
 				# Create an internal ID for this request
-				request_id=uuid.uuid4()
+				request_id = uuid.uuid4()
 				current_request = lambda: func(inst, *args, **kwargs)
 				# Add tuple with current user, and request to be performed
 				# to the pending request dictionary
@@ -842,10 +842,17 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				self.__close_file_handles(*args, **kwargs)
 				reply.deleteLater()
 				return
+
+			# Truncate the temp file. This will delete any contents that have been streamed 
+			# to the file during the redirect request.
+			if 'tmp_file' in kwargs and isinstance(kwargs['tmp_file'], QtCore.QTemporaryFile):
+				kwargs['tmp_file'].resize(0)
+
 			# Perform another request with the redirect_url and pass on the callback
 			redirect_url = reply.attribute(request.RedirectionTargetAttribute)
 			# For now, the redirects only work for GET operations (but to my
 			# knowledge, those are the only operations they occur for)
+
 			if reply.operation() == self.GetOperation:
 				self.get(redirect_url, callback, *args, **kwargs)
 		else:
@@ -906,8 +913,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 				size = progressDialog['filesize']
 			except KeyError as e:
 				raise KeyError("progressDialog missing field {}".format(e))
-			icon = QtGui.QIcon()
-			title = _("Transfer in progress")
 			progress_indicator = self.__create_progress_dialog(text, size)
 			kwargs['progressDialog'] = progress_indicator
 			kwargs['downloadProgress'] = self.__transfer_progress

@@ -27,6 +27,7 @@ setup(
 		'python-fileinspector',
 		'requests-oauthlib>=0.6',
 		'qtawesome',
+		'python-dotenv'
 	],
 	include_package_data=True,
 	packages = ['QOpenScienceFramework'],
