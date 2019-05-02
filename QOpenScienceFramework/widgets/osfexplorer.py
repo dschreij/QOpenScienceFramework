@@ -772,8 +772,9 @@ class OSFExplorer(QtWidgets.QWidget):
             self.upload_button.setDisabled(True)
             self.delete_button.setDisabled(True)
 
+        nodeStatus = item.data(1, QtCore.Qt.UserRole)
         if (data['type'] == 'nodes' or data['attributes']['kind'] == 'folder') \
-            and item.childCount() == 0:
+            and not nodeStatus['fetched']:
             self.tree.refresh_children_of_node(item)
 
     def __slot_itemSelectionChanged(self):

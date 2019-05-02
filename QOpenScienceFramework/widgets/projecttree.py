@@ -90,6 +90,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Event handling
         self.itemExpanded.connect(self.__set_expanded_icon)
+        self.itemExpanded.connect(self.__fetch_if_needed)
         self.itemCollapsed.connect(self.__set_collapsed_icon)
         self.refreshFinished.connect(self.__refresh_finished)
 
@@ -133,6 +134,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
             item.setIcon(0, self.get_icon(
                 'folder', data['attributes']['name']))
         self.expanded_items.discard(data['id'])
+
+    def __fetch_if_needed(self, item):
+        data = item.data(0, QtCore.Qt.UserRole)
+        nodeStatus = item.data(1, QtCore.Qt.UserRole)
+        if (data['type'] == 'nodes' or data['attributes']['kind'] == 'folder') \
+            and not nodeStatus['fetched']:
+            self.refresh_children_of_node(item)
 
     def __cleanup_reply(self, reply):
         """ Callback for when an error occured while populating the tree, or when
@@ -319,22 +327,21 @@ class ProjectTree(QtWidgets.QTreeWidget):
             's3': 'web-microsoft-onedrive',
         }
 
-        if datatype.lower() in ['public project', 'private project',
-                                'readonly project']:
+        if datatype.lower() in ['public project', 'private project', 'readonly project']:
             if datatype.lower() == 'public project':
-                return qta.icon('fa.cube', 'fa.globe',
-                                options=[
-                                    {},
-                                    {'scale_factor': 0.75,
-                                     'offset': (0.2, 0.20),
-                                     'color': 'green'}])
+                return qta.icon('fa.cube', 'fa.globe', options=[
+                    {},
+                    {'scale_factor': 0.75,
+                     'offset': (0.2, 0.20),
+                     'color': 'green'}
+                ])
             elif datatype.lower() == "readonly project":
-                return qta.icon('fa.cube', 'fa.lock',
-                                options=[
-                                    {},
-                                    {'scale_factor': 0.75,
-                                     'offset': (0.2, 0.20),
-                                     'color': 'red'}])
+                return qta.icon('fa.cube', 'fa.lock', options=[
+                    {},
+                    {'scale_factor': 0.75,
+                     'offset': (0.2, 0.20),
+                     'color': 'red'}
+                ])
             else:
                 return qta.icon('fa.cube')
 
@@ -381,18 +388,19 @@ class ProjectTree(QtWidgets.QTreeWidget):
         if not isinstance(node, QtWidgets.QTreeWidgetItem):
             raise TypeError('node is not a tree widget item')
 
-        # If tree currently is refreshing, do nothing
-        # if self.isRefreshing == True:
-        #     return
-        # Set flag that tree is currently refreshing
-        self.isRefreshing = True
-
         try:
+            # If tree currently is refreshing, do nothing
+            nodeStatus = node.data(1, QtCore.Qt.UserRole)
+            if nodeStatus['refreshing']:
+                return
+            # Set flag that tree is currently refreshing
+            nodeStatus['refreshing'] = True
+            node.setData(1, QtCore.Qt.UserRole, nodeStatus)
+
             node_data = node.data(0, QtCore.Qt.UserRole)
         except RuntimeError as e:
             warnings.warn('Partial refresh attempted while tree item was already'
-                          ' deleted')
-            self.isRefreshing = False
+                          ' deleted', e)
             return
 
         try:
@@ -523,6 +531,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Create item
         item = QtWidgets.QTreeWidgetItem(parent, values)
+        if kind == 'project' or kind == 'folder':
+            item.setChildIndicatorPolicy(
+                QtWidgets.QTreeWidgetItem.ShowIndicator)
 
         # Copy permission data of project to child elements
         if kind != "project" and parent:
@@ -541,6 +552,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Add data
         item.setData(0, QtCore.Qt.UserRole, data)
+        item.setData(1, QtCore.Qt.UserRole, {
+            'refreshing': False,
+            'fetched': False
+        })
 
         # Set icon
         icon = self.get_icon(icon_type, name)
@@ -578,6 +593,11 @@ class ProjectTree(QtWidgets.QTreeWidget):
         else:
             # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
             self.reset_icon(parent)
+            nodeStatus = parent.data(1, QtCore.Qt.UserRole)
+            nodeStatus['refreshing'] = False
+            nodeStatus['fetched'] = True
+            parent.setData(1, QtCore.Qt.UserRole, nodeStatus)
+            parent.setChildIndicatorPolicy(QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
@@ -611,6 +631,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 # If something went wrong, req should be None
                 if req:
                     self.active_requests.append(req)
+                    self.set_loading_icon(item)
 
             # Check if there are linked projects.
             if kind == "project" and recursive:
@@ -632,6 +653,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 # If something went wrong, req should be None
                 if req:
                     self.active_requests.append(req)
+                    self.set_loading_icon(item)
 
         # If the results are paginated, see if there is another page that needs
         # to be processed
