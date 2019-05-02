@@ -550,16 +550,16 @@ class ProjectTree(QtWidgets.QTreeWidget):
             if not "write" in data["attributes"]["current_user_permissions"]:
                 icon_type = "readonly project"
 
+        # Set icon
+        icon = self.get_icon(icon_type, name)
+        item.setIcon(0, icon)
         # Add data
         item.setData(0, QtCore.Qt.UserRole, data)
         item.setData(1, QtCore.Qt.UserRole, {
             'refreshing': False,
-            'fetched': False
+            'fetched': False,
+            'icon': icon
         })
-
-        # Set icon
-        icon = self.get_icon(icon_type, name)
-        item.setIcon(0, icon)
 
         return item, kind
 
@@ -588,7 +588,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         osf_response = json.loads(safe_decode(reply.readAll().data()))
 
-        if parent is None:
+        if parent is None or parent.data(0, QtCore.Qt.UserRole) is None:
             parent = self.invisibleRootItem()
         else:
             # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
@@ -698,12 +698,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
         if type(item) != QtWidgets.QTreeWidgetItem:
             return
         try:
-            data = item.data(0, QtCore.Qt.UserRole)
-        except RuntimeError:
+            data = item.data(1, QtCore.Qt.UserRole)
+            if data is None:
+                warnings.warn('node data was None, but it should not be')
+                return
+            item.setIcon(0, data['icon'])
+        except RuntimeError as e:
+            warnings.warn(str(e))
             return
-        name, _, icon_type = self.determine_node_type(data)
-        icon = self.get_icon(icon_type, name)
-        item.setIcon(0, icon)
 
     def process_repo_contents(self, logged_in_user):
         """ Processes contents for the logged in user. Starts by listing
