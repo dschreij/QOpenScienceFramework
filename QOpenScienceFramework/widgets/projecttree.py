@@ -115,6 +115,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
         # Flag that indicates if contents are currently refreshed
         self.isRefreshing = False
 
+        # The icon to show for refreshing items
+        self.refresh_icon = qta.icon('fa.refresh', color='green')
+
     # Private functions
 
     def __set_expanded_icon(self, item):
@@ -141,6 +144,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
         except ValueError:
             logging.info("Reply not found in active requests")
 
+        reply.deleteLater()
         if not self.active_requests:
             self.refreshFinished.emit()
 
@@ -364,7 +368,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
             )
         return QtGui.QIcon(osf_blacklogo_path)
 
-    def refresh_children_of_node(self, node, recurse=False):
+    def refresh_children_of_node(self, node, recursive=False):
         """ Refreshes the children of the specified node.
         In contrast to refresh_contents, which refreshes the whole tree from
         the root, this function only refreshes the children of the passed node.
@@ -395,7 +399,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
             content_url = node_data['relationships']['files']['links']['related']['href']
         except KeyError as e:
             self.isRefreshing = False
-            raise osf.OSFInvalidResponse('Invalid structure of tree item data: {}'.format(e))
+            raise osf.OSFInvalidResponse(
+                'Invalid structure of tree item data: {}'.format(e))
 
         # Delete the current children of the node to make place for the new ones
         node.takeChildren()
@@ -406,14 +411,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
             self.populate_tree,
             node,
             errorCallback=self.__cleanup_reply,
-            recurse=recurse
+            recursive=recursive
         )
-
-
 
         # If something went wrong, req should be None
         if req:
             self.active_requests.append(req)
+            self.set_loading_icon(node)
 
     def refresh_contents(self):
         """ Refreshes all contents in the tree. This operation might take a long
@@ -446,6 +450,37 @@ class ProjectTree(QtWidgets.QTreeWidget):
             self.manager.get_logged_in_user(
                 self.process_repo_contents, errorCallback=self.__cleanup_reply)
 
+    def determine_node_type(self, data):
+        """ Determines the type of the node given its data.
+
+        Parameters
+        ----------
+        data : dict
+                The 'data' segment from the node containing the osf data.
+
+        Returns
+        -------
+        name: str
+                The title of the node (usually the file or folder name)
+        kind : str
+                The type of the new item (folder, file, project, etc.)
+        icon_type: str
+                The filetype to use for icon determination
+        """
+        if data['type'] == 'nodes':
+            name = data["attributes"]["title"]
+            if data["attributes"]["public"]:
+                access = "public "
+            else:
+                access = "private "
+            kind = data["attributes"]["category"]
+            icon_type = access + kind
+        if data['type'] == 'files':
+            name = data["attributes"]["name"]
+            kind = data["attributes"]["kind"]
+            icon_type = kind
+        return name, kind, icon_type
+
     def add_item(self, parent, data):
         """ Adds a new item to the tree. The data that is passed should be
         the dictionary containing the information that is found under the 'data'
@@ -465,18 +500,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
         kind : str
                 The type of the new item (folder, file, project, etc.)
         """
-        if data['type'] == 'nodes':
-            name = data["attributes"]["title"]
-            if data["attributes"]["public"]:
-                access = "public "
-            else:
-                access = "private "
-            kind = data["attributes"]["category"]
-            icon_type = access + kind
-        if data['type'] == 'files':
-            name = data["attributes"]["name"]
-            kind = data["attributes"]["kind"]
-            icon_type = kind
+
+        name, kind, icon_type = self.determine_node_type(data)
 
         values = [name, kind]
         if "size" in data["attributes"] and data["attributes"]["size"]:
@@ -523,7 +548,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         return item, kind
 
-    def populate_tree(self, reply, parent=None, recurse=False):
+    def populate_tree(self, reply, parent=None, recursive=False):
         """
         Populates the tree with content. The entry point should be a project,
         repository or folder inside a repository. The JSON representation
@@ -550,6 +575,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         if parent is None:
             parent = self.invisibleRootItem()
+        else:
+            # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
+            self.reset_icon(parent)
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
@@ -564,7 +592,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 self.__cleanup_reply(reply)
                 return
 
-            if kind in ["project", "folder"] and recurse:
+            if kind in ["project", "folder"] and recursive:
                 try:
                     next_entrypoint = entry['relationships']['files']['links']['related']['href']
                 except AttributeError as e:
@@ -578,14 +606,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
                     self.populate_tree,
                     item,
                     errorCallback=self.__cleanup_reply,
-                    recurse=recurse
+                    recursive=recursive
                 )
                 # If something went wrong, req should be None
                 if req:
                     self.active_requests.append(req)
 
             # Check if there are linked projects.
-            if kind == "project" and recurse:
+            if kind == "project" and recursive:
                 try:
                     linked_projects_entrypoint = entry['relationships']['linked_nodes']['links']['related']['href']
                 except AttributeError as e:
@@ -599,7 +627,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                     self.populate_tree,
                     item,
                     errorCallback=self.__cleanup_reply,
-                    recurse=recurse
+                    recursive=recursive
                 )
                 # If something went wrong, req should be None
                 if req:
@@ -626,6 +654,34 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Remove current reply from list of active requests (assuming it finished)
         self.__cleanup_reply(reply)
+
+    def set_loading_icon(self, item):
+        if type(item) != QtWidgets.QTreeWidgetItem:
+            return
+        item.setIcon(0, self.refresh_icon)
+
+    def reset_icon(self, item):
+        """ Resets the icon of the treewidget item to its original icon.
+
+        When a treewidget item is a container (project, folder, etc.) its icon will be set to a
+        spinner or loading indicator when its contents are refreshed. This function resets the item's
+        icon to its original.
+
+        Parameters
+        ----------
+        item : QtWidgets.QTreeWidgetItem
+                The item of which to reset the icon.
+        """
+
+        if type(item) != QtWidgets.QTreeWidgetItem:
+            return
+        try:
+            data = item.data(0, QtCore.Qt.UserRole)
+        except RuntimeError:
+            return
+        name, _, icon_type = self.determine_node_type(data)
+        icon = self.get_icon(icon_type, name)
+        item.setIcon(0, icon)
 
     def process_repo_contents(self, logged_in_user):
         """ Processes contents for the logged in user. Starts by listing
