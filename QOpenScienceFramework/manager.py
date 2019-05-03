@@ -181,8 +181,6 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
                 True if a valid token was found at tokenfile's location, False otherwise
         """
 
-        logging.info("Looking for token at {}".format(tokenfile))
-
         if not os.path.isfile(tokenfile):
             return False
 
