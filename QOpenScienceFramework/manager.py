@@ -825,7 +825,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
             # Call error callback, if set
             if callable(errorCallback):
-                errorCallback(reply)
+                errorCallback(reply, *args, **kwargs)
             reply.deleteLater()
             return
 
@@ -846,7 +846,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
                     _("Too Many redirects")
                 )
                 if callable(errorCallback):
-                    errorCallback(reply)
+                    errorCallback(reply, *args, **kwargs)
                 # Close any remaining file handles that were created for upload
                 # or download
                 self.__close_file_handles(*args, **kwargs)

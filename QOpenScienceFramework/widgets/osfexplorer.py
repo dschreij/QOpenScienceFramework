@@ -1161,6 +1161,6 @@ class OSFExplorer(QtWidgets.QWidget):
         progress = 100*received/total
         self.img_preview_progress_bar.setValue(progress)
 
-    def __img_preview_error(self, reply):
+    def __img_preview_error(self, reply, *args, **kwargs):
         """ Callback for set_file_properties() """
         self.img_preview_progress_bar.hide()

@@ -142,7 +142,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
             and not nodeStatus['fetched']:
             self.refresh_children_of_node(item)
 
-    def __cleanup_reply(self, reply):
+    def __cleanup_reply(self, reply, *args, **kwargs):
         """ Callback for when an error occured while populating the tree, or when
         populate_tree finished successfully. Removes the QNetworkReply
         from the list of active HTTP operations. """
@@ -151,6 +151,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
             self.active_requests.remove(reply)
         except ValueError:
             logging.info("Reply not found in active requests")
+
+        # reset the loading icon to the item's original, if necessary
+        if len(args) and type(args[0]) == QtWidgets.QTreeWidgetItem:
+            nodeStatus = args[0].data(1, QtCore.Qt.UserRole)
+            if not nodeStatus is None:
+                args[0].setIcon(0, nodeStatus['icon'])
 
         reply.deleteLater()
         if not self.active_requests:
