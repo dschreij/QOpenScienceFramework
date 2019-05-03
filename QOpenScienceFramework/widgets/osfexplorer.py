@@ -774,7 +774,7 @@ class OSFExplorer(QtWidgets.QWidget):
 
         nodeStatus = item.data(1, QtCore.Qt.UserRole)
         if (data['type'] == 'nodes' or data['attributes']['kind'] == 'folder') \
-            and not nodeStatus['fetched']:
+                and not nodeStatus['fetched']:
             self.tree.refresh_children_of_node(item)
 
     def __slot_itemSelectionChanged(self):
@@ -964,10 +964,11 @@ class OSFExplorer(QtWidgets.QWidget):
         # Get new folder link from data
         new_folder_url = data['links']['new_folder']
 
-        new_folder_name, ok = QtWidgets.QInputDialog.getText(self,
-                                                             _(u'Create new folder'),
-                                                             _(u'Please enter the folder name:')
-                                                             )
+        new_folder_name, ok = QtWidgets.QInputDialog.getText(
+            self,
+            _(u'Create new folder'),
+            _(u'Please enter the folder name:')
+        )
         new_folder_name = safe_decode(new_folder_name)
         if not ok or not len(new_folder_name):
             return

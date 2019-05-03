@@ -509,7 +509,10 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
                 "The data_to_send should be of type QtCore.QIODevice")
 
         request = QtNetwork.QNetworkRequest(url)
-        # request.setHeader(request.ContentTypeHeader,"application/x-www-form-urlencoded");
+        request.setHeader(request.ContentTypeHeader, "application/x-www-form-urlencoded")
+
+        if data_to_send is None:
+            request.setHeader(request.ContentLengthHeader, '0')
 
         # Add OAuth2 token
         if not self.add_token(request):
