@@ -156,7 +156,7 @@ class UserBadge(QtWidgets.QWidget):
 			errorCallback=self.handle_logout
 		)
 
-	def handle_logout(self, *args):
+	def handle_logout(self, *args, **kwargs):
 		""" Callback function for EventDispatcher when a logout event is detected. """
 		self.login_button.setIcon(self.osf_icon)
 		self.login_button.setText(self.login_text)

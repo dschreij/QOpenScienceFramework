@@ -139,7 +139,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
         data = item.data(0, QtCore.Qt.UserRole)
         nodeStatus = item.data(1, QtCore.Qt.UserRole)
         if (data['type'] == 'nodes' or data['attributes']['kind'] == 'folder') \
-            and not nodeStatus['fetched']:
+                and not nodeStatus['fetched']:
             self.refresh_children_of_node(item)
 
     def __cleanup_reply(self, reply, *args, **kwargs):
@@ -603,7 +603,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
             nodeStatus['refreshing'] = False
             nodeStatus['fetched'] = True
             parent.setData(1, QtCore.Qt.UserRole, nodeStatus)
-            parent.setChildIndicatorPolicy(QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
+            parent.setChildIndicatorPolicy(
+                QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
@@ -647,8 +648,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                     raise osf.OSFInvalidResponse("Invalid api call for getting "
                                                  "linked projects: {}".format(e))
 
-                linked_projects_entrypoint += "?page[size]={}".format(
-                    self.ITEMS_PER_PAGE)
+                linked_projects_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
                 req = self.manager.get(
                     linked_projects_entrypoint,
                     self.populate_tree,

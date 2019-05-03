@@ -1,34 +1,30 @@
 # -*- coding: utf-8 -*-
 
 # Python3 compatibility
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+import json
 # Import basics
 import logging
 import os
-import json
 import time
+# UUID generation
+import uuid
+# Python warnings
+import warnings
+# Easier function decorating
+from functools import wraps
+
+from libopensesame.oslogging import oslogger
+# PyQt modules
+from qtpy import QtCore, QtGui, QtNetwork, QtWidgets
 
 # OSF modules
 import QOpenScienceFramework.connection as osf
-# Python warnings
-import warnings
-# UUID generation
-import uuid
-
 # OSF modules
 from QOpenScienceFramework import events
-from QOpenScienceFramework.widgets import LoginWindow
-# Python 2 and 3 compatiblity settings
 from QOpenScienceFramework.compat import *
-
-# Easier function decorating
-from functools import wraps
-# PyQt modules
-from qtpy import QtCore, QtNetwork, QtWidgets, QtGui
+from QOpenScienceFramework.widgets import LoginWindow
 
 # Dummy function later to be replaced for translation
 
@@ -187,7 +183,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         try:
             token = json.load(open(tokenfile))
         except IOError:
-            warnings.warn("Token file could not be opened.")
+            oslogger.warning("Token file could not be opened.")
             return False
 
         # Check if token has not yet expired
@@ -198,7 +194,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         else:
             osf.session = osf.create_session()
             os.remove(tokenfile)
-            logging.info("Token expired; need log-in")
+            oslogger.info("Token expired; need log-in")
             return False
 
     def show_login_window(self):

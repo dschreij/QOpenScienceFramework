@@ -33,7 +33,7 @@ _ = lambda s: s
 
 class LoginWindow(WebView):
 	""" A Login window for the OSF """
-	
+
 	# Login event is emitted after successfull login
 	logged_in = QtCore.Signal()
 	""" Event fired when user successfully logged in. """
@@ -60,7 +60,7 @@ class LoginWindow(WebView):
 		self.urlChanged.connect(self.check_URL)
 
 	def checkResponse(self, reply):
-		"""Callback function. Do not use directly. 
+		"""Callback function. Do not use directly.
 
 		Callback for NetworkRequestManager.finished event
 		used to check if OAuth2 is redirecting to a link containing the token
@@ -98,7 +98,7 @@ class LoginWindow(WebView):
 
 	def check_URL(self, url):
 		""" Callback function. Do not use directly.
-		
+
 		Calback for urlChanged event.
 
 		Parameters
