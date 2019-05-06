@@ -83,7 +83,6 @@ class OSFExplorer(QtWidgets.QWidget):
         super(OSFExplorer, self).__init__()
 
         self.manager = manager
-
         self.setWindowTitle(_("OSF Explorer"))
         self.resize(800, 500)
         # Set Window icon
@@ -92,6 +91,8 @@ class OSFExplorer(QtWidgets.QWidget):
                 osf_blacklogo_path))
         osf_icon = QtGui.QIcon(osf_blacklogo_path)
         self.setWindowIcon(osf_icon)
+
+        self.__config = {}
 
         # Set up the title widget (so much code for a simple header with image...)
         self.title_widget = QtWidgets.QWidget(self)
@@ -165,9 +166,26 @@ class OSFExplorer(QtWidgets.QWidget):
         self.info_frame.setLayout(info_grid)
         self.info_frame.setVisible(False)
 
+
+        filterPanel = QtWidgets.QWidget(self)
+        filterPanel.setLayout(QtWidgets.QHBoxLayout())
+        filterLabel = QtWidgets.QLabel('Filter:')
+        self.filterField = QtWidgets.QLineEdit(self)
+        self.filterField.setPlaceholderText(_('Search projects by their name'))
+        self.filterField.textChanged.connect(self.__slot_filterChanged)
+        filterPanel.layout().addWidget(filterLabel)
+        filterPanel.layout().addWidget(self.filterField)
+        filterPanel.layout().setContentsMargins(0, 0, 0, 0)
+
+        # The widget to hold the filter textfield and the tree
+        treePanel = QtWidgets.QWidget(self)
+        treePanel.setLayout(QtWidgets.QVBoxLayout())
+        treePanel.layout().addWidget(filterPanel)
+        treePanel.layout().addWidget(self.tree)
+
         # Combine tree and info frame with a splitter in the middle
         splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
-        splitter.addWidget(self.tree)
+        splitter.addWidget(treePanel)
         splitter.addWidget(self.info_frame)
 
         # Create buttons at the bottom
@@ -188,16 +206,16 @@ class OSFExplorer(QtWidgets.QWidget):
         # Content pane with tree and properties view
         # Also has overlay showing login required message when use is logged
         # out
-        content_pane = QtWidgets.QWidget(self)
+        content_panel = QtWidgets.QWidget(self)
         content_layout = QtWidgets.QGridLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_pane.setLayout(content_layout)
+        content_panel.setLayout(content_layout)
         content_layout.addWidget(splitter, 1, 1)
         content_layout.addWidget(self.login_required_overlay, 1, 1)
 
         # Add to layout
         self.main_layout.addWidget(self.title_widget)
-        self.main_layout.addWidget(content_pane)
+        self.main_layout.addWidget(content_panel)
         self.main_layout.addWidget(self.buttonbar)
         self.main_layout.setContentsMargins(12, 12, 12, 12)
         self.setLayout(self.main_layout)
@@ -664,7 +682,7 @@ class OSFExplorer(QtWidgets.QWidget):
         """ The current configuration of the project explorer. Contains information
         about the current filter that is set for the project tree and the buttonset
         that is shown. """
-        return self._config
+        return self.__config
 
     @config.setter
     def config(self, value):
@@ -678,17 +696,20 @@ class OSFExplorer(QtWidgets.QWidget):
         """
         if not isinstance(value, dict):
             raise TypeError('config should be a dict with options')
-        self._config = value
 
-        # Get filters
-        filt = value.pop('filter', None)
-        buttonset = value.pop('buttonset', 'default')
+        self.__config.update(value)
+        cfg = self.__config.copy()
+
+        # Get the current filter
+        filt = cfg.pop('filter', None)
+        # Get the current buttonset
+        buttonset = cfg.pop('buttonset', 'default')
 
         self.tree.filter = filt
         self.show_buttonset(buttonset)
 
-        if value:
-            logger.warning("Unknown options: {}".format(value.keys()))
+        if len(cfg):
+            logger.warning("Unknown options: {}".format(cfg.keys()))
 
     # PyQT slots
 
@@ -701,6 +722,9 @@ class OSFExplorer(QtWidgets.QWidget):
         context_menu = self.create_context_menu(item)
         if not context_menu is None:
             context_menu.popup(e.globalPos())
+
+    def __slot_filterChanged(self, contents):
+        self.config = {"filter": contents}
 
     def __slot_currentItemChanged(self, item, col):
         """ Handles the QTreeWidget currentItemChanged event. """

@@ -108,7 +108,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
         self.active_requests = []
 
         # Init filter variable
-        self._filter = None
+        self.__filter = None
 
         # Save the previously selected item before a refresh, so this item can
         # be set as the selected item again after the refresh
@@ -168,8 +168,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
         refresh. """
 
         # Reapply filter if set
-        if self._filter:
-            self.filter = self._filter
+        if self.__filter:
+            self.filter = self.__filter
 
         iterator = QtWidgets.QTreeWidgetItemIterator(self)
         while(iterator.value()):
@@ -189,7 +189,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
     @property
     def filter(self):
         """ The currently set filter parameters. """
-        return self._filter
+        return self.__filter
 
     @filter.setter
     def filter(self, value):
@@ -214,7 +214,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                              ' or None')
 
         # Store the filter for later reference
-        self._filter = value
+        self.__filter = value
 
         # Iterate over the items
         iterator = QtWidgets.QTreeWidgetItemIterator(self)
@@ -226,7 +226,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
             if item_type == "file":
                 # If filter is None, it means everything should be
                 # visible, so set this item to visible and continue.
-                if self._filter is None:
+                if self.__filter is None:
                     item.setHidden(False)
                     iterator += 1
                     continue
@@ -238,11 +238,11 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 # Assume no match by default
                 typematch = False
                 # If filter is a single string, just check directly
-                if isinstance(self._filter, basestring):
-                    typematch = fnmatch.fnmatch(filename, self._filter)
+                if isinstance(self.__filter, basestring):
+                    typematch = fnmatch.fnmatch(filename, self.__filter)
                 # If filter is a list, compare to each item in it
-                if isinstance(self._filter, list):
-                    for ext in self._filter:
+                if isinstance(self.__filter, list):
+                    for ext in self.__filter:
                         if fnmatch.fnmatch(filename, ext):
                             typematch = True
                             break
