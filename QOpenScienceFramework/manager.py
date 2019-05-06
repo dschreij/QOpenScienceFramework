@@ -3,6 +3,12 @@
 # Python3 compatibility
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from QOpenScienceFramework.widgets import LoginWindow
+from QOpenScienceFramework.compat import *
+from QOpenScienceFramework import events
+import QOpenScienceFramework.connection as osf
+from qtpy import QtCore, QtGui, QtNetwork, QtWidgets
+
 import json
 # Import basics
 import logging
@@ -15,21 +21,13 @@ import warnings
 # Easier function decorating
 from functools import wraps
 
-from libopensesame.oslogging import oslogger
-# PyQt modules
-from qtpy import QtCore, QtGui, QtNetwork, QtWidgets
-
-# OSF modules
-import QOpenScienceFramework.connection as osf
-# OSF modules
-from QOpenScienceFramework import events
-from QOpenScienceFramework.compat import *
-from QOpenScienceFramework.widgets import LoginWindow
-
-# Dummy function later to be replaced for translation
+import logging
+logger = logging.getLogger()
 
 
-def _(s): return s
+def _(s):
+    """ Dummy function later to be replaced for translation. """
+    return s
 
 
 class ConnectionManager(QtNetwork.QNetworkAccessManager):
@@ -183,7 +181,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         try:
             token = json.load(open(tokenfile))
         except IOError:
-            oslogger.warning("Token file could not be opened.")
+            logger.warning("Token file could not be opened.")
             return False
 
         # Check if token has not yet expired
@@ -194,7 +192,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         else:
             osf.session = osf.create_session()
             os.remove(tokenfile)
-            oslogger.info("Token expired; need log-in")
+            logger.info("Token expired; need log-in")
             return False
 
     def show_login_window(self):
@@ -505,7 +503,8 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
                 "The data_to_send should be of type QtCore.QIODevice")
 
         request = QtNetwork.QNetworkRequest(url)
-        request.setHeader(request.ContentTypeHeader, "application/x-www-form-urlencoded")
+        request.setHeader(request.ContentTypeHeader,
+                          "application/x-www-form-urlencoded")
 
         if data_to_send is None:
             request.setHeader(request.ContentLengthHeader, '0')

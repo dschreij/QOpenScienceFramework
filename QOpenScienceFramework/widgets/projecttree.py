@@ -643,14 +643,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
             # Check if there are linked projects.
             if kind == "project" and recursive:
                 try:
-                    linked_projects_entrypoint = entry['relationships']['linked_nodes']['links']['related']['href']
+                    linked_project_entrypoint = entry['relationships']['linked_nodes']['links']['related']['href']
                 except AttributeError as e:
                     raise osf.OSFInvalidResponse("Invalid api call for getting "
                                                  "linked projects: {}".format(e))
 
-                linked_projects_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
+                linked_project_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
                 req = self.manager.get(
-                    linked_projects_entrypoint,
+                    linked_project_entrypoint,
                     self.populate_tree,
                     item,
                     errorCallback=self.__cleanup_reply,
