@@ -626,16 +626,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 The list of tree items that have just been generated """
 
         osf_response = json.loads(safe_decode(reply.readAll().data()))
+        nodeStatus = None
 
         if parent is None or parent.data(0, QtCore.Qt.UserRole) is None:
             parent = self.invisibleRootItem()
         else:
-            # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
-            self.reset_icon(parent)
             nodeStatus = parent.data(1, QtCore.Qt.UserRole)
-            nodeStatus['refreshing'] = False
             nodeStatus['fetched'] = True
-            parent.setData(1, QtCore.Qt.UserRole, nodeStatus)
             parent.setChildIndicatorPolicy(
                 QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
 
@@ -693,6 +690,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
             # If something went wrong, req should be None
             if req:
                 self.active_requests.append(req)
+        else:
+            if not nodeStatus is None:
+                # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
+                self.reset_icon(parent)
+                nodeStatus['refreshing'] = False
+
+        if not nodeStatus is None:
+            parent.setData(1, QtCore.Qt.UserRole, nodeStatus)
 
         # Remove current reply from list of active requests (assuming it finished)
         self.__cleanup_reply(reply)
