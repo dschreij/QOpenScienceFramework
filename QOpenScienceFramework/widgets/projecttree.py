@@ -19,7 +19,8 @@ import os
 import json
 import logging
 import warnings
-logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger()
 pp = pprint.PrettyPrinter(indent=2)
 
 osf_logo_path = os.path.join(dirname, 'img/cos-white2.png')
@@ -79,7 +80,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Set Window icon
         if not os.path.isfile(osf_logo_path):
-            logging.error("OSF logo not found at {}".format(osf_logo_path))
+            logger.error("OSF logo not found at {}".format(osf_logo_path))
         osf_icon = QtGui.QIcon(osf_logo_path)
         self.setWindowIcon(osf_icon)
 
@@ -150,7 +151,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
         try:
             self.active_requests.remove(reply)
         except ValueError:
-            logging.info("Reply not found in active requests")
+            logger.info("Reply not found in active requests")
 
         # reset the loading icon to the item's original, if necessary
         if len(args) and type(args[0]) == QtWidgets.QTreeWidgetItem:
@@ -412,7 +413,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
         try:
             content_url = node_data['relationships']['files']['links']['related']['href']
         except KeyError as e:
-            self.isRefreshing = False
+            nodeStatus['refreshing'] = False
             raise osf.OSFInvalidResponse(
                 'Invalid structure of tree item data: {}'.format(e))
 
@@ -432,6 +433,38 @@ class ProjectTree(QtWidgets.QTreeWidget):
         if req:
             self.active_requests.append(req)
             self.set_loading_icon(node)
+
+        # If recursive retrieval is enabled, the steps below will take place in populate_tree itself
+        if not recursive:
+            self.fetch_linked_nodes(node, recursive=recursive)
+
+
+    def fetch_linked_nodes(self, node, recursive=False):
+        try:
+            node_data = node.data(0, QtCore.Qt.UserRole)
+        except RuntimeError as e:
+            warnings.warn('Partial refresh attempted while tree item was already'
+                          ' deleted', e)
+            return
+
+        if node_data['type'] != 'nodes' or node_data["attributes"]["category"] != 'project':
+            return
+        try:
+            related_url = node_data['relationships']['linked_nodes']['links']['related']['href']
+            # Retrieve the new listing of children from the OSF
+            related_url += "?page[size]={}".format(self.ITEMS_PER_PAGE)
+            req = self.manager.get(
+                related_url,
+                self.populate_tree,
+                node,
+                errorCallback=self.__cleanup_reply,
+                recursive=recursive
+            )
+            if req:
+                self.active_requests.append(req)
+        except KeyError as e:
+            logger.warning('Unable to fetch related items: {}'.format(e))
+            return
 
     def refresh_contents(self):
         """ Refreshes all contents in the tree. This operation might take a long
@@ -622,7 +655,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
             if kind in ["project", "folder"] and recursive:
                 try:
                     next_entrypoint = entry['relationships']['files']['links']['related']['href']
-                except AttributeError as e:
+                except KeyError as e:
                     raise osf.OSFInvalidResponse("Invalid api call for getting next"
                                                  "entry point: {}".format(e))
                 # Add page size parameter to url to let more than 10 results per page be
@@ -640,26 +673,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                     self.active_requests.append(req)
                     self.set_loading_icon(item)
 
-            # Check if there are linked projects.
-            if kind == "project" and recursive:
-                try:
-                    linked_project_entrypoint = entry['relationships']['linked_nodes']['links']['related']['href']
-                except AttributeError as e:
-                    raise osf.OSFInvalidResponse("Invalid api call for getting "
-                                                 "linked projects: {}".format(e))
-
-                linked_project_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
-                req = self.manager.get(
-                    linked_project_entrypoint,
-                    self.populate_tree,
-                    item,
-                    errorCallback=self.__cleanup_reply,
-                    recursive=recursive
-                )
-                # If something went wrong, req should be None
-                if req:
-                    self.active_requests.append(req)
-                    self.set_loading_icon(item)
+                self.fetch_linked_nodes(item, recursive)
 
         # If the results are paginated, see if there is another page that needs
         # to be processed

@@ -21,9 +21,10 @@ import os
 import re
 import sys
 import json
-import logging
 import warnings
-logging.basicConfig(level=logging.INFO)
+
+import logging
+logger = logging.getLogger()
 
 # QtAwesome icon fonts for spinners
 # OSF connection interface
@@ -687,7 +688,7 @@ class OSFExplorer(QtWidgets.QWidget):
         self.show_buttonset(buttonset)
 
         if value:
-            logging.warning("Unknown options: {}".format(value.keys()))
+            logger.warning("Unknown options: {}".format(value.keys()))
 
     # PyQT slots
 
@@ -935,7 +936,7 @@ class OSFExplorer(QtWidgets.QWidget):
                 if reply == QtWidgets.QMessageBox.No:
                     return
 
-                logging.info(
+                logger.info(
                     "File {} exists and will be updated".format(filename))
                 old_item = selected_item.child(index_if_present)
                 # Get data stored in item
