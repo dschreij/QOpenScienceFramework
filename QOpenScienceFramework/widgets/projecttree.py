@@ -216,15 +216,18 @@ class ProjectTree(QtWidgets.QTreeWidget):
         self.__filter = value
 
         # Iterate over the items
-        iterator = QtWidgets.QTreeWidgetItemIterator(self)
-        while(iterator.value()):
-            item = iterator.value()
+        # iterator = QtWidgets.QTreeWidgetItemIterator(self)
+        # while(iterator.value()):
+        #     item = iterator.value()
+
+        for i in range(0, self.invisibleRootItem().childCount()):
+            item = self.invisibleRootItem().child(i)
 
             # If filter is None, it means everything should be
             # visible, so set this item to visible and continue.
             if not self.__filter:
                 item.setHidden(False)
-                iterator += 1
+                #  iterator += 1
                 continue
 
             item_name = item.data(0, QtCore.Qt.DisplayRole)
@@ -233,11 +236,11 @@ class ProjectTree(QtWidgets.QTreeWidget):
             typematch = False
             # If filter is a single string, just check directly
             if isinstance(self.__filter, basestring):
-                typematch = self.__filter in item_name
+                typematch = self.__filter.lower() in item_name.lower()
             # If filter is a list, compare to each item in it
             if isinstance(self.__filter, list):
                 for entry in self.__filter:
-                    if entry in item_name:
+                    if isinstance(entry, basestring) and entry.lower() in item_name.lower():
                         typematch = True
                         break
             # Set item's visibility according to value of typematch
@@ -245,7 +248,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 item.setHidden(False)
             else:
                 item.setHidden(True)
-            iterator += item.childCount() + 1
+            # iterator += item.childCount() + 1
 
     # Public functions
 
