@@ -9,7 +9,6 @@ from QOpenScienceFramework.compat import *
 from qtpy import QtGui, QtCore, QtWidgets, QtNetwork
 
 import pprint
-import fnmatch
 import humanize
 import arrow
 import fileinspector
@@ -220,38 +219,33 @@ class ProjectTree(QtWidgets.QTreeWidget):
         iterator = QtWidgets.QTreeWidgetItemIterator(self)
         while(iterator.value()):
             item = iterator.value()
-            # Check if item is of type 'file'
-            # Filters are only applicable to files
-            item_type = item.data(1, QtCore.Qt.DisplayRole)
-            if item_type == "file":
-                # If filter is None, it means everything should be
-                # visible, so set this item to visible and continue.
-                if self.__filter is None:
-                    item.setHidden(False)
-                    iterator += 1
-                    continue
 
-                # Check if filter extension is contained in filename
-                item_data = item.data(0, QtCore.Qt.UserRole)
-                filename = item_data['attributes']['name']
+            # If filter is None, it means everything should be
+            # visible, so set this item to visible and continue.
+            if not self.__filter:
+                item.setHidden(False)
+                iterator += 1
+                continue
 
-                # Assume no match by default
-                typematch = False
-                # If filter is a single string, just check directly
-                if isinstance(self.__filter, basestring):
-                    typematch = fnmatch.fnmatch(filename, self.__filter)
-                # If filter is a list, compare to each item in it
-                if isinstance(self.__filter, list):
-                    for ext in self.__filter:
-                        if fnmatch.fnmatch(filename, ext):
-                            typematch = True
-                            break
-                # Set item's visibility according to value of typematch
-                if typematch:
-                    item.setHidden(False)
-                else:
-                    item.setHidden(True)
-            iterator += 1
+            item_name = item.data(0, QtCore.Qt.DisplayRole)
+
+            # Assume no match by default
+            typematch = False
+            # If filter is a single string, just check directly
+            if isinstance(self.__filter, basestring):
+                typematch = self.__filter in item_name
+            # If filter is a list, compare to each item in it
+            if isinstance(self.__filter, list):
+                for entry in self.__filter:
+                    if entry in item_name:
+                        typematch = True
+                        break
+            # Set item's visibility according to value of typematch
+            if typematch:
+                item.setHidden(False)
+            else:
+                item.setHidden(True)
+            iterator += item.childCount() + 1
 
     # Public functions
 
@@ -303,6 +297,24 @@ class ProjectTree(QtWidgets.QTreeWidget):
             if displaytext == value:
                 return i
         return None
+
+    def get_item_name(self, item):
+        """[summary]
+
+        Arguments:
+            item {[type]} -- [description]
+        """
+        try:
+            data = item.data(0, QtCore.Qt.UserRole)
+            try:
+                return data['attributes']['title']
+            except KeyError:
+                try:
+                    return data['attributes']['name']
+                except KeyError:
+                    raise TypeError('Could not find node title')
+        except RuntimeError:
+            return "<Unknown>"
 
     def get_icon(self, datatype, name):
         """ Returns a QIcon for the passed datatype.
