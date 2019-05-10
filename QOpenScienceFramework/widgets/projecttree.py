@@ -122,21 +122,27 @@ class ProjectTree(QtWidgets.QTreeWidget):
     # Private functions
 
     def __set_expanded_icon(self, item):
-        data = item.data(0, QtCore.Qt.UserRole)
+        data = self.get_node_data(item)
+        if data is None:
+            return
         if data['type'] == 'files' and data['attributes']['kind'] == 'folder':
             item.setIcon(0, self.get_icon(
                 'folder-open', data['attributes']['name']))
         self.expanded_items.add(data['id'])
 
     def __set_collapsed_icon(self, item):
-        data = item.data(0, QtCore.Qt.UserRole)
+        data = self.get_node_data(item)
+        if data is None:
+            return
         if data['type'] == 'files' and data['attributes']['kind'] == 'folder':
             item.setIcon(0, self.get_icon(
                 'folder', data['attributes']['name']))
         self.expanded_items.discard(data['id'])
 
     def __fetch_if_needed(self, item):
-        data = item.data(0, QtCore.Qt.UserRole)
+        data = self.get_node_data(item)
+        if data is None:
+            return
         nodeStatus = item.data(1, QtCore.Qt.UserRole)
         if (data['type'] == 'nodes' or data['attributes']['kind'] == 'folder') \
                 and not nodeStatus['fetched']:
@@ -154,7 +160,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # reset the loading icon to the item's original, if necessary
         if len(args) and type(args[0]) == QtWidgets.QTreeWidgetItem:
-            nodeStatus = args[0].data(1, QtCore.Qt.UserRole)
+            nodeStatus = self.get_node_data(args[0], 1)
             if not nodeStatus is None:
                 args[0].setIcon(0, nodeStatus['icon'])
 
@@ -173,8 +179,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
         iterator = QtWidgets.QTreeWidgetItemIterator(self)
         while(iterator.value()):
             item = iterator.value()
-            item_data = item.data(0, QtCore.Qt.UserRole)
-            if item_data['id'] in self.expanded_items:
+            item_data = self.get_node_data(item)
+            if item_data and item_data['id'] in self.expanded_items:
                 item.setExpanded(True)
             # Reset selection to item that was selected before refresh
             if self.previously_selected_item:
@@ -349,23 +355,41 @@ class ProjectTree(QtWidgets.QTreeWidget):
             's3': 'web-microsoft-onedrive',
         }
 
-        if datatype.lower() in ['public project', 'private project', 'readonly project']:
-            if datatype.lower() == 'public project':
-                return qta.icon('fa.cube', 'fa.globe', options=[
-                    {},
-                    {'scale_factor': 0.75,
-                     'offset': (0.2, 0.20),
-                     'color': 'green'}
-                ])
-            elif datatype.lower() == "readonly project":
-                return qta.icon('fa.cube', 'fa.lock', options=[
-                    {},
-                    {'scale_factor': 0.75,
-                     'offset': (0.2, 0.20),
-                     'color': 'red'}
+        if "project" in datatype:
+            primary_icon = 'fa5s.cube'
+        elif "instrumentation" in datatype:
+            primary_icon = 'fa5s.flask'
+        elif "analysis" in datatype:
+            primary_icon = 'fa5s.chart-bar'
+        elif "data" in datatype:
+            primary_icon = 'fa5s.database'
+        elif "hypothesis" in datatype:
+            primary_icon = 'fa5.lightbulb'
+        elif "methods and measures" in datatype:
+            primary_icon = 'fa5s.pencil-alt'
+        elif "procedure" in datatype:
+            primary_icon = 'fa5s.cogs'
+        elif "software" in datatype:
+            primary_icon = 'fa5s.laptop'
+        elif "other" in datatype:
+            primary_icon = 'fa5s.th-large'
+        else:
+            primary_icon = None
+
+        if 'public' in datatype.lower():
+            secondary_icon = ('fa5s.globe-americas', 'green')
+        elif 'readonly' in datatype.lower():
+            secondary_icon = ('fa5s.lock', 'red')
+        else:
+            secondary_icon = None
+
+        if primary_icon:
+            if secondary_icon:
+                return qta.icon('fa.cube', secondary_icon[0], options=[
+                    {}, {'scale_factor': 0.70, 'offset': (0.2, 0.20), 'color': secondary_icon[1]}
                 ])
             else:
-                return qta.icon('fa.cube')
+                return qta.icon(primary_icon)
 
         if datatype in ['folder', 'folder-open']:
             # Providers are also seen as folders, so if the current folder
@@ -396,6 +420,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 )
             )
         return QtGui.QIcon(osf_blacklogo_path)
+
+    def get_node_data(self, node, idx=0):
+        try:
+            return node.data(idx, QtCore.Qt.UserRole)
+        except RuntimeError as e:
+            warnings.warn('Partial refresh attempted while tree item was already'
+                          ' deleted', e)
+            return None
 
     def refresh_children_of_node(self, node, recursive=False):
         """ Refreshes the children of the specified node.
@@ -452,34 +484,45 @@ class ProjectTree(QtWidgets.QTreeWidget):
         # If recursive retrieval is enabled, the steps below will take place in populate_tree itself
         if not recursive:
             self.fetch_linked_nodes(node, recursive=recursive)
-
+            self.fetch_child_components(node, recursive=recursive)
 
     def fetch_linked_nodes(self, node, recursive=False):
-        try:
-            node_data = node.data(0, QtCore.Qt.UserRole)
-        except RuntimeError as e:
-            warnings.warn('Partial refresh attempted while tree item was already'
-                          ' deleted', e)
+        node_data = self.get_node_data(node)
+        if node_data is None or node_data['type'] != 'nodes':
             return
 
-        if node_data['type'] != 'nodes' or node_data["attributes"]["category"] != 'project':
-            return
         try:
             related_url = node_data['relationships']['linked_nodes']['links']['related']['href']
-            # Retrieve the new listing of children from the OSF
-            related_url += "?page[size]={}".format(self.ITEMS_PER_PAGE)
-            req = self.manager.get(
-                related_url,
-                self.populate_tree,
-                node,
-                errorCallback=self.__cleanup_reply,
-                recursive=recursive
-            )
-            if req:
-                self.active_requests.append(req)
+            self.fetch_from_endpoint(
+                related_url, parent=node, recursive=recursive)
         except KeyError as e:
             logger.warning('Unable to fetch related items: {}'.format(e))
             return
+
+    def fetch_child_components(self, node, recursive=False):
+        node_data = self.get_node_data(node)
+        if node_data is None or node_data['type'] != 'nodes':
+            return
+
+        try:
+            children_url = node_data['relationships']['children']['links']['related']['href']
+            self.fetch_from_endpoint(
+                children_url, parent=node, recursive=recursive)
+        except KeyError as e:
+            logger.warning('Unable to fetch children of node: {}'.format(e))
+            return
+
+    def fetch_from_endpoint(self, endpoint, parent=None, recursive=False):
+        req = self.manager.get(
+            endpoint,
+            self.populate_tree,
+            parent,
+            errorCallback=self.__cleanup_reply,
+            recursive=recursive
+        )
+        if req:
+            self.active_requests.append(req)
+        return req
 
     def refresh_contents(self):
         """ Refreshes all contents in the tree. This operation might take a long
@@ -673,16 +716,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 # Add page size parameter to url to let more than 10 results per page be
                 # returned
                 next_entrypoint += "?page[size]={}".format(self.ITEMS_PER_PAGE)
-                req = self.manager.get(
-                    next_entrypoint,
-                    self.populate_tree,
-                    item,
-                    errorCallback=self.__cleanup_reply,
-                    recursive=recursive
-                )
+                req = self.fetch_from_endpoint(
+                    next_entrypoint, parent=item, recursive=recursive)
                 # If something went wrong, req should be None
                 if req:
-                    self.active_requests.append(req)
                     self.set_loading_icon(item)
 
                 self.fetch_linked_nodes(item, recursive)
@@ -696,21 +733,14 @@ class ProjectTree(QtWidgets.QTreeWidget):
                                          "results. Missing attribute: {}".format(e))
 
         if not next_page_url is None:
-            req = self.manager.get(
-                next_page_url,
-                self.populate_tree,
-                parent,
-                errorCallback=self.__cleanup_reply
-            )
-            # If something went wrong, req should be None
-            if req:
-                self.active_requests.append(req)
-        else:
-            if not nodeStatus is None:
-                # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
-                self.reset_icon(parent)
-                nodeStatus['refreshing'] = False
+            self.fetch_from_endpoint(
+                next_page_url, parent=parent, recursive=recursive)
+        elif not nodeStatus is None:
+            # Reset icon of the refreshed TreeWidgetItem (in case it was set to a loading icon)
+            self.reset_icon(parent)
+            nodeStatus['refreshing'] = False
 
+        # Attach current nodestatus back to node
         if not nodeStatus is None:
             parent.setData(1, QtCore.Qt.UserRole, nodeStatus)
 
@@ -768,6 +798,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
         self.clear()
         # Add the max items to return per request to the api url
         user_nodes_api_call += "?page[size]={}".format(self.ITEMS_PER_PAGE)
+        # Explicitly state to only show projects, otherwise all associated nodes will be shown in
+        # the root of the tree.
+        user_nodes_api_call += "&filter[category][eq]=project"
 
         # Start populating the tree
         req = self.manager.get(
@@ -784,8 +817,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
     def handle_login(self):
         """ Callback function for EventDispatcher when a login event is detected. """
         self.active_requests = []
-        if not self.isRefreshing:
-            self.refresh_contents()
+        self.refresh_contents()
 
     def handle_logout(self):
         """ Callback function for EventDispatcher when a logout event is detected. """
