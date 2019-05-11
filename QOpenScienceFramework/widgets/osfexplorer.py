@@ -166,7 +166,6 @@ class OSFExplorer(QtWidgets.QWidget):
         self.info_frame.setLayout(info_grid)
         self.info_frame.setVisible(False)
 
-
         filterPanel = QtWidgets.QWidget(self)
         filterPanel.setLayout(QtWidgets.QHBoxLayout())
         filterLabel = QtWidgets.QLabel('Filter:')
@@ -746,20 +745,19 @@ class OSFExplorer(QtWidgets.QWidget):
 
         if data['type'] == 'nodes':
             name = data["attributes"]["title"]
+            kind = data["attributes"]["category"]
             if not user_has_write_permissions:
-                kind = "readonly " + data["attributes"]["category"]
+                access = "readonly"
+            elif data["attributes"]["public"]:
+                access = "public"
             else:
-                if data["attributes"]["public"]:
-                    access = "public "
-                else:
-                    access = "private "
-                kind = access + data["attributes"]["category"]
+                access = "private"
 
         if data['type'] == 'files':
             name = data["attributes"]["name"]
             kind = data["attributes"]["kind"]
 
-        pm = self.tree.get_icon(kind, name).pixmap(self.preview_size)
+        pm = self.tree.get_icon(kind, name, access).pixmap(self.preview_size)
         self.image_space.setPixmap(pm)
 
         if kind == "file":
@@ -922,11 +920,12 @@ class OSFExplorer(QtWidgets.QWidget):
                 os.path.expanduser(safe_str("~")),
                 enc=sys.getfilesystemencoding())
 
-        file_to_upload = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                               _("Select file for upload"),
-                                                               os.path.join(
-                                                                   self.last_open_destination_folder),
-                                                               )
+        file_to_upload = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            _("Select file for upload"),
+            os.path.join(
+                self.last_open_destination_folder),
+        )
 
         # PyQt5 returns a tuple, because it actually performs the function of
         # PyQt4's getSaveFileNameAndFilter() function

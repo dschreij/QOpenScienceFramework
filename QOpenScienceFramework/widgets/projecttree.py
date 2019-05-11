@@ -325,15 +325,15 @@ class ProjectTree(QtWidgets.QTreeWidget):
         except RuntimeError:
             return "<Unknown>"
 
-    def get_icon(self, datatype, name):
+    def get_icon(self, kind, name, access=None):
         """ Returns a QIcon for the passed datatype.
         Retrieves the current theme icon for a certain object (project, folder)
         or filetype. Uses the file extension to determine the file type.
 
         Parameters
         ----------
-        datatype : string
-                The kind of object, which can be project, folder or file
+        kind : string
+                The kind of object, which can be a node type, folder or file
         name : string
                 The name of the object, which is the project's, folder's or
                 file's name
@@ -355,30 +355,26 @@ class ProjectTree(QtWidgets.QTreeWidget):
             's3': 'web-microsoft-onedrive',
         }
 
-        if "project" in datatype:
-            primary_icon = 'fa5s.cube'
-        elif "instrumentation" in datatype:
-            primary_icon = 'fa5s.flask'
-        elif "analysis" in datatype:
-            primary_icon = 'fa5s.chart-bar'
-        elif "data" in datatype:
-            primary_icon = 'fa5s.database'
-        elif "hypothesis" in datatype:
-            primary_icon = 'fa5.lightbulb'
-        elif "methods and measures" in datatype:
-            primary_icon = 'fa5s.pencil-alt'
-        elif "procedure" in datatype:
-            primary_icon = 'fa5s.cogs'
-        elif "software" in datatype:
-            primary_icon = 'fa5s.laptop'
-        elif "other" in datatype:
-            primary_icon = 'fa5s.th-large'
-        else:
+        nodes = {
+            'project': 'fa5s.cube',
+            'instrumentation': 'fa5s.flask',
+            'analysis': 'fa5s.chart-bar',
+            'data': 'fa5s.database',
+            'hypothesis': 'fa5.lightbulb',
+            'methods and measures': 'fa5s.pencil-alt',
+            'procedure': 'fa5s.cogs',
+            'software': 'fa5s.laptop',
+            'other': 'fa5s.th-large'
+        }
+
+        try:
+            primary_icon = nodes[kind]
+        except KeyError:
             primary_icon = None
 
-        if 'public' in datatype.lower():
+        if access == 'public':
             secondary_icon = ('fa5s.globe-americas', 'green')
-        elif 'readonly' in datatype.lower():
+        elif access == 'readonly':
             secondary_icon = ('fa5s.lock', 'red')
         else:
             secondary_icon = None
@@ -391,7 +387,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
             else:
                 return qta.icon(primary_icon)
 
-        if datatype in ['folder', 'folder-open']:
+        if kind in ['folder', 'folder-open']:
             # Providers are also seen as folders, so if the current folder
             # matches a provider's name, simply show its icon.
             if name in providers:
@@ -401,10 +397,10 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 )
             else:
                 return QtGui.QIcon.fromTheme(
-                    datatype,
+                    kind,
                     QtGui.QIcon(osf_blacklogo_path)
                 )
-        elif datatype == 'file':
+        elif kind == 'file':
             # check for OpenSesame extensions first. If this is not an OS file
             # use fileinspector to determine the filetype
             if check_if_opensesame_file(name):
@@ -575,16 +571,15 @@ class ProjectTree(QtWidgets.QTreeWidget):
         if data['type'] == 'nodes':
             name = data["attributes"]["title"]
             if data["attributes"]["public"]:
-                access = "public "
+                access = "public"
             else:
-                access = "private "
+                access = "private"
             kind = data["attributes"]["category"]
-            icon_type = access + kind
         if data['type'] == 'files':
             name = data["attributes"]["name"]
             kind = data["attributes"]["kind"]
-            icon_type = kind
-        return name, kind, icon_type
+            access = None
+        return name, kind, access
 
     def add_item(self, parent, data):
         """ Adds a new item to the tree. The data that is passed should be
@@ -606,7 +601,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 The type of the new item (folder, file, project, etc.)
         """
 
-        name, kind, icon_type = self.determine_node_type(data)
+        name, kind, access = self.determine_node_type(data)
 
         values = [name, kind]
         if "size" in data["attributes"] and data["attributes"]["size"]:
@@ -628,12 +623,12 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         # Create item
         item = QtWidgets.QTreeWidgetItem(parent, values)
-        if kind == 'project' or kind == 'folder':
+        if data['type'] == 'nodes' or kind == 'folder':
             item.setChildIndicatorPolicy(
                 QtWidgets.QTreeWidgetItem.ShowIndicator)
 
         # Copy permission data of project to child elements
-        if kind != "project" and parent:
+        if kind in ["folder","file"] and parent:
             try:
                 parent_data = parent.data(0, QtCore.Qt.UserRole)
                 if parent_data and "current_user_permissions" in parent_data["attributes"]:
@@ -642,13 +637,13 @@ class ProjectTree(QtWidgets.QTreeWidget):
             except AttributeError as e:
                 raise osf.OSFInvalidResponse(
                     "Could not obtain permission data: {}".format(e))
-        elif kind == "project":
+        else:
             # Show a lock icon if project has read-only permissions
             if not "write" in data["attributes"]["current_user_permissions"]:
-                icon_type = "readonly project"
+                access = "readonly"
 
         # Set icon
-        icon = self.get_icon(icon_type, name)
+        icon = self.get_icon(kind, name, access)
         item.setIcon(0, icon)
         # Add data
         item.setData(0, QtCore.Qt.UserRole, data)
