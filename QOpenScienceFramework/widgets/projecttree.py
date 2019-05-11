@@ -381,7 +381,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
 
         if primary_icon:
             if secondary_icon:
-                return qta.icon('fa.cube', secondary_icon[0], options=[
+                return qta.icon(primary_icon, secondary_icon[0], options=[
                     {}, {'scale_factor': 0.70, 'offset': (0.2, 0.20), 'color': secondary_icon[1]}
                 ])
             else:

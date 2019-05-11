@@ -743,6 +743,7 @@ class OSFExplorer(QtWidgets.QWidget):
         user_has_write_permissions = "write" in \
             data["attributes"]["current_user_permissions"]
 
+        access=None
         if data['type'] == 'nodes':
             name = data["attributes"]["title"]
             kind = data["attributes"]["category"]
