@@ -169,13 +169,19 @@ class ProjectTree(QtWidgets.QTreeWidget):
             self.refreshFinished.emit()
 
     def __refresh_finished(self):
-        """ Expands all treewidget items again that were expanded before the
-        refresh. """
+        """Callback for after a refresh operation is finished
+        """
 
         # Reapply filter if set
         if self.__filter:
             self.filter = self.__filter
 
+        # self.__reexpand_items()
+        self.isRefreshing = False
+
+    def __reexpand_items(self):
+        """ Expands all treewidget items again that were expanded before the
+        refresh. """
         iterator = QtWidgets.QTreeWidgetItemIterator(self)
         while(iterator.value()):
             item = iterator.value()
@@ -188,9 +194,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                     self.setCurrentItem(item)
             iterator += 1
 
-        self.isRefreshing = False
     # Properties
-
     @property
     def filter(self):
         """ The currently set filter parameters. """
@@ -382,7 +386,8 @@ class ProjectTree(QtWidgets.QTreeWidget):
         if primary_icon:
             if secondary_icon:
                 return qta.icon(primary_icon, secondary_icon[0], options=[
-                    {}, {'scale_factor': 0.70, 'offset': (0.2, 0.20), 'color': secondary_icon[1]}
+                    {}, {'scale_factor': 0.70, 'offset': (
+                        0.2, 0.20), 'color': secondary_icon[1]}
                 ])
             else:
                 return qta.icon(primary_icon)
@@ -628,7 +633,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 QtWidgets.QTreeWidgetItem.ShowIndicator)
 
         # Copy permission data of project to child elements
-        if kind in ["folder","file"] and parent:
+        if kind in ["folder", "file"] and parent:
             try:
                 parent_data = parent.data(0, QtCore.Qt.UserRole)
                 if parent_data and "current_user_permissions" in parent_data["attributes"]:
@@ -681,13 +686,16 @@ class ProjectTree(QtWidgets.QTreeWidget):
         osf_response = json.loads(safe_decode(reply.readAll().data()))
         nodeStatus = None
 
-        if parent is None or parent.data(0, QtCore.Qt.UserRole) is None:
+        if parent is None:
             parent = self.invisibleRootItem()
         else:
-            nodeStatus = parent.data(1, QtCore.Qt.UserRole)
-            nodeStatus['fetched'] = True
-            parent.setChildIndicatorPolicy(
-                QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
+            try:
+                nodeStatus = parent.data(1, QtCore.Qt.UserRole)
+                nodeStatus['fetched'] = True
+                parent.setChildIndicatorPolicy(
+                    QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
+            except RuntimeError:
+                pass
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
