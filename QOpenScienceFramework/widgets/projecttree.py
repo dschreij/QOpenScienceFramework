@@ -695,7 +695,7 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 parent.setChildIndicatorPolicy(
                     QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
             except RuntimeError:
-                warnings.warn('Node referenced after deletion:', e)
+                warnings.warn('Node referenced after deletion')
             except TypeError:
                 warnings.warn('Could not fetch node\'s status:', parent.text(0))
 
