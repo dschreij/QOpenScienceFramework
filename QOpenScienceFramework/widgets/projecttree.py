@@ -695,7 +695,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
                 parent.setChildIndicatorPolicy(
                     QtWidgets.QTreeWidgetItem.DontShowIndicatorWhenChildless)
             except RuntimeError:
-                pass
+                warnings.warn('Node referenced after deletion:', e)
+            except TypeError:
+                warnings.warn('Could not fetch node\'s status:', parent.text(0))
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
