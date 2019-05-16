@@ -697,7 +697,9 @@ class ProjectTree(QtWidgets.QTreeWidget):
             except RuntimeError:
                 warnings.warn('Node referenced after deletion')
             except TypeError:
-                warnings.warn('Could not fetch node\'s status:', parent.text(0))
+                warnings.warn(
+                    'Could not fetch node\'s status: {}'.format(parent.text(0))
+                )
 
         for entry in osf_response["data"]:
             # Add item to the tree. Check if object hasn't been deleted in the
