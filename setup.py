@@ -26,7 +26,7 @@ setup(
 		'humanize',
 		'python-fileinspector',
 		'requests-oauthlib>=0.6',
-		'qtawesome',
+		'qtawesome>=0.5.7',
 		'python-dotenv'
 	],
 	include_package_data=True,
