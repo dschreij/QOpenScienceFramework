@@ -783,7 +783,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         reply = self.sender()
         request = reply.request()
         # Get the error callback function, if set
-        errorCallback = kwargs.pop('errorCallback', None)
+        errorCallback = kwargs.get('errorCallback', None)
         # Get the request id, if set (only for authenticated requests, if a user
         # is logged in), so it can be repeated if the user is required to
         # reauthenticate.
@@ -820,6 +820,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
 
             # Call error callback, if set
             if callable(errorCallback):
+                kwargs.pop('errorCallback')
                 errorCallback(reply, *args, **kwargs)
             reply.deleteLater()
             return
@@ -841,6 +842,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
                     _("Too Many redirects")
                 )
                 if callable(errorCallback):
+                    kwargs.pop('errorCallback')
                     errorCallback(reply, *args, **kwargs)
                 # Close any remaining file handles that were created for upload
                 # or download
