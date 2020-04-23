@@ -783,7 +783,7 @@ class ConnectionManager(QtNetwork.QNetworkAccessManager):
         reply = self.sender()
         request = reply.request()
         # Get the error callback function, if set
-        errorCallback = kwargs.get('errorCallback', None)
+        errorCallback = kwargs.pop('errorCallback', None)
         # Get the request id, if set (only for authenticated requests, if a user
         # is logged in), so it can be repeated if the user is required to
         # reauthenticate.
