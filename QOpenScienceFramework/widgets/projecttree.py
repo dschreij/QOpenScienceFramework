@@ -383,14 +383,17 @@ class ProjectTree(QtWidgets.QTreeWidget):
         else:
             secondary_icon = None
 
-        if primary_icon:
-            if secondary_icon:
-                return qta.icon(primary_icon, secondary_icon[0], options=[
-                    {}, {'scale_factor': 0.70, 'offset': (
-                        0.2, 0.20), 'color': secondary_icon[1]}
-                ])
-            else:
-                return qta.icon(primary_icon)
+        try:
+            if primary_icon:
+                if secondary_icon:
+                    return qta.icon(primary_icon, secondary_icon[0], options=[
+                        {}, {'scale_factor': 0.70, 'offset': (
+                            0.2, 0.20), 'color': secondary_icon[1]}
+                    ])
+                else:
+                    return qta.icon(primary_icon)
+        except Exception:
+            return QtGui.QIcon.fromTheme('text-x-generic')
 
         if kind in ['folder', 'folder-open']:
             # Providers are also seen as folders, so if the current folder
